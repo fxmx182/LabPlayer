@@ -1,0 +1,19 @@
+# Gerado pelo XcodeGen — nunca versionar, senão dá conflito a cada build.
+*.xcodeproj/
+*.xcworkspace/
+
+# Build
+build/
+DerivedData/
+payload/
+*.ipa
+*.dSYM.zip
+
+# Dependências pesadas do FFmpeg (fase 2) — vêm do cache do CI.
+Vendor/
+*.xcframework/
+
+# macOS / editores
+.DS_Store
+*.swp
+.vscode/
