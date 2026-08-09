@@ -80,11 +80,23 @@ jobs:
           [ -n "$LIB" ] || { echo "::error::libffmpeg.a não existe no xcframework"; exit 1; }
 
           echo "arquitetura: $(lipo -info "$LIB")"
-          SIMBOLOS=$(nm -gj "$LIB" 2>/dev/null | sed 's/^_//' | sort -u)
+
+          # Um arquivo, não uma variável de shell: com dezenas de milhares de
+          # símbolos, `echo "$VAR" | grep` é frágil. E fixamos a arquitetura —
+          # sem -arch, o nm do runner tenta ler com a arquitetura do host e
+          # devolve resultado parcial numa lib só de arm64/iOS.
+          nm -arch arm64 --defined-only -g -j "$LIB" 2>/dev/null \
+            | sed 's/^_//' | sort -u > /tmp/simbolos.txt
+          TOTAL=$(wc -l < /tmp/simbolos.txt | tr -d ' ')
+          echo "símbolos definidos: $TOTAL"
+          [ "$TOTAL" -gt 100 ] || {
+            echo "::error title=nm não leu a biblioteca::só $TOTAL símbolos — a verificação, não a build, está quebrada"
+            exit 1
+          }
 
           FALTANTES=""
           checar() {
-            if echo "$SIMBOLOS" | grep -qx "$1"; then
+            if grep -qx "$1" /tmp/simbolos.txt; then
               printf '  ok      %s  (%s)\n' "$1" "$2"
             else
               printf '  FALTOU  %s  (%s)\n' "$1" "$2"
@@ -131,9 +143,13 @@ jobs:
           du -sh Vendor/FFmpeg.xcframework
 
           if [ -n "$FALTANTES" ]; then
-            # Codifica as quebras de linha para caberem numa anotação — é o
-            # único canal que eu consigo ler sem admin no repositório.
-            ENC=$(printf '%s' "$FALTANTES" | python3 -c "import sys; print(sys.stdin.read().replace('%','%25').replace('\n','%0A'))")
+            # Junto vai o contexto para distinguir "a build está errada" de "a
+            # verificação está errada" sem gastar outro ciclo de CI: total de
+            # símbolos e uma amostra do que existe com nome parecido.
+            DIAG="símbolos definidos: $TOTAL"$'\n'"amostra com 'avformat_': $(grep -c '^avformat_' /tmp/simbolos.txt || true)"$'\n'
+            DIAG="${DIAG}amostra com 'ff_.*_demuxer': $(grep -c '_demuxer$' /tmp/simbolos.txt || true)"$'\n'
+            DIAG="${DIAG}primeiros demuxers: $(grep '_demuxer$' /tmp/simbolos.txt | head -8 | tr '\n' ' ')"$'\n\n'
+            ENC=$(printf '%s' "${DIAG}FALTOU:"$'\n'"$FALTANTES" | python3 -c "import sys; print(sys.stdin.read().replace('%','%25').replace('\n','%0A'))")
             echo "::error title=Componentes ausentes no FFmpeg::$ENC"
             exit 1
           fi
