@@ -102,7 +102,10 @@ final class PlayerControlsView: UIView {
 
         playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
         playButton.tintColor = .white
-        playButton.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        // UIButton não expõe `preferredSymbolConfiguration` como propriedade —
+        // isso é do UIImageView. No botão, é este método.
+        playButton.setPreferredSymbolConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold), forImageIn: .normal)
         playButton.addTarget(self, action: #selector(playTapped), for: .touchUpInside)
         playButton.translatesAutoresizingMaskIntoConstraints = false
 

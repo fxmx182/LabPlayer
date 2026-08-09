@@ -43,7 +43,39 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build 2>&1 | tee build.log
+
+      # O log completo do job só é baixável por quem tem admin no repositório,
+      # mas as *anotações* de um repo público são lidas por qualquer um. Então
+      # republicamos os erros do compilador como anotação: assim dá para
+      # diagnosticar a falha de fora, sem token de acesso.
+      - name: Republicar erros do compilador como anotação
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          log = pathlib.Path("build.log")
+          if not log.exists():
+              print("::error title=Sem log::build.log não foi gerado")
+              raise SystemExit(0)
+
+          text = log.read_text(errors="replace")
+          seen, errors = set(), []
+          for line in text.splitlines():
+              if re.search(r"(error:|fatal error:|\*\* BUILD FAILED)", line):
+                  line = line.strip()
+                  if line not in seen:
+                      seen.add(line)
+                      errors.append(line)
+
+          if not errors:
+              tail = "\n".join(text.splitlines()[-40:])
+              errors = ["Nenhuma linha 'error:' encontrada. Fim do log:", tail]
+
+          body = "\n".join(errors)[:6000]
+          enc = body.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Erros de compilação ({len(errors)})::{enc}")
+          PY
 
       - name: Empacotar .ipa
         run: |
