@@ -25,6 +25,21 @@ jobs:
       - name: Instalar XcodeGen
         run: brew install xcodegen
 
+      # O xcframework não é versionado (são megabytes de binário). Vem do
+      # cache que o workflow ffmpeg.yml preencheu; a chave é a mesma nos dois.
+      - name: Restaurar FFmpeg do cache
+        id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: Vendor/FFmpeg.xcframework
+          key: ffmpeg-ios-${{ hashFiles('Scripts/build-ffmpeg.sh') }}
+
+      - name: Compilar FFmpeg (só se o cache falhar)
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        run: |
+          chmod +x Scripts/build-ffmpeg.sh
+          ./Scripts/build-ffmpeg.sh
+
       - name: Gerar projeto
         run: xcodegen generate
 

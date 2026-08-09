@@ -37,3 +37,24 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_BITCODE: NO
+        SWIFT_OBJC_BRIDGING_HEADER: App/Sources/Core/FFmpegBridge.h
+        # Recursivo de propósito: assim não dependemos do nome da fatia
+        # (ios-arm64) que o xcodebuild escolhe ao montar o xcframework.
+        HEADER_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/Vendor/FFmpeg.xcframework/**
+
+    dependencies:
+      # Estática: nada a embarcar no bundle, só linkar.
+      - framework: Vendor/FFmpeg.xcframework
+        embed: false
+      # Dependências que o FFmpeg exige do sistema. Faltando qualquer uma, a
+      # compilação passa e o *link* quebra — por isso ficam explícitas.
+      - sdk: libz.tbd
+      - sdk: libbz2.tbd
+      - sdk: libiconv.tbd
+      - sdk: VideoToolbox.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
+      - sdk: AudioToolbox.framework
+      - sdk: Security.framework

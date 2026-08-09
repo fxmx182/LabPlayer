@@ -140,6 +140,13 @@ struct LibraryView: View {
             } label: {
                 Label("Abrir um arquivo avulso", systemImage: "play.rectangle")
             }
+        } footer: {
+            // Prova de linkagem, não enfeite: se o xcframework não tivesse
+            // linkado, o app nem iniciaria. Ver isto no aparelho confirma que
+            // a biblioteca está viva antes de existir motor para usá-la.
+            Text("FFmpeg \(FFmpegRuntime.version) · \(FFmpegRuntime.demuxerCount) contêineres")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
     }
 }
