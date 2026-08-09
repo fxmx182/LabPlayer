@@ -58,14 +58,63 @@ read -rsp "Senha do Apple ID: " APPLE_SENHA
 echo; echo
 
 echo "==> assinando e instalando (o 2FA vai ser pedido aqui)…"
+echo
+
+# O AltServer sai com código 0 mesmo quando falha — confiar no exit status faz
+# o script anunciar sucesso que não houve. Então guardamos a saída, procuramos
+# erro nela e, no fim, conferimos no próprio aparelho.
+LOG="$(mktemp)"
+trap 'rm -f "$LOG"' EXIT
+
+set +e
 ALTSERVER_ANISETTE_SERVER="$ANISETTE_URL" \
-  "$ALTSERVER" -u "$UDID" -a "$APPLE_ID" -p "$APPLE_SENHA" "$IPA"
+  "$ALTSERVER" -u "$UDID" -a "$APPLE_ID" -p "$APPLE_SENHA" "$IPA" 2>&1 | tee "$LOG"
+set -e
 
 echo
-echo "pronto. O LabPlayer deve estar na tela inicial do iPhone."
+echo "==> conferindo no aparelho…"
+sleep 2
+
+if ideviceinstaller -l 2>/dev/null | grep -qi 'labplayer'; then
+  echo
+  echo "INSTALADO. O LabPlayer está na tela inicial do iPhone."
+  echo
+  echo "Antes de abrir, confie no certificado uma vez:"
+  echo "  Ajustes > Geral > VPN e Gerenciamento de Dispositivo > seu Apple ID > Confiar"
+  echo
+  echo "Com Apple ID gratuito o app expira em 7 dias — rode este script de novo"
+  echo "para renovar."
+  exit 0
+fi
+
 echo
-echo "Antes de abrir, confie no certificado uma vez:"
-echo "  Ajustes > Geral > VPN e Gerenciamento de Dispositivo > seu Apple ID > Confiar"
+echo "NÃO INSTALOU. O app não aparece na lista do aparelho."
 echo
-echo "Com Apple ID gratuito o app expira em 7 dias — rode este script de novo"
-echo "para renovar, ou instale o SideStore para ele renovar sozinho pelo Wi-Fi."
+
+if grep -q '434' "$LOG"; then
+  cat <<'DIAG'
+Diagnóstico: código 434 na resposta de dois fatores.
+
+Isso vem da autenticação da Apple, não do app nem do .ipa — que já foi
+verificado como íntegro. O AltServer-Linux não recebe atualização real desde
+2023, e a Apple mudou o fluxo de login desde então; é o suspeito principal.
+
+O que costuma valer a pena, em ordem:
+  1. Repetir uma vez — a Apple às vezes bloqueia por tentativas seguidas.
+     Espere alguns minutos entre as tentativas.
+  2. Entrar em https://appleid.apple.com pelo navegador e ver se há termos
+     novos a aceitar ou aviso de segurança pendente. Login travado por isso
+     falha exatamente assim.
+  3. Trocar a ferramenta de instalação (Sideloadly num PC Windows/Mac, ou
+     conta de desenvolvedor paga assinando por certificado — que dispensa
+     senha, 2FA e o AltServer inteiro).
+DIAG
+elif grep -qi 'anisette' "$LOG"; then
+  echo "Diagnóstico: problema no servidor anisette. Reinicie com:"
+  echo "  docker restart anisette"
+else
+  echo "Últimas linhas da saída do AltServer:"
+  tail -15 "$LOG" | sed 's/^/  /'
+fi
+
+exit 1
