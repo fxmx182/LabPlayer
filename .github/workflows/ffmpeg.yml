@@ -70,13 +70,74 @@ jobs:
           print(f"::error title=Falha ao compilar FFmpeg::{enc}")
           PY
 
-      - name: Inventário do que ficou dentro
+      # "Compilou" não é "compilou com o que precisamos": um --disable-everything
+      # com um nome de componente errado passa silenciosamente e só quebraria
+      # muito depois, ao tentar abrir um MKV. Aqui a ausência falha o build.
+      - name: Conferir conteúdo da biblioteca
         run: |
-          echo "### FFmpeg.xcframework" >> "$GITHUB_STEP_SUMMARY"
-          du -sh Vendor/FFmpeg.xcframework >> "$GITHUB_STEP_SUMMARY"
-          find Vendor/FFmpeg.xcframework -name '*.a' -exec ls -lh {} \; >> "$GITHUB_STEP_SUMMARY"
-          echo "cabeçalhos:" >> "$GITHUB_STEP_SUMMARY"
-          find Vendor/FFmpeg.xcframework -name '*.h' | wc -l >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          LIB=$(find Vendor/FFmpeg.xcframework -name 'libffmpeg.a' | head -1)
+          [ -n "$LIB" ] || { echo "::error::libffmpeg.a não existe no xcframework"; exit 1; }
+
+          echo "arquitetura: $(lipo -info "$LIB")"
+          SIMBOLOS=$(nm -gj "$LIB" 2>/dev/null | sed 's/^_//' | sort -u)
+
+          FALTANTES=""
+          checar() {
+            if echo "$SIMBOLOS" | grep -qx "$1"; then
+              printf '  ok      %s  (%s)\n' "$1" "$2"
+            else
+              printf '  FALTOU  %s  (%s)\n' "$1" "$2"
+              FALTANTES="${FALTANTES}${1} — ${2}"$'\n'
+            fi
+          }
+
+          echo "— API que o motor vai usar —"
+          checar avformat_open_input  "abrir contêiner"
+          checar av_read_frame        "ler pacotes"
+          checar av_seek_frame        "seek para keyframe"
+          checar avcodec_send_packet  "decodificar"
+          checar avcodec_receive_frame "receber frame"
+          checar avio_alloc_context   "I/O próprio — é por aqui que o SMB entra"
+          checar swr_convert          "reamostrar áudio"
+          checar sws_scale            "converter pixel format"
+
+          echo "— contêineres que o AVFoundation recusa —"
+          checar ff_matroska_demuxer  "mkv"
+          checar ff_avi_demuxer       "avi"
+          checar ff_mpegts_demuxer    "ts"
+          checar ff_flv_demuxer       "flv"
+          checar ff_asf_demuxer       "wmv"
+
+          echo "— áudio que costuma abrir mudo no iOS —"
+          checar ff_dca_decoder       "DTS"
+          checar ff_truehd_decoder    "TrueHD"
+          checar ff_eac3_decoder      "E-AC3"
+          checar ff_ac3_decoder       "AC3"
+
+          echo "— vídeo e aceleração por hardware —"
+          checar ff_h264_decoder      "H.264 software"
+          checar ff_hevc_decoder      "HEVC software"
+          checar ff_h264_videotoolbox_hwaccel "H.264 por hardware"
+          checar ff_hevc_videotoolbox_hwaccel "HEVC por hardware"
+
+          echo "— legendas —"
+          checar ff_subrip_decoder    "SRT"
+          checar ff_ass_decoder       "ASS/SSA"
+          checar ff_pgssub_decoder    "PGS (Blu-ray)"
+
+          echo
+          echo "cabeçalhos: $(find Vendor/FFmpeg.xcframework -name '*.h' | wc -l | tr -d ' ')"
+          du -sh Vendor/FFmpeg.xcframework
+
+          if [ -n "$FALTANTES" ]; then
+            # Codifica as quebras de linha para caberem numa anotação — é o
+            # único canal que eu consigo ler sem admin no repositório.
+            ENC=$(printf '%s' "$FALTANTES" | python3 -c "import sys; print(sys.stdin.read().replace('%','%25').replace('\n','%0A'))")
+            echo "::error title=Componentes ausentes no FFmpeg::$ENC"
+            exit 1
+          fi
+          echo "::notice title=FFmpeg conferido::todos os componentes esperados estão presentes"
 
       - name: Publicar artefato
         uses: actions/upload-artifact@v4
