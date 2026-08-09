@@ -1,0 +1,87 @@
+name: FFmpeg xcframework
+
+# Deliberadamente separado do build do app: compilar o FFmpeg é demorado e
+# frágil, e uma falha aqui não pode derrubar o pipeline que gera o .ipa.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Scripts/build-ffmpeg.sh'
+      - '.github/workflows/ffmpeg.yml'
+  workflow_dispatch:
+
+jobs:
+  ffmpeg:
+    name: Compilar FFmpeg para iOS
+    runs-on: macos-15
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A chave é o hash do script: mexeu na configuração, recompila; não
+      # mexeu, restaura em segundos.
+      - name: Restaurar cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: Vendor/FFmpeg.xcframework
+          key: ffmpeg-ios-${{ hashFiles('Scripts/build-ffmpeg.sh') }}
+
+      - name: Compilar
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          set -o pipefail
+          chmod +x Scripts/build-ffmpeg.sh
+          ./Scripts/build-ffmpeg.sh 2>&1 | tee ffmpeg-build.log
+
+      # Mesmo truque do build do app: o log do job exige admin, anotações não.
+      - name: Republicar erros como anotação
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+          log = pathlib.Path("ffmpeg-build.log")
+          if not log.exists():
+              print("::error title=Sem log::ffmpeg-build.log não foi gerado")
+              raise SystemExit(0)
+
+          text = log.read_text(errors="replace")
+          linhas = text.splitlines()
+
+          # O ./configure do FFmpeg não escreve o motivo no stdout — ele manda
+          # para ffbuild/config.log. Sem isso a anotação viria vazia.
+          conf = pathlib.Path(".ffmpeg-build")
+          cfg_logs = list(conf.glob("*/ffbuild/config.log")) if conf.exists() else []
+          extra = []
+          for c in cfg_logs:
+              extra = ["", f"--- fim de {c} ---"]
+              extra += c.read_text(errors="replace").splitlines()[-50:]
+
+          erros = [l.strip() for l in linhas
+                   if re.search(r"(error:|Error \d|ERROR:|not found|No such file)", l)]
+          # dict.fromkeys tira duplicata preservando a ordem.
+          corpo = "\n".join(list(dict.fromkeys(erros))[-40:])
+          if not corpo:
+              corpo = "\n".join(linhas[-40:])
+          corpo = "\n".join([corpo] + extra)[:6000]
+
+          enc = corpo.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Falha ao compilar FFmpeg::{enc}")
+          PY
+
+      - name: Inventário do que ficou dentro
+        run: |
+          echo "### FFmpeg.xcframework" >> "$GITHUB_STEP_SUMMARY"
+          du -sh Vendor/FFmpeg.xcframework >> "$GITHUB_STEP_SUMMARY"
+          find Vendor/FFmpeg.xcframework -name '*.a' -exec ls -lh {} \; >> "$GITHUB_STEP_SUMMARY"
+          echo "cabeçalhos:" >> "$GITHUB_STEP_SUMMARY"
+          find Vendor/FFmpeg.xcframework -name '*.h' | wc -l >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: FFmpeg-xcframework
+          path: Vendor/FFmpeg.xcframework
+          retention-days: 30
+          if-no-files-found: error

@@ -17,3 +17,4 @@ Vendor/
 .DS_Store
 *.swp
 .vscode/
+.ffmpeg-build/
