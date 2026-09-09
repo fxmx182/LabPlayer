@@ -15,6 +15,13 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mauricio.viperplayer.core.LabTheme
@@ -49,6 +56,30 @@ fun Modifier.tvFocus(
         .onFocusChanged { focado = it.isFocused }
         .scale(escala)
         .border(if (focado) 2.5.dp else 0.dp, cor, RoundedCornerShape(radius))
+}
+
+/**
+ * Deixa as setas saírem de dentro de um campo de texto.
+ *
+ * O Compose entrega as setas ao cursor do campo — comportamento certo num
+ * teclado de computador, e uma armadilha num controle remoto: o usuário entra
+ * no primeiro campo do formulário e **não sai mais dele**. Como os campos aqui
+ * são todos de uma linha só, não há cursor vertical para mover, e cima/baixo
+ * podem significar o que significam no resto da tela: trocar de campo.
+ *
+ * `onPreviewKeyEvent` porque a interceptação precisa acontecer antes de o campo
+ * consumir a tecla — depois já é tarde.
+ */
+fun Modifier.setasTrocamDeCampo(): Modifier = composed {
+    val foco = LocalFocusManager.current
+    onPreviewKeyEvent { evento ->
+        if (evento.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        when (evento.key) {
+            Key.DirectionDown -> { foco.moveFocus(FocusDirection.Down); true }
+            Key.DirectionUp -> { foco.moveFocus(FocusDirection.Up); true }
+            else -> false
+        }
+    }
 }
 
 /** Fonte de interação sem ondulação: o efeito de toque não faz sentido na TV. */

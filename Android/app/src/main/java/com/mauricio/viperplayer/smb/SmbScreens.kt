@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -47,18 +50,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import com.mauricio.viperplayer.core.Device
 import com.mauricio.viperplayer.core.LabTheme
 import com.mauricio.viperplayer.core.MediaItem
 import com.mauricio.viperplayer.core.labCard
 import com.mauricio.viperplayer.player.Playback
+import com.mauricio.viperplayer.tv.setasTrocamDeCampo
 import com.mauricio.viperplayer.tv.tvFocus
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +79,11 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
     var servidores by remember { mutableStateOf(store.servers) }
     var editando by remember { mutableStateOf<SmbServer?>(null) }
     var criando by remember { mutableStateOf(false) }
+    val primeiroFoco = remember { FocusRequester() }
+
+    // Sem foco inicial, a primeira seta do controle não move nada — e da
+    // poltrona isso não se distingue de uma tela travada.
+    LaunchedEffect(Unit) { runCatching { primeiroFoco.requestFocus() } }
 
     Scaffold(
         containerColor = LabTheme.background,
@@ -81,8 +96,14 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { criando = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adicionar servidor")
+                    // Na televisão este botão sai: a busca de foco do Compose
+                    // não chega até a barra superior, então ele ficaria à
+                    // mostra e inalcançável — pior que não existir. Lá quem
+                    // adiciona é a primeira linha da lista.
+                    if (!Device.isTv(contexto)) {
+                        IconButton(onClick = { criando = true }) {
+                            Icon(Icons.Filled.Add, contentDescription = "Adicionar servidor")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -94,53 +115,75 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
             )
         },
     ) { padding ->
-        if (servidores.isEmpty()) {
-            Column(
-                Modifier.padding(padding).fillMaxSize().padding(32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(Icons.Filled.Dns, null, tint = LabTheme.faint, modifier = Modifier.size(44.dp))
-                Spacer(Modifier.height(14.dp))
-                Text("Nenhum servidor salvo", color = LabTheme.text, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Adicione o endereço do servidor de casa e o Viper toca os vídeos direto de lá, " +
-                        "sem baixar nada antes.",
-                    color = LabTheme.muted, textAlign = TextAlign.Center, fontSize = 13.sp,
-                )
+        // Uma lista só, sempre — com a ação de adicionar dentro dela.
+        //
+        // O "+" da barra superior é confortável no polegar e inalcançável no
+        // controle remoto: a busca de foco não chega até ele, e o usuário fica
+        // preso na seta de voltar sem nenhum jeito de cadastrar um servidor.
+        // Numa tela vista a três metros, a ação tem que ser uma linha da lista,
+        // do tamanho das outras.
+        LazyColumn(
+            Modifier.padding(padding).fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        ) {
+            item {
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                        .focusRequester(primeiroFoco)
+                        .tvFocus(LabTheme.radiusCard)
+                        .clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
+                        .clickable { criando = true }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Add, null, tint = LabTheme.accent, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("Adicionar servidor", color = LabTheme.text, fontWeight = FontWeight.Medium)
+                }
             }
-        } else {
-            LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)) {
-                items(servidores, key = { it.id }) { servidor ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = 10.dp)
-                            // O realce de foco só aparece com controle remoto;
-                            // no celular, onde o dedo aponta, ele nunca acende.
-                            .tvFocus(LabTheme.radiusCard)
-                            .clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
-                            .clickable { onOpen(servidor) }
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Dns, null, tint = LabTheme.accent, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(servidor.name, color = LabTheme.text, fontWeight = FontWeight.Medium)
-                            Text(
-                                servidor.displayHost + if (servidor.isGuest) " · convidado" else " · ${servidor.username}",
-                                color = LabTheme.muted, fontSize = 12.sp,
-                            )
-                        }
-                        IconButton(onClick = { editando = servidor }) {
-                            Icon(Icons.Filled.Edit, "Editar", tint = LabTheme.muted)
-                        }
-                        IconButton(onClick = {
+
+            if (servidores.isEmpty()) {
+                item {
+                    Text(
+                        "Nenhum servidor salvo ainda. Adicione o endereço do servidor de casa " +
+                            "e o Viper toca os vídeos direto de lá, sem baixar nada antes.",
+                        color = LabTheme.muted, fontSize = 13.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
+                    )
+                }
+            }
+
+            items(servidores, key = { it.id }) { servidor ->
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                        // O realce de foco só aparece com controle remoto;
+                        // no celular, onde o dedo aponta, ele nunca acende.
+                        .tvFocus(LabTheme.radiusCard)
+                        .clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
+                        .clickable { onOpen(servidor) }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Dns, null, tint = LabTheme.accent, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(servidor.name, color = LabTheme.text, fontWeight = FontWeight.Medium)
+                        Text(
+                            servidor.displayHost + if (servidor.isGuest) " · convidado" else " · ${servidor.username}",
+                            color = LabTheme.muted, fontSize = 12.sp,
+                        )
+                    }
+                    IconButton(onClick = { editando = servidor }, modifier = Modifier.tvFocus(24.dp)) {
+                        Icon(Icons.Filled.Edit, "Editar", tint = LabTheme.muted)
+                    }
+                    IconButton(
+                        onClick = {
                             store.remove(servidor)
                             servidores = store.servers
-                        }) {
-                            Icon(Icons.Filled.Delete, "Remover", tint = LabTheme.muted)
-                        }
+                        },
+                        modifier = Modifier.tvFocus(24.dp),
+                    ) {
+                        Icon(Icons.Filled.Delete, "Remover", tint = LabTheme.muted)
                     }
                 }
             }
@@ -175,30 +218,46 @@ private fun EditorDeServidor(
     var usuario by remember { mutableStateOf(servidor?.username ?: "") }
     var senha by remember { mutableStateOf(senhaAtual ?: "") }
     var convidado by remember { mutableStateOf(servidor?.isGuest ?: false) }
+    var mostrarSenha by remember { mutableStateOf(false) }
+
+    val rolagem = rememberScrollState()
 
     AlertDialog(
         onDismissRequest = onCancel,
+        // Sem a largura padrão da plataforma o diálogo aproveita a tela larga
+        // da televisão em vez de virar uma coluna estreita e altíssima — que é
+        // justamente o formato que não cabe numa tela deitada.
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier.widthIn(max = 560.dp).padding(horizontal = 24.dp),
         containerColor = LabTheme.surface,
         title = { Text(if (servidor == null) "Novo servidor" else "Editar servidor") },
         text = {
-            Column {
+            // **O conteúdo rola.** Sem isto, numa tela deitada — televisão, ou
+            // celular virado — os últimos campos e os botões ficam abaixo da
+            // borda, e o que não dá para focar não dá para digitar: a senha
+            // simplesmente não aceitava texto porque nunca recebia o foco.
+            Column(Modifier.verticalScroll(rolagem)) {
                 OutlinedTextField(
                     value = nome, onValueChange = { nome = it },
                     label = { Text("Nome") }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = host, onValueChange = { host = it },
                     label = { Text("Endereço (IP ou nome)") }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = porta, onValueChange = { porta = it.filter(Char::isDigit) },
                     label = { Text("Porta") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number, imeAction = ImeAction.Next,
+                    ),
+                    modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -209,15 +268,29 @@ private fun EditorDeServidor(
                     OutlinedTextField(
                         value = usuario, onValueChange = { usuario = it },
                         label = { Text("Usuário") }, singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = senha, onValueChange = { senha = it },
                         label = { Text("Senha") }, singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = if (mostrarSenha) VisualTransformation.None
+                        else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = if (mostrarSenha) KeyboardType.Text else KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                        modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
                     )
+                    // Ver o que foi digitado importa mais aqui do que num
+                    // celular: com um controle remoto, cada caractere é uma
+                    // viagem pelo teclado da tela, e uma senha mascarada não
+                    // dá como conferir se sobrou uma letra pelo caminho.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = mostrarSenha, onCheckedChange = { mostrarSenha = it })
+                        Text("Mostrar a senha", color = LabTheme.text, fontSize = 13.sp)
+                    }
                 }
             }
         },
@@ -465,7 +538,7 @@ private fun RaizDoServidor(
                     OutlinedTextField(
                         value = nome, onValueChange = { nome = it },
                         label = { Text("Nome") }, singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
