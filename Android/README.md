@@ -46,6 +46,30 @@ Honestidade primeiro, porque descobrir isso sozinho custa mais caro:
   (`VlcEngine.addSubtitle`), mas não há botão. Legenda ao lado do arquivo com o
   mesmo nome já entra sozinha.
 
+## Achar o servidor sozinho
+
+A tela de Servidores procura na rede assim que abre — sem botão, porque
+procurar é o que se quer fazer ao entrar ali. Um toque no que apareceu leva o
+nome e o endereço prontos para o formulário; só sobram usuário e senha.
+
+São duas técnicas somadas, as mesmas do irmão de iOS, porque cada uma sozinha
+deixa buraco:
+
+| | acha | traz |
+|---|---|---|
+| **mDNS** (`_smb._tcp`) | quem se anuncia — NAS, Windows, Samba com Avahi | o nome legível da máquina |
+| **Varredura da porta 445** | qualquer coisa que aceite conexão SMB | só o endereço |
+
+Uma diferença em relação ao iOS que não é cosmética: lá o código pergunta pela
+interface `en0`, o Wi-Fi do iPhone. Aqui isso não serve — uma caixinha de
+Android TV quase sempre está no cabo, e fixar o Wi-Fi deixaria a descoberta
+morta justamente no aparelho que mais precisa dela. Quem responde qual é a rede
+em uso é o sistema, e aí funciona no celular, na TV e com VPN ligada.
+
+A varredura é 32 endereços por vez, com 700 ms de prazo cada: numa rede local
+quem responde responde em milissegundos, e esperar mais só faria a busca
+inteira demorar.
+
 ## No carro (Android Auto)
 
 Só na variante de celular, e **só o áudio** — essa é a primeira coisa a dizer,

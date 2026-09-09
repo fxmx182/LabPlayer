@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +45,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,6 +72,7 @@ import com.mauricio.viperplayer.core.labCard
 import com.mauricio.viperplayer.player.Playback
 import com.mauricio.viperplayer.tv.setasTrocamDeCampo
 import com.mauricio.viperplayer.tv.tvFocus
+import kotlinx.coroutines.withTimeoutOrNull
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +81,35 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
     val store = remember { SmbServerStore.get(contexto) }
     var servidores by remember { mutableStateOf(store.servers) }
     var editando by remember { mutableStateOf<SmbServer?>(null) }
-    var criando by remember { mutableStateOf(false) }
+    // Não é um sim/não: guarda os valores já preenchidos, para um servidor
+    // achado na rede chegar ao formulário com nome e endereço prontos.
+    var criando by remember { mutableStateOf<SmbServer?>(null) }
+
+    val encontrados = remember { mutableStateListOf<SmbDiscovery.Encontrado>() }
+    var procurando by remember { mutableStateOf(true) }
+
+    // A busca começa junto com a tela e morre com ela. Sem botão: procurar a
+    // rede é o que se quer fazer ao abrir "Servidores", e pedir um toque a
+    // mais para isso seria só cerimônia.
+    LaunchedEffect(Unit) {
+        procurando = true
+        runCatching {
+            withTimeoutOrNull(20_000) {
+                SmbDiscovery(contexto).procurar { achado ->
+                    val jaTem = encontrados.indexOfFirst { it.host == achado.host }
+                    when {
+                        // O mDNS tem prioridade: traz nome legível, e a
+                        // varredura acharia o mesmo servidor identificado só
+                        // pelo endereço.
+                        jaTem >= 0 && achado.viaMdns -> encontrados[jaTem] = achado
+                        jaTem >= 0 -> Unit
+                        else -> encontrados.add(achado)
+                    }
+                }
+            }
+        }
+        procurando = false
+    }
     val primeiroFoco = remember { FocusRequester() }
 
     // Sem foco inicial, a primeira seta do controle não move nada — e da
@@ -101,7 +132,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                     // mostra e inalcançável — pior que não existir. Lá quem
                     // adiciona é a primeira linha da lista.
                     if (!Device.isTv(contexto)) {
-                        IconButton(onClick = { criando = true }) {
+                        IconButton(onClick = { criando = SmbServer(name = "", host = "") }) {
                             Icon(Icons.Filled.Add, contentDescription = "Adicionar servidor")
                         }
                     }
@@ -132,7 +163,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                         .focusRequester(primeiroFoco)
                         .tvFocus(LabTheme.radiusCard)
                         .clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
-                        .clickable { criando = true }
+                        .clickable { criando = SmbServer(name = "", host = "") }
                         .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -187,18 +218,76 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                     }
                 }
             }
+
+            // Só o que ainda não está salvo: repetir na descoberta um servidor
+            // que já está na lista de cima seria oferecer cadastrar de novo o
+            // que já existe.
+            val novos = encontrados.filterNot { achado ->
+                servidores.any { it.host.equals(achado.host, ignoreCase = true) }
+            }
+
+            if (novos.isNotEmpty() || procurando) {
+                item {
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp, start = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("NA REDE", style = LabTheme.sectionTitle)
+                        if (procurando) {
+                            Spacer(Modifier.width(10.dp))
+                            CircularProgressIndicator(Modifier.size(12.dp), strokeWidth = 1.5.dp)
+                        }
+                    }
+                }
+            }
+
+            items(novos, key = { it.host }) { achado ->
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                        .tvFocus(LabTheme.radiusCard)
+                        .clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
+                        .clickable { criando = SmbServer(name = achado.nome, host = achado.host) }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Dns, null, tint = LabTheme.muted, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(achado.nome, color = LabTheme.text, fontWeight = FontWeight.Medium)
+                        Text(
+                            if (achado.viaMdns) "${achado.host} · anunciado na rede"
+                            else "${achado.host} · responde na porta 445",
+                            color = LabTheme.muted, fontSize = 12.sp,
+                        )
+                    }
+                    Icon(Icons.Filled.Add, null, tint = LabTheme.accent, modifier = Modifier.size(18.dp))
+                }
+            }
+
+            if (!procurando && novos.isEmpty() && servidores.isEmpty()) {
+                item {
+                    Text(
+                        "Nada encontrado na rede. Isso é comum quando o servidor não se anuncia — " +
+                            "adicione o endereço à mão acima.",
+                        color = LabTheme.faint, fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                    )
+                }
+            }
         }
     }
 
-    if (criando || editando != null) {
+    val emEdicao = editando ?: criando
+    if (emEdicao != null) {
         EditorDeServidor(
-            servidor = editando,
+            servidor = emEdicao,
+            editando = editando != null,
             senhaAtual = editando?.let { store.password(it) },
-            onCancel = { criando = false; editando = null },
+            onCancel = { criando = null; editando = null },
             onSave = { servidor, senha ->
                 store.save(servidor, senha)
                 servidores = store.servers
-                criando = false
+                criando = null
                 editando = null
             },
         )
@@ -207,17 +296,18 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
 
 @Composable
 private fun EditorDeServidor(
-    servidor: SmbServer?,
+    servidor: SmbServer,
+    editando: Boolean,
     senhaAtual: String?,
     onCancel: () -> Unit,
     onSave: (SmbServer, String?) -> Unit,
 ) {
-    var nome by remember { mutableStateOf(servidor?.name ?: "") }
-    var host by remember { mutableStateOf(servidor?.host ?: "") }
-    var porta by remember { mutableStateOf((servidor?.port ?: 445).toString()) }
-    var usuario by remember { mutableStateOf(servidor?.username ?: "") }
+    var nome by remember { mutableStateOf(servidor.name) }
+    var host by remember { mutableStateOf(servidor.host) }
+    var porta by remember { mutableStateOf(servidor.port.toString()) }
+    var usuario by remember { mutableStateOf(servidor.username) }
     var senha by remember { mutableStateOf(senhaAtual ?: "") }
-    var convidado by remember { mutableStateOf(servidor?.isGuest ?: false) }
+    var convidado by remember { mutableStateOf(servidor.isGuest) }
     var mostrarSenha by remember { mutableStateOf(false) }
 
     val rolagem = rememberScrollState()
@@ -230,7 +320,7 @@ private fun EditorDeServidor(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.widthIn(max = 560.dp).padding(horizontal = 24.dp),
         containerColor = LabTheme.surface,
-        title = { Text(if (servidor == null) "Novo servidor" else "Editar servidor") },
+        title = { Text(if (editando) "Editar servidor" else "Novo servidor") },
         text = {
             // **O conteúdo rola.** Sem isto, numa tela deitada — televisão, ou
             // celular virado — os últimos campos e os botões ficam abaixo da
@@ -298,9 +388,8 @@ private fun EditorDeServidor(
             TextButton(
                 enabled = host.isNotBlank(),
                 onClick = {
-                    val base = servidor ?: SmbServer(name = "", host = "")
                     onSave(
-                        base.copy(
+                        servidor.copy(
                             name = nome.ifBlank { host },
                             host = host.trim(),
                             port = porta.toIntOrNull() ?: 445,
