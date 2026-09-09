@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <solid android:color="@color/viper_accent" />
-    <size android:width="14dp" android:height="14dp" />
-</shape>
+<!-- A bolinha cresce quando a barra está focada.
+
+     É o sinal de "as setas agora mexem aqui". Na televisão isso não é enfeite:
+     a barra focada e a barra apenas visível precisam ser distinguíveis da
+     poltrona, e mudar o tamanho lê-se de longe melhor que mudar a cor sobre
+     uma imagem que muda o tempo todo. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="oval">
+            <solid android:color="@color/viper_accent" />
+            <stroke android:width="3dp" android:color="#66FBC501" />
+            <size android:width="26dp" android:height="26dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/viper_accent" />
+            <size android:width="14dp" android:height="14dp" />
+        </shape>
+    </item>
+</selector>

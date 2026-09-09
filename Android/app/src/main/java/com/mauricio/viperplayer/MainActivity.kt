@@ -29,9 +29,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.mauricio.viperplayer.core.Device
 import com.mauricio.viperplayer.core.LabTheme
 import com.mauricio.viperplayer.core.ViperTheme
 import com.mauricio.viperplayer.library.LibraryScreen
+import com.mauricio.viperplayer.tv.TvHomeScreen
 import com.mauricio.viperplayer.smb.SmbBrowserScreen
 import com.mauricio.viperplayer.smb.SmbServer
 import com.mauricio.viperplayer.smb.SmbServersScreen
@@ -73,9 +75,14 @@ private fun App() {
     // como adivinhar sozinho.
     BackHandler(enabled = tela is Screen.Servers) { tela = Screen.Library }
 
+    val naTv = Device.isTv(LocalContext.current)
+
     when (val atual = tela) {
-        is Screen.Library -> ComPermissao {
-            LibraryScreen(onOpenServers = { tela = Screen.Servers })
+        // A mesma origem de dados nos dois casos; o que muda é a tela — grade
+        // para o dedo, faixas para o controle remoto.
+        is Screen.Library -> ComPermissao(bloqueia = !naTv) {
+            if (naTv) TvHomeScreen(onOpenServers = { tela = Screen.Servers })
+            else LibraryScreen(onOpenServers = { tela = Screen.Servers })
         }
         is Screen.Servers -> SmbServersScreen(
             onBack = { tela = Screen.Library },
@@ -97,7 +104,7 @@ private fun App() {
  * usuário — o app só fica com a lista vazia, sem explicação.
  */
 @Composable
-private fun ComPermissao(conteudo: @Composable () -> Unit) {
+private fun ComPermissao(bloqueia: Boolean = true, conteudo: @Composable () -> Unit) {
     val contexto = LocalContext.current
     val permissao = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_VIDEO
@@ -117,7 +124,11 @@ private fun ComPermissao(conteudo: @Composable () -> Unit) {
 
     LaunchedEffect(Unit) { if (!concedida) pedido.launch(permissao) }
 
-    if (concedida) {
+    // Na televisão a permissão é pedida do mesmo jeito, mas a negativa não
+    // tranca a porta: numa caixinha de TV quase não há vídeo local, e o que
+    // interessa — o servidor de casa — não depende dela. Trancar tudo aqui
+    // deixaria o usuário sem o acervo por causa de uma pasta vazia.
+    if (concedida || !bloqueia) {
         conteudo()
     } else {
         Column(

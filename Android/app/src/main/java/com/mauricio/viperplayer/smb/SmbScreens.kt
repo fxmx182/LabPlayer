@@ -59,6 +59,7 @@ import com.mauricio.viperplayer.core.LabTheme
 import com.mauricio.viperplayer.core.MediaItem
 import com.mauricio.viperplayer.core.labCard
 import com.mauricio.viperplayer.player.Playback
+import com.mauricio.viperplayer.tv.tvFocus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,6 +115,9 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                 items(servidores, key = { it.id }) { servidor ->
                     Row(
                         Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                            // O realce de foco só aparece com controle remoto;
+                            // no celular, onde o dedo aponta, ele nunca acende.
+                            .tvFocus(LabTheme.radiusCard)
                             .clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
                             .clickable { onOpen(servidor) }
                             .padding(14.dp),
@@ -378,6 +382,7 @@ private fun LinhaDoServidor(entrada: SmbBrowser.Entry, onClick: () -> Unit) {
     val ehVideo = MediaItem.isVideo(entrada.name)
     Row(
         Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            .tvFocus(LabTheme.radiusSmall, scale = 1.02f)
             .clip(RoundedCornerShape(LabTheme.radiusSmall))
             .background(LabTheme.glass, RoundedCornerShape(LabTheme.radiusSmall))
             .clickable(enabled = entrada.isDirectory || ehVideo, onClick = onClick)
@@ -427,6 +432,7 @@ private fun RaizDoServidor(
         item {
             Row(
                 Modifier.fillMaxWidth().padding(top = if (entradas.isEmpty()) 0.dp else 6.dp)
+                    .tvFocus(LabTheme.radiusSmall, scale = 1.02f)
                     .clip(RoundedCornerShape(LabTheme.radiusSmall))
                     .background(LabTheme.glass, RoundedCornerShape(LabTheme.radiusSmall))
                     .clickable { perguntando = true }

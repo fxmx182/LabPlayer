@@ -1,0 +1,57 @@
+package com.mauricio.viperplayer.tv
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.mauricio.viperplayer.core.LabTheme
+
+/**
+ * O realce de foco — a peça que faz uma tela de TV ser usável.
+ *
+ * No celular o dedo aponta para onde vai agir, e o app não precisa dizer nada.
+ * A três metros de distância, com um controle remoto, **o foco é a única coisa
+ * que diz onde você está**: sem ele o usuário aperta uma direção e não sabe o
+ * que se moveu. Por isso o realce é deliberadamente exagerado — borda da cor da
+ * marca, e um crescimento que se percebe de longe.
+ *
+ * No celular isto não aparece nunca: dedo não dá foco a nada.
+ */
+fun Modifier.tvFocus(
+    radius: Dp = 14.dp,
+    scale: Float = 1.06f,
+): Modifier = composed {
+    var focado by remember { mutableStateOf(false) }
+
+    val escala by animateFloatAsState(
+        targetValue = if (focado) scale else 1f,
+        label = "escala do foco",
+    )
+    val cor by animateColorAsState(
+        targetValue = if (focado) LabTheme.accent else Color.Transparent,
+        label = "borda do foco",
+    )
+
+    this
+        .onFocusChanged { focado = it.isFocused }
+        .scale(escala)
+        .border(if (focado) 2.5.dp else 0.dp, cor, RoundedCornerShape(radius))
+}
+
+/** Fonte de interação sem ondulação: o efeito de toque não faz sentido na TV. */
+@Composable
+fun rememberTvInteraction(): MutableInteractionSource =
+    remember { MutableInteractionSource() }

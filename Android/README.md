@@ -2,7 +2,8 @@
 
 O mesmo player do iPhone, do outro lado. Mesmo nome, mesmo ícone, mesmos
 gestos, mesmo motor de vídeo — escrito de novo em Kotlin porque não há uma
-linha de Swift que rode aqui.
+linha de Swift que rode aqui. E o mesmo APK também é o app de televisão: veja
+[Televisão](#televisão).
 
 Não é um porte automático nem uma casca de WebView: é a mesma **arquitetura**
 reimplementada. A interface conversa com um `VlcEngine`, nunca com o VLC
@@ -48,9 +49,35 @@ Honestidade primeiro, porque descobrir isso sozinho custa mais caro:
   (`VlcEngine.addSubtitle`), mas não há botão. Legenda ao lado do arquivo com o
   mesmo nome já entra sozinha.
 
+## Televisão
+
+O mesmo APK roda na TV. Não há versão separada, nem outro download: o app
+descobre onde está (`UI_MODE_TYPE_TELEVISION`) e troca o que precisa ser
+trocado — porque o motor, o SMB, a retomada e as preferências são idênticos, e
+o que muda é quem comanda.
+
+| | Celular | Televisão |
+|---|---|---|
+| **Tela inicial** | grade de miniaturas | faixas horizontais, servidor na primeira |
+| **Foco** | não existe — o dedo aponta | borda amarela e crescimento, legível a três metros |
+| **Rolar o vídeo** | arrastar o dedo | ◀ ▶ com a barra escondida; a barra focada rola fino |
+| **Menu** | botão ⋮ | tecla MENU do controle, ou o mesmo ⋮ |
+| **Fora do menu** | — | sem "girar tela" nem "bloquear tela": não há o problema que elas resolvem |
+| **Janela flutuante** | sim | não existe em TV — o botão sai |
+
+Vale a pena entender por que o servidor vem primeiro na TV: numa caixinha de
+Android TV quase não existe vídeo local. O acervo mora no servidor de casa, e
+esconder isso atrás de um ícone de canto seria enterrar justamente o que a
+pessoa ligou a televisão para ver.
+
+Serve Chromecast com Google TV, Fire TV, Nvidia Shield e as TVs com Google TV
+de fábrica. **É o mesmo `arm64-v8a`** — nenhuma caixinha atual é de 32 bits.
+As teclas de mídia (play, avanço, faixa) valem também em teclado bluetooth e
+em controle de jogo.
+
 ## Gestos
 
-Os mesmos do irmão de iOS, que por sua vez são os do MX Player:
+No celular. Os mesmos do irmão de iOS, que por sua vez são os do MX Player:
 
 | Gesto | Ação |
 |---|---|
@@ -85,6 +112,14 @@ Não existe APK universal de propósito: o VLC vem compilado para cada
 arquitetura e os três juntos passam de 200 MB, dos quais o aparelho usaria um
 terço.
 
+Para testar a versão de televisão no emulador é preciso acrescentar o x86 de
+32 bits — é a única arquitetura das imagens de Android TV que roda acelerada
+num PC comum, e ela não vai no release porque não existe mais aparelho assim:
+
+```bash
+./gradlew assembleRelease -PviperX86
+```
+
 ```bash
 adb install -r app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
@@ -108,10 +143,11 @@ repositório.
 
 ```
 app/src/main/java/com/mauricio/viperplayer/
-  core/      Media · Prefs · ResumeStore · Theme
+  core/      Media · Prefs · ResumeStore · Theme · Device (celular ou TV?)
   library/   MediaLibrary (MediaStore) · LibraryScreen · Thumbnails
   smb/       SmbServerStore · SmbBrowser · SmbScreens
   player/    VlcEngine · PlayerActivity · Playback · Vlc
+  tv/        TvHomeScreen · TvFocus (o realce que a TV exige)
   MainActivity.kt
 app/src/main/res/layout/activity_player.xml   a tela de reprodução
 ```

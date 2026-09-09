@@ -177,6 +177,7 @@
                 android:layout_marginHorizontal="8dp"
                 android:max="10000"
                 android:progressDrawable="@drawable/seek_progress"
+                android:background="@drawable/seek_focus"
                 android:thumb="@drawable/seek_thumb"
                 android:splitTrack="false"
                 android:paddingHorizontal="8dp" />

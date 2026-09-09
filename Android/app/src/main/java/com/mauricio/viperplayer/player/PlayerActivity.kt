@@ -24,6 +24,7 @@ import android.widget.SeekBar
 import android.widget.Toast
 import com.mauricio.viperplayer.R
 import com.mauricio.viperplayer.core.MediaItem
+import com.mauricio.viperplayer.core.Device
 import com.mauricio.viperplayer.core.PlayerPreferences
 import com.mauricio.viperplayer.core.ResumeStore
 import com.mauricio.viperplayer.core.TimeFormat
@@ -104,6 +105,9 @@ class PlayerActivity : Activity() {
     private var touchStartedOnBars = false
     private var axisLockThreshold = 12f
 
+    /** Televisão: quem comanda é o controle remoto, e não o dedo. */
+    private var isTv = false
+
     // Ampliação: o enquadramento decide como o vídeo se encaixa na tela; a
     // ampliação é o usuário chegando mais perto de um pedaço. São coisas
     // diferentes e por isso não se atrapalham.
@@ -133,6 +137,7 @@ class PlayerActivity : Activity() {
         resume = ResumeStore.get(this)
         audio = getSystemService(AUDIO_SERVICE) as AudioManager
         axisLockThreshold = ViewConfiguration.get(this).scaledTouchSlop.toFloat()
+        isTv = Device.isTv(this)
 
         goFullscreen()
 
@@ -154,6 +159,7 @@ class PlayerActivity : Activity() {
         engine.attach(ui.videoLayout)
 
         bindControls()
+        if (isTv) prepararParaTv()
         bindEngine()
         updateNavigation()
         loadAndPlay()
@@ -459,6 +465,94 @@ class PlayerActivity : Activity() {
 
         applyGravity(anunciar = false)
         setControlsVisible(true)
+    }
+
+    /**
+     * Os ajustes que a televisão exige.
+     *
+     * Dois botões deixam de fazer sentido sem uma tela sensível ao toque:
+     * bloquear a tela protege contra o dedo que encosta sem querer, e não
+     * existe dedo aqui; e a janela flutuante do Android não existe em TV.
+     * Mantê-los seria oferecer dois caminhos que não levam a lugar nenhum.
+     */
+    private fun prepararParaTv() {
+        ui.btnLock.visibility = View.GONE
+        ui.btnPip.visibility = View.GONE
+        // A barra fica mais tempo: a três metros, com um controle na mão, a
+        // pessoa demora mais para decidir o que apertar do que com o dedo já
+        // sobre o botão.
+        ui.seekBar.isFocusable = true
+        ui.btnPlay.isFocusableInTouchMode = false
+    }
+
+    /**
+     * O controle remoto.
+     *
+     * A regra que faz os dois mundos conviverem: **com a barra escondida, as
+     * setas comandam o vídeo; com a barra à mostra, elas andam entre os
+     * botões**. É o que todo player de TV faz, e é o que evita o impasse de
+     * uma seta significar duas coisas ao mesmo tempo.
+     *
+     * As teclas de mídia (as do controle com desenho de play e avanço, e as de
+     * qualquer teclado bluetooth) valem sempre, com barra ou sem ela.
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action != KeyEvent.ACTION_DOWN) return super.dispatchKeyEvent(event)
+
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK -> {
+                togglePlayPause(); return true
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY -> { engine.play(); return true }
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> { engine.pause(); return true }
+            KeyEvent.KEYCODE_MEDIA_STOP -> { finish(); return true }
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { jump(30.0); return true }
+            KeyEvent.KEYCODE_MEDIA_REWIND -> { jump(-30.0); return true }
+            KeyEvent.KEYCODE_MEDIA_NEXT -> { goToNext(); return true }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> { goToPrevious(); return true }
+        }
+
+        if (!isTv) return super.dispatchKeyEvent(event)
+
+        if (event.keyCode == KeyEvent.KEYCODE_MENU) {
+            setControlsVisible(true)
+            ui.btnMore.post { showToolsMenu(ui.btnMore) }
+            return true
+        }
+
+        // Com os controles na tela, o foco é quem manda: as setas percorrem os
+        // botões e o centro aciona o que estiver focado.
+        if (controlsVisible) {
+            scheduleControlsHide()
+            return super.dispatchKeyEvent(event)
+        }
+
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> { jump(-Tuning.DOUBLE_TAP_SECONDS); return true }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> { jump(Tuning.DOUBLE_TAP_SECONDS); return true }
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_BUTTON_A -> {
+                togglePlayPause()
+                mostrarControlesComFoco()
+                return true
+            }
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                mostrarControlesComFoco()
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    /**
+     * Mostra a barra já com algo focado.
+     *
+     * Sem isto a barra aparece e a primeira seta não move nada: o foco está em
+     * lugar nenhum, e da poltrona isso é indistinguível de um travamento.
+     */
+    private fun mostrarControlesComFoco() {
+        setControlsVisible(true)
+        ui.btnPlay.post { ui.btnPlay.requestFocus() }
+        scheduleControlsHide()
     }
 
     private fun updateProgress(tempo: Double) {
@@ -954,8 +1048,14 @@ class PlayerActivity : Activity() {
         item("Velocidade (${playbackSpeed}×)") { showSpeedSheet() }
         item("Captura de tela") { takeSnapshot() }
         item("Ampliação normal") { resetZoom() }
-        item("Girar tela") { toggleOrientation() }
-        item("Bloquear tela") { setLocked(true) }
+        // Girar e bloquear são respostas a problemas que só existem num
+        // aparelho de mão: a tela que vira sozinha e o dedo que encosta sem
+        // querer. Numa televisão as duas entradas seriam caminhos para lugar
+        // nenhum no meio de um menu curto.
+        if (!isTv) {
+            item("Girar tela") { toggleOrientation() }
+            item("Bloquear tela") { setLocked(true) }
+        }
         item("Modo noturno") { cycleNightMode() }
         item(sleepTimerTitle()) { showSleepSheet() }
         item("Segurar para acelerar (${prefs.holdSpeed}×)") { showHoldSpeedSheet() }
@@ -1154,7 +1254,11 @@ class PlayerActivity : Activity() {
         super.onUserLeaveHint()
         // Sair pelo botão de início com o vídeo tocando entra na janelinha, em
         // vez de parar — é o que todo player de vídeo do Android faz.
-        if (engine.state == PlaybackState.Playing && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // Em televisão não há janelinha para onde ir, e tentar entrar nela
+        // deixaria o vídeo tocando sem tela ao sair do app.
+        if (!isTv && engine.state == PlaybackState.Playing &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        ) {
             enterPip()
         }
     }

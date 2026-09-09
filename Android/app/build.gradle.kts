@@ -72,7 +72,16 @@ android {
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            // `-PviperX86` acrescenta o x86 de 32 bits. Ele não vai no release
+            // — não existe mais aparelho assim — mas é a única arquitetura das
+            // imagens de Android TV que rodam aceleradas neste PC, e sem ela
+            // não há como testar a versão de televisão antes de publicar.
+            include(
+                *buildList {
+                    add("arm64-v8a"); add("armeabi-v7a"); add("x86_64")
+                    if (project.hasProperty("viperX86")) add("x86")
+                }.toTypedArray()
+            )
             // Sem APK universal: ele soma as três arquiteturas e passa de
             // 200 MB, dos quais o aparelho usa um terço. Quem instala escolhe
             // o de arm64 — todo celular deste lado de 2015 é arm64 — e o

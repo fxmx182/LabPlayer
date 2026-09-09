@@ -18,12 +18,21 @@
     <!-- Pendrive por USB-C entra montado pelo sistema e aparece no MediaStore
          como qualquer outro volume; não há permissão especial a pedir. -->
 
+    <!-- Um APK só, para celular e televisão.
+         `leanback` e `touchscreen` ficam os dois como NÃO obrigatórios: exigir
+         o primeiro tiraria o app da Play Store de celular, e exigir o segundo
+         o tiraria da de TV. Sem tela sensível ao toque o app continua inteiro,
+         porque a camada de controle remoto cobre tudo o que o dedo fazia. -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
     <application
         android:name=".ViperApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
+        android:banner="@drawable/tv_banner"
         android:supportsRtl="true"
         android:largeHeap="true"
         android:theme="@style/Theme.Viper"
@@ -38,6 +47,10 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <!-- A tela inicial do Android TV só lista quem declara esta
+                     categoria. Sem ela o app instala, aparece em "aplicativos"
+                     e some da grade principal — que é onde se procura. -->
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
