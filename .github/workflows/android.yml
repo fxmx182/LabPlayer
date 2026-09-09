@@ -116,7 +116,9 @@ jobs:
             --title "Viper Player (Android) — build mais recente" \
             --notes "Compilado de ${GITHUB_SHA:0:7}.
 
-          **Instale o \`ViperPlayer-arm64-v8a.apk\`** — é o de todo celular deste lado de 2015.
+          **Instale o \`ViperPlayer-arm64-v8a.apk\`** — serve todo celular deste lado de 2015
+          **e também a televisão** (Chromecast com Google TV, Fire TV, Nvidia Shield): é o
+          mesmo app, que troca a interface sozinho ao perceber que está numa TV.
           O \`armeabi-v7a\` serve aparelhos antigos de 32 bits; o \`x86_64\`, só emulador.
 
           \`\`\`
