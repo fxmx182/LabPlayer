@@ -178,10 +178,11 @@ class ViperMediaService : MediaBrowserServiceCompat() {
         val share = partes.getOrNull(1)
         val caminho = partes.drop(2).joinToString("/")
 
-        val uri = if (share == null) SmbBrowser.rootUri(servidor, senha)
-        else SmbBrowser.uri(servidor, senha, share, caminho)
+        val uri = if (share == null) SmbBrowser.rootUri(servidor)
+        else SmbBrowser.uri(servidor, share, caminho)
 
-        val entradas = SmbBrowser.list(this, uri) ?: return mutableListOf()
+        val entradas = SmbBrowser.list(this, uri, SmbBrowser.credenciais(servidor, senha))
+            ?: return mutableListOf()
 
         val tocaveis = if (share != null) {
             SmbBrowser.playableItems(servidor, share, caminho, entradas)

@@ -59,7 +59,7 @@ fun Modifier.tvFocus(
 }
 
 /**
- * Deixa as setas saírem de dentro de um campo de texto.
+ * Deixa as setas andarem por um formulário inteiro.
  *
  * O Compose entrega as setas ao cursor do campo — comportamento certo num
  * teclado de computador, e uma armadilha num controle remoto: o usuário entra
@@ -67,16 +67,26 @@ fun Modifier.tvFocus(
  * são todos de uma linha só, não há cursor vertical para mover, e cima/baixo
  * podem significar o que significam no resto da tela: trocar de campo.
  *
- * `onPreviewKeyEvent` porque a interceptação precisa acontecer antes de o campo
- * consumir a tecla — depois já é tarde.
+ * `onPreviewKeyEvent` porque a interceptação precisa acontecer antes de quem
+ * tem o foco consumir a tecla — depois já é tarde. E aplicado no **contêiner**,
+ * não em cada campo: a caixa de seleção do meio do formulário também prendia o
+ * foco, e cobrir um por um deixa sempre um de fora.
  */
 fun Modifier.setasTrocamDeCampo(): Modifier = composed {
     val foco = LocalFocusManager.current
     onPreviewKeyEvent { evento ->
         if (evento.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        // Devolver o resultado do movimento, e não `true` fixo, é o que
+        // permite chegar aos botões: quando não há mais para onde descer, a
+        // tecla segue o caminho normal em vez de ser engolida aqui.
+        // `Next`/`Previous`, e não `Down`/`Up`: a busca geométrica falha ao sair
+        // de dentro de uma linha — a caixa de seleção do meio do formulário
+        // prendia o foco porque o próximo campo é irmão da linha, não dela. Num
+        // formulário vertical a ordem de declaração é a ordem visual, então
+        // seguir a ordem acerta sempre.
         when (evento.key) {
-            Key.DirectionDown -> { foco.moveFocus(FocusDirection.Down); true }
-            Key.DirectionUp -> { foco.moveFocus(FocusDirection.Up); true }
+            Key.DirectionDown -> foco.moveFocus(FocusDirection.Next)
+            Key.DirectionUp -> foco.moveFocus(FocusDirection.Previous)
             else -> false
         }
     }

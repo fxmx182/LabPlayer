@@ -236,19 +236,19 @@ private fun EditorDeServidor(
             // celular virado — os últimos campos e os botões ficam abaixo da
             // borda, e o que não dá para focar não dá para digitar: a senha
             // simplesmente não aceitava texto porque nunca recebia o foco.
-            Column(Modifier.verticalScroll(rolagem)) {
+            Column(Modifier.verticalScroll(rolagem).setasTrocamDeCampo()) {
                 OutlinedTextField(
                     value = nome, onValueChange = { nome = it },
                     label = { Text("Nome") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = host, onValueChange = { host = it },
                     label = { Text("Endereço (IP ou nome)") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
@@ -257,7 +257,7 @@ private fun EditorDeServidor(
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number, imeAction = ImeAction.Next,
                     ),
-                    modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -269,7 +269,7 @@ private fun EditorDeServidor(
                         value = usuario, onValueChange = { usuario = it },
                         label = { Text("Usuário") }, singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
@@ -281,7 +281,7 @@ private fun EditorDeServidor(
                             keyboardType = if (mostrarSenha) KeyboardType.Text else KeyboardType.Password,
                             imeAction = ImeAction.Done,
                         ),
-                        modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     // Ver o que foi digitado importa mais aqui do que num
                     // celular: com um controle remoto, cada caractere é uma
@@ -329,6 +329,7 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
     val contexto = LocalContext.current
     val store = remember { SmbServerStore.get(contexto) }
     val senha = remember(server.id) { store.password(server) }
+    val credenciais = remember(server.id) { SmbBrowser.credenciais(server, senha) }
 
     var caminho by remember { mutableStateOf(listOf<String>()) }
     var entradas by remember { mutableStateOf<List<SmbBrowser.Entry>>(emptyList()) }
@@ -339,11 +340,11 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
         carregando = true
         erro = null
         val uri = if (caminho.isEmpty()) {
-            SmbBrowser.rootUri(server, senha)
+            SmbBrowser.rootUri(server)
         } else {
-            SmbBrowser.uri(server, senha, caminho.first(), caminho.drop(1).joinToString("/"))
+            SmbBrowser.uri(server, caminho.first(), caminho.drop(1).joinToString("/"))
         }
-        val resultado = SmbBrowser.list(contexto, uri)
+        val resultado = SmbBrowser.list(contexto, uri, credenciais)
         if (resultado == null) {
             erro = if (caminho.isEmpty()) {
                 "Este servidor não devolveu a lista de compartilhamentos."
@@ -538,7 +539,7 @@ private fun RaizDoServidor(
                     OutlinedTextField(
                         value = nome, onValueChange = { nome = it },
                         label = { Text("Nome") }, singleLine = true,
-                        modifier = Modifier.fillMaxWidth().setasTrocamDeCampo(),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(

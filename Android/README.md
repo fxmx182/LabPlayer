@@ -242,6 +242,28 @@ divisão do lado de lá, onde a biblioteca é SwiftUI e o player é UIKit. A tel
 que precisa interceptar cada toque, decidir o eixo do arrasto e conviver com
 botões quer controle fino sobre o evento — e é justamente a que menos muda.
 
+## A armadilha da senha no SMB
+
+Fica registrada porque o sintoma aponta para o lugar errado. O jeito óbvio de
+mandar credenciais ao VLC é embuti-las na URL — `smb://usuario:senha@servidor`.
+O VLC aceita, avisa `Password in a URI is DEPRECATED` no log **e segue sem a
+senha**.
+
+O resultado é um app que "não conecta" com todos os dados certos, e um servidor
+que não registra nem uma falha de autenticação — porque o usuário nunca chegou
+lá. Procura-se rede, firewall e digitação; o problema estava na URL.
+
+O certo é mandar por opção do próprio media:
+
+```kotlin
+media.addOption(":smb-user=$usuario")
+media.addOption(":smb-pwd=$senha")
+media.addOption(":smb-domain=WORKGROUP")
+```
+
+De quebra some uma classe inteira de defeito: senha com `@`, `/`, `:` ou acento
+não precisa mais sobreviver a uma codificação de URL.
+
 ## Um motor só, para tocar e para navegar
 
 O `libvlc-all` traz tudo: MKV, HEVC, AC-3/DTS, legenda ASS e PGS, decodificação

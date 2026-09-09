@@ -199,10 +199,15 @@ class VlcEngine(private val context: Context) {
             is MediaOrigin.Local -> mediaForLocal(origem.uri)
             is MediaOrigin.Remote -> Media(libVlc, origem.uri)
             is MediaOrigin.Smb -> {
-                val servidor = SmbServerStore.get(context).byId(origem.serverId)
-                    ?: error("servidor não encontrado")
-                val senha = SmbServerStore.get(context).password(servidor)
-                Media(libVlc, SmbBrowser.uri(servidor, senha, origem.share, origem.path))
+                val loja = SmbServerStore.get(context)
+                val servidor = loja.byId(origem.serverId) ?: error("servidor não encontrado")
+                Media(libVlc, SmbBrowser.uri(servidor, origem.share, origem.path)).also { m ->
+                    // As credenciais vão por opção: o VLC descarta senha
+                    // embutida na URL, e a leitura chegaria ao servidor como
+                    // anônima.
+                    SmbBrowser.credenciais(servidor, loja.password(servidor))
+                        .forEach { m.addOption(it) }
+                }
             }
         }
 

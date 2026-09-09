@@ -35,33 +35,45 @@ object SmbBrowser {
     )
 
     /** Raiz do servidor: a lista de compartilhamentos. */
-    fun rootUri(server: SmbServer, password: String?): Uri =
-        Uri.parse(buildUrl(server, password, share = null, path = ""))
+    fun rootUri(server: SmbServer): Uri = Uri.parse(buildUrl(server, share = null, path = ""))
 
-    fun uri(server: SmbServer, password: String?, share: String, path: String): Uri =
-        Uri.parse(buildUrl(server, password, share, path))
+    fun uri(server: SmbServer, share: String, path: String): Uri =
+        Uri.parse(buildUrl(server, share, path))
 
     /**
-     * Monta a URL que o VLC entende, com as credenciais embutidas.
+     * As credenciais, como **opções**, e nunca dentro da URL.
      *
-     * É como o VLC as recebe. Elas continuam vindo do arquivo cifrado e nunca
-     * são gravadas em disco desta forma — a string existe só na memória, o
-     * tempo da chamada.
+     * Foi aqui que o app deixou de conectar em servidor com senha, e o sintoma
+     * enganava: o VLC avisa `Password in a URI is DEPRECATED` e **segue sem a
+     * senha**. A tentativa então chega ao servidor como anônima — e no log do
+     * servidor não aparece nem uma falha de autenticação do usuário, porque o
+     * usuário nunca foi enviado. Parecia problema de rede.
+     *
+     * De quebra, some toda uma classe de defeito: senha com `@`, `/`, `:` ou
+     * acento não precisa mais sobreviver a uma codificação de URL.
      */
-    private fun buildUrl(server: SmbServer, password: String?, share: String?, path: String): String {
-        val credenciais = when {
-            server.isGuest -> ""
-            password.isNullOrEmpty() -> "${esc(server.username)}@"
-            // Codificar é obrigatório: senha com @ ou / quebraria a URL.
-            else -> "${esc(server.username)}:${esc(password)}@"
+    fun credenciais(server: SmbServer, password: String?): List<String> {
+        if (server.isGuest) return emptyList()
+        return buildList {
+            add(":smb-user=${server.username}")
+            if (!password.isNullOrEmpty()) add(":smb-pwd=$password")
+            // O grupo de trabalho padrão do Samba. Sem ele, o libsmb2 manda
+            // domínio vazio e há servidor que recusa por isso.
+            add(":smb-domain=WORKGROUP")
         }
+    }
+
+    /**
+     * Monta a URL que o VLC entende — só endereço e caminho.
+     */
+    private fun buildUrl(server: SmbServer, share: String?, path: String): String {
         val porta = if (server.port == 445) "" else ":${server.port}"
         val partes = buildList {
             if (share != null) add(esc(share))
             addAll(path.split('/').filter { it.isNotEmpty() }.map { esc(it) })
         }.joinToString("/")
         val cauda = if (partes.isEmpty()) "" else "/$partes"
-        return "smb://$credenciais${server.host}$porta$cauda"
+        return "smb://${server.host}$porta$cauda"
     }
 
     private fun esc(texto: String): String =
@@ -74,10 +86,16 @@ object SmbBrowser {
      * pasta vazia, e a tela precisa distinguir os dois para não dizer "nada
      * aqui" quando o problema foi a senha.
      */
-    suspend fun list(context: Context, uri: Uri, timeoutMs: Long = 15_000): List<Entry>? =
+    suspend fun list(
+        context: Context,
+        uri: Uri,
+        credenciais: List<String> = emptyList(),
+        timeoutMs: Long = 15_000,
+    ): List<Entry>? =
         withContext(Dispatchers.IO) {
             val libVlc = Vlc.get(context)
             val media = Media(libVlc, uri)
+            credenciais.forEach { media.addOption(it) }
             try {
                 val status = withTimeoutOrNull(timeoutMs) { parse(media) }
                     ?: IMedia.ParsedStatus.Timeout
