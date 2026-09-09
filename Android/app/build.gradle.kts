@@ -51,9 +51,15 @@ android {
             dimension = "aparelho"
             ndk {
                 abiFilters.clear()
-                abiFilters += listOf("arm64-v8a", "armeabi-v7a")
-                // Mesmo motivo da variante de TV: o emulador é x86.
-                if (project.hasProperty("viperX86")) abiFilters += listOf("x86", "x86_64")
+                // O x86_64 entra no release, e não só nos testes: é o que roda
+                // em PC — emulador, Waydroid, BlueStacks — e em Chromebook.
+                // A variante de TV não o carrega: caixinha de TV é sempre ARM,
+                // e incluí-lo lá engordaria o APK universal em 25 MB à toa.
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+                // O x86 de 32 bits continua só sob demanda: não existe aparelho
+                // assim, mas é a arquitetura das imagens de Android TV que
+                // rodam aceleradas num PC.
+                if (project.hasProperty("viperX86")) abiFilters += "x86"
             }
         }
         create("tv") {
@@ -109,7 +115,9 @@ android {
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a", "armeabi-v7a")
+            // O x86_64 só existe na variante de celular (é lá que o
+            // `abiFilters` o inclui), então listá-lo aqui não afeta a de TV.
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
             isUniversalApk = true
         }
     }
@@ -167,8 +175,21 @@ val publicarApks = tasks.register<Copy>("publicarApks") {
         include("*-armeabi-v7a-release.apk")
         rename { "ViperPlayer-Celular-Antigo.apk" }
     }
+    from(saida.map { it.dir("celular/release") }) {
+        include("*-x86_64-release.apk")
+        rename { "ViperPlayer-PC-x86_64.apk" }
+    }
 
     into(rootProject.layout.projectDirectory.dir("dist"))
+
+    // Sempre roda.
+    //
+    // A tarefa apaga os APKs antigos antes de copiar os novos, e isso briga
+    // com o cálculo de "já está feito" do Gradle: numa execução ele
+    // considerava a cópia atualizada, pulava tudo — inclusive o apagamento — e
+    // a pasta ficava com a geração anterior. Copiar 300 MB de novo custa
+    // segundos; entregar o APK errado custa uma investigação.
+    outputs.upToDateWhen { false }
 
     doFirst {
         // Nome antigo some junto: duas gerações de nomes na mesma pasta é

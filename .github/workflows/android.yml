@@ -119,6 +119,7 @@ jobs:
           | \`ViperPlayer-TV.apk\` | **televisão** — Google TV, Fire TV, Shield |
           | \`ViperPlayer-Celular.apk\` | celular deste lado de 2015 |
           | \`ViperPlayer-Celular-Antigo.apk\` | celular anterior a isso |
+          | \`ViperPlayer-PC-x86_64.apk\` | PC e Chromebook — emulador, Waydroid, BlueStacks |
 
           São variantes **exclusivas**: o de TV exige o recurso \`leanback\` e não
           instala em celular; o de celular não aparece na tela inicial da TV.

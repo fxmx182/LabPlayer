@@ -176,6 +176,7 @@ Os APKs prontos ficam em **`Android/dist/`**, com nome de aparelho:
 | `ViperPlayer-TV.apk` | **televisão** — Google TV, Fire TV, Shield | 106 MB |
 | `ViperPlayer-Celular.apk` | **celular** deste lado de 2015 | 67 MB |
 | `ViperPlayer-Celular-Antigo.apk` | celular anterior a isso | 53 MB |
+| `ViperPlayer-PC-x86_64.apk` | **PC e Chromebook** — emulador, Waydroid, BlueStacks | 75 MB |
 
 São **variantes exclusivas**, não o mesmo arquivo com dois nomes. O de TV exige
 o recurso `leanback`, que celular nenhum tem — então ele nem instala num
@@ -219,9 +220,14 @@ Não existe APK universal de propósito: o VLC vem compilado para cada
 arquitetura e os três juntos passam de 200 MB, dos quais o aparelho usaria um
 terço.
 
+O `x86_64` sai da variante de celular, que é a completa: ele roda em emulador,
+Waydroid, BlueStacks e Chromebook. A variante de TV não o carrega — caixinha de
+televisão é sempre ARM, e incluí-lo lá engordaria o APK universal em 25 MB à
+toa.
+
 Para testar a versão de televisão no emulador é preciso acrescentar o x86 de
-32 bits — é a única arquitetura das imagens de Android TV que roda acelerada
-num PC comum, e ela não vai no release porque não existe mais aparelho assim:
+**32 bits** — é a única arquitetura das imagens de Android TV que roda acelerada
+num PC comum, e ela não vai no release porque não existe aparelho assim:
 
 ```bash
 ./gradlew assembleRelease -PviperX86
