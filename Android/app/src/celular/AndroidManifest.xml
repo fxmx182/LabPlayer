@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A variante de celular.
+
+  Ela não declara `LEANBACK_LAUNCHER`, e é só isso que a mantém fora da tela
+  inicial de uma televisão. Instalar continua sendo possível — o Android não
+  proíbe —, mas o app não se anuncia como app de TV, que é o combinado.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+
+    <!-- Tocar com a tela apagada e no carro exige serviço em primeiro plano. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- Declara o app ao Android Auto. Sem esta linha o carro não o lista,
+             mesmo com o serviço de mídia implementado. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <!-- O carro conversa com este serviço, e não com a tela do app: ele
+             pede a árvore de pastas, escolhe um item e manda tocar. É o mesmo
+             serviço que sustenta o áudio em segundo plano no celular. -->
+        <service
+            android:name=".auto.ViperMediaService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

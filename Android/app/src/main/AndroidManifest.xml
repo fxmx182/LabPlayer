@@ -23,8 +23,26 @@
          o primeiro tiraria o app da Play Store de celular, e exigir o segundo
          o tiraria da de TV. Sem tela sensível ao toque o app continua inteiro,
          porque a camada de controle remoto cobre tudo o que o dedo fazia. -->
-    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <!-- `leanback` e a categoria da tela inicial vivem nos manifestos de cada
+         variante: é o que torna um APK exclusivo do celular e o outro da TV. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <!-- Recursos que a televisão não tem, declarados como NÃO obrigatórios.
+         Isto não é excesso de zelo: algumas permissões declaram um recurso
+         obrigatório por conta própria, e a que faz isso aqui é a
+         ACCESS_WIFI_STATE, que implica `android.hardware.wifi` como EXIGIDO.
+         Uma TV ligada por cabo — ou cujo firmware simplesmente não anuncia
+         wifi — é filtrada por causa disso e responde "este app não é
+         compatível com sua TV", sem dizer qual recurso faltou.
+         O app nunca precisou de wifi: ele precisa de rede, e cabo é rede. -->
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
+    <uses-feature android:name="android.hardware.screen.landscape" android:required="false" />
 
     <application
         android:name=".ViperApp"
@@ -32,7 +50,6 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
-        android:banner="@drawable/tv_banner"
         android:supportsRtl="true"
         android:largeHeap="true"
         android:theme="@style/Theme.Viper"
@@ -44,14 +61,6 @@
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
             android:theme="@style/Theme.Viper">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-                <!-- A tela inicial do Android TV só lista quem declara esta
-                     categoria. Sem ela o app instala, aparece em "aplicativos"
-                     e some da grade principal — que é onde se procura. -->
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <activity

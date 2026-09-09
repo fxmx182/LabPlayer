@@ -19,6 +19,7 @@ android {
         versionName = "0.1.0"
         vectorDrawables { useSupportLibrary = true }
 
+
         // O commit carimbado dentro do app, mostrado nas opções.
         //
         // Vem do irmão de iOS, onde a falta disso custou várias rodadas: sem
@@ -30,6 +31,41 @@ android {
             "COMMIT",
             "\"" + (project.findProperty("viperCommit")?.toString() ?: "local") + "\"",
         )
+    }
+
+    // Dois aplicativos, e não um que se adapta.
+    //
+    // O código é o mesmo — a tela de TV e a de celular convivem no mesmo fonte,
+    // e `Device.isTv()` continua escolhendo entre elas. O que se separa é o
+    // **pacote**: cada um declara só o que serve ao seu aparelho, e recusa o
+    // outro. O de TV exige `leanback`, então não instala num celular; o de
+    // celular não se anuncia à tela inicial da televisão, então não aparece lá.
+    //
+    // A separação também resolve o peso: o de TV carrega as duas arquiteturas
+    // ARM porque as caixinhas se dividem entre 32 e 64 bits e ninguém deveria
+    // ter de descobrir qual é a sua; o de celular carrega só a sua e fica na
+    // metade do tamanho.
+    flavorDimensions += "aparelho"
+    productFlavors {
+        create("celular") {
+            dimension = "aparelho"
+            ndk {
+                abiFilters.clear()
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+                // Mesmo motivo da variante de TV: o emulador é x86.
+                if (project.hasProperty("viperX86")) abiFilters += listOf("x86", "x86_64")
+            }
+        }
+        create("tv") {
+            dimension = "aparelho"
+            ndk {
+                abiFilters.clear()
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+                // As imagens de Android TV que rodam aceleradas num PC são
+                // todas x86; sem isto não há como testar esta variante.
+                if (project.hasProperty("viperX86")) abiFilters += listOf("x86", "x86_64")
+            }
+        }
     }
 
     // A assinatura mora no repositório de propósito.
@@ -63,30 +99,18 @@ android {
         }
     }
 
-    // Um APK por arquitetura.
+    // O celular recebe um APK por arquitetura; a TV recebe o universal.
     //
-    // O VLC traz o motor inteiro compilado para cada ABI; num APK só, as três
-    // juntas passam de 200 MB para o aparelho usar uma. O de arm64 serve todo
-    // celular fabricado da metade dos anos 2010 para cá e é o que se instala.
+    // A divisão vale no celular, onde 14 MB de diferença aparecem no download.
+    // Na televisão ela seria uma armadilha: o aparelho não diz de quantos bits
+    // é, e escolher errado devolve "este app não é compatível com sua TV" sem
+    // dizer o motivo. Lá vai o universal, com as duas ARM dentro.
     splits {
         abi {
             isEnable = true
             reset()
-            // `-PviperX86` acrescenta o x86 de 32 bits. Ele não vai no release
-            // — não existe mais aparelho assim — mas é a única arquitetura das
-            // imagens de Android TV que rodam aceleradas neste PC, e sem ela
-            // não há como testar a versão de televisão antes de publicar.
-            include(
-                *buildList {
-                    add("arm64-v8a"); add("armeabi-v7a"); add("x86_64")
-                    if (project.hasProperty("viperX86")) add("x86")
-                }.toTypedArray()
-            )
-            // Sem APK universal: ele soma as três arquiteturas e passa de
-            // 200 MB, dos quais o aparelho usa um terço. Quem instala escolhe
-            // o de arm64 — todo celular deste lado de 2015 é arm64 — e o
-            // README diz isso em uma linha.
-            isUniversalApk = false
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
         }
     }
 
@@ -120,30 +144,32 @@ android {
 /**
  * Os APKs com nome de gente, em `Android/dist/`.
  *
- * O Gradle nomeia a saída pela arquitetura — `app-arm64-v8a-release.apk` — que
- * é exatamente a informação que quem vai instalar não tem como usar. Aqui cada
- * arquivo passa a dizer em que aparelho ele entra.
- *
- * O `arm64` aparece como "Celular e TV" porque é literalmente o mesmo arquivo
- * nos dois: o app percebe sozinho que está numa televisão. Duplicá-lo com dois
- * nomes custaria 67 MB para não dizer nada de novo.
+ * O Gradle nomeia a saída pela variante e pela arquitetura —
+ * `app-tv-universal-release.apk` — que é exatamente a informação que quem vai
+ * instalar não tem como usar. Aqui cada arquivo passa a dizer em que aparelho
+ * entra. O que não é escolhido (os APKs por arquitetura da variante de TV)
+ * fica no diretório de compilação e não chega ao `dist/`.
  */
-val nomePorArquitetura = mapOf(
-    "arm64-v8a" to "ViperPlayer-Celular-e-TV",
-    "armeabi-v7a" to "ViperPlayer-Celular-Antigo-32-bits",
-    "x86_64" to "ViperPlayer-Emulador",
-    "x86" to "ViperPlayer-Emulador-de-TV",
-)
-
 val publicarApks = tasks.register<Copy>("publicarApks") {
     description = "Copia os APKs para Android/dist/ com nome de aparelho, não de arquitetura."
-    from(layout.buildDirectory.dir("outputs/apk/release")) { include("*.apk") }
-    into(rootProject.layout.projectDirectory.dir("dist"))
-    rename { arquivo ->
-        val abi = Regex("^app-(.+)-release\\.apk$").find(arquivo)?.groupValues?.get(1)
-        val nome = abi?.let { nomePorArquitetura[it] }
-        if (nome != null) "$nome.apk" else arquivo
+
+    val saida = layout.buildDirectory.dir("outputs/apk")
+
+    from(saida.map { it.dir("tv/release") }) {
+        include("*-universal-release.apk")
+        rename { "ViperPlayer-TV.apk" }
     }
+    from(saida.map { it.dir("celular/release") }) {
+        include("*-arm64-v8a-release.apk")
+        rename { "ViperPlayer-Celular.apk" }
+    }
+    from(saida.map { it.dir("celular/release") }) {
+        include("*-armeabi-v7a-release.apk")
+        rename { "ViperPlayer-Celular-Antigo.apk" }
+    }
+
+    into(rootProject.layout.projectDirectory.dir("dist"))
+
     doFirst {
         // Nome antigo some junto: duas gerações de nomes na mesma pasta é
         // pior que nenhuma, porque não dá para saber qual é a atual.

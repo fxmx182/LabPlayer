@@ -61,6 +61,15 @@ class VlcEngine(private val context: Context) {
 
     private var videoLayout: VLCVideoLayout? = null
 
+    /**
+     * Só o som, sem decodificar imagem.
+     *
+     * É o modo do carro e do rádio: com a tela apagada, decodificar 1080p para
+     * jogar fora cada quadro gasta bateria e processador para nada. Precisa ser
+     * decidido antes da carga, porque vira uma opção do próprio arquivo.
+     */
+    var audioOnly = false
+
     var state: PlaybackState = PlaybackState.Idle
         private set(value) {
             if (field == value) return
@@ -198,6 +207,7 @@ class VlcEngine(private val context: Context) {
         }
 
         media.setHWDecoderEnabled(true, false)
+        if (audioOnly) media.addOption(":no-video")
         configureBuffer(media, item.origin)
         tamanhoDoArquivo = item.fileSize
         bytesNaBusca = null

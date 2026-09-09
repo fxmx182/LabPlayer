@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  O que este app faz dentro do carro.
+
+  Só `media`, e essa é a única resposta possível: o Android Auto não expõe
+  superfície de vídeo para app de terceiro, e a política do Google recusa app
+  de vídeo no carro. O que dá para fazer — e é o que apps como o VLC fazem — é
+  entregar a biblioteca para o carro navegar e tocar a **faixa de áudio**.
+-->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>

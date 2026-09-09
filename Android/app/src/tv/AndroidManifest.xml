@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A variante de televisão.
+
+  `leanback` como **obrigatório** é o que a torna exclusiva: um celular não tem
+  esse recurso, então o APK simplesmente não instala lá. É o oposto do que se
+  faz num app único, e aqui é intencional.
+
+  As duas categorias de tela inicial ficam: `LEANBACK_LAUNCHER` é o que o
+  Android TV lista, e o Fire TV, que é Android com outra casca, procura as
+  duas conforme a geração do aparelho.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.software.leanback" android:required="true" />
+
+    <application android:banner="@drawable/tv_banner">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -42,12 +42,41 @@ Honestidade primeiro, porque descobrir isso sozinho custa mais caro:
   de filme — e a lista abre na hora.
 - **Tamanho e data dos arquivos no servidor.** Quem lista é o próprio VLC, que
   responde nome e tipo, não metadados.
-- **Áudio em segundo plano com a tela apagada.** Hoje o vídeo pausa ao sair
-  (ou entra na janela flutuante). Um serviço de primeiro plano resolve; ainda
-  não está escrito.
 - **Legenda externa escolhida à mão.** O motor já aceita
   (`VlcEngine.addSubtitle`), mas não há botão. Legenda ao lado do arquivo com o
   mesmo nome já entra sozinha.
+
+## No carro (Android Auto)
+
+Só na variante de celular, e **só o áudio** — essa é a primeira coisa a dizer,
+porque a expectativa natural é outra. O Android Auto não entrega superfície de
+vídeo a app de terceiro, e a política do Google recusa app de vídeo no carro.
+Não é limitação do Viper: não existe player de vídeo de terceiro rodando na
+tela do carro, de ninguém.
+
+O que existe, e é o que está implementado: o carro navega a biblioteca — as
+pastas do aparelho **e os servidores SMB** — numa lista feita para ser lida de
+relance, e toca a faixa de áudio do arquivo escolhido. Play, pausa, faixa
+anterior e próxima respondem no volante. Serve para show, documentário, aula
+gravada, podcast em vídeo: tudo que se ouve sem precisar ver.
+
+O mesmo serviço (`auto/ViperMediaService.kt`) resolve o **áudio em segundo
+plano** no celular, que estava na lista de pendências — são o mesmo problema,
+tocar sem tela na frente, e escrevê-lo duas vezes seria desperdício.
+
+Dois cuidados que um app de carro precisa ter e que estão lá:
+
+- **Foco de áudio.** Sem pedir, o som se sobrepõe ao GPS e à ligação em vez de
+  baixar ou parar. Com o foco, ele abaixa para 25% quando o GPS fala e volta
+  sozinho.
+- **Retomar sem perguntar.** No celular o app pergunta se você quer continuar
+  de onde parou; no carro não há como responder uma pergunta, então ele retoma
+  e deixa a barra de progresso desfazer isso num toque.
+
+**Testado até onde dá aqui:** o serviço sobe, registra a sessão de mídia (é o
+que o carro procura) e responde aos comandos de transporte sem quebrar. O
+percurso completo — o carro listando as pastas — precisa do Desktop Head Unit
+ou de um carro de verdade.
 
 ## Televisão
 
@@ -71,9 +100,22 @@ esconder isso atrás de um ícone de canto seria enterrar justamente o que a
 pessoa ligou a televisão para ver.
 
 Serve Chromecast com Google TV, Fire TV, Nvidia Shield e as TVs com Google TV
-de fábrica. **É o mesmo `arm64-v8a`** — nenhuma caixinha atual é de 32 bits.
-As teclas de mídia (play, avanço, faixa) valem também em teclado bluetooth e
-em controle de jogo.
+de fábrica — instale o **`ViperPlayer-TV.apk`**, que traz as duas arquiteturas
+ARM. As teclas de mídia (play, avanço, faixa) valem também em teclado bluetooth
+e em controle de jogo.
+
+**Não instale pela Play Store.** O app não está publicado lá; a loja da TV vai
+dizer que ele não é compatível simplesmente por não o conhecer. Os caminhos que
+funcionam:
+
+- **Downloader** (existe nas duas lojas): digite a URL do release e ele baixa e
+  instala. Antes, ligue *Ajustes → Sistema → Sobre → tocar 7× em "Versão"* e
+  depois *Opções do desenvolvedor → Apps de fontes desconhecidas*.
+- **adb**, com a depuração pela rede ligada:
+  ```bash
+  adb connect IP-DA-TV:5555
+  adb install -r dist/ViperPlayer-TV.apk
+  ```
 
 ## Gestos
 
@@ -105,15 +147,45 @@ Precisa de JDK 17 e do SDK do Android. Nada mais — nem Android Studio.
 
 Os APKs prontos ficam em **`Android/dist/`**, com nome de aparelho:
 
-| Arquivo | Para quê |
-|---|---|
-| `ViperPlayer-Celular-e-TV.apk` | **o que você quer.** Todo celular deste lado de 2015 e toda caixinha de Android TV |
-| `ViperPlayer-Celular-Antigo-32-bits.apk` | aparelho anterior a isso |
-| `ViperPlayer-Emulador.apk` | rodar no PC |
+| Arquivo | Para quê | Tamanho |
+|---|---|---|
+| `ViperPlayer-TV.apk` | **televisão** — Google TV, Fire TV, Shield | 106 MB |
+| `ViperPlayer-Celular.apk` | **celular** deste lado de 2015 | 67 MB |
+| `ViperPlayer-Celular-Antigo.apk` | celular anterior a isso | 53 MB |
 
-Um arquivo só serve celular e TV porque é literalmente o mesmo app — ele
-percebe onde está. Duplicá-lo com dois nomes custaria 67 MB para não dizer
-nada de novo.
+São **variantes exclusivas**, não o mesmo arquivo com dois nomes. O de TV exige
+o recurso `leanback`, que celular nenhum tem — então ele nem instala num
+telefone. O de celular não declara a categoria da tela inicial de TV, então não
+aparece na grade da televisão. É o `productFlavors` do Gradle: mesmo código
+fonte, dois pacotes que se recusam mutuamente.
+
+O da TV é o dobro do tamanho porque carrega as **duas** arquiteturas ARM, e
+essa é a única forma honesta de resolver uma armadilha: muita caixinha de
+Google TV e quase todo Fire Stick rodam Android de **32 bits** sobre um
+processador de 64. Um APK só de arm64 é genuinamente incompatível com elas — e
+a mensagem que aparece, *"este app não é compatível com sua TV"*, não diz qual
+recurso faltou. Com as duas dentro, ninguém precisa descobrir de quantos bits é
+a sua TV.
+
+### O que faz uma TV recusar um app
+
+Vale registrar porque não é óbvio e o sintoma engana. Duas coisas reprovam:
+
+1. **Uma arquitetura que o aparelho não tem** — o caso acima.
+2. **Um recurso declarado como obrigatório que a TV não possui.** E há
+   permissões que declaram recursos por conta própria: `ACCESS_WIFI_STATE`
+   implica `android.hardware.wifi` como **exigido**, o que reprova qualquer TV
+   ligada por cabo. Por isso o manifesto declara explicitamente wifi, câmera,
+   telefonia, microfone e localização como `required="false"`.
+
+Para conferir num APK qualquer, sem instalar:
+
+```bash
+aapt2 dump badging arquivo.apk | grep -E "native-code|feature"
+```
+
+Nenhuma linha deve dizer `uses-feature:` ou `uses-implied-feature:` — só
+`uses-feature-not-required:`.
 
 `app/build/outputs/apk/release/` continua tendo os mesmos arquivos com o nome
 que o Gradle dá (`app-arm64-v8a-release.apk`). É diretório de compilação: quem
@@ -132,7 +204,7 @@ num PC comum, e ela não vai no release porque não existe mais aparelho assim:
 ```
 
 ```bash
-adb install -r dist/ViperPlayer-Celular-e-TV.apk
+adb install -r dist/ViperPlayer-Celular.apk
 ```
 
 Um push na `main` faz o mesmo no GitHub Actions e publica em
@@ -160,6 +232,8 @@ app/src/main/java/com/mauricio/viperplayer/
   player/    VlcEngine · PlayerActivity · Playback · Vlc
   tv/        TvHomeScreen · TvFocus (o realce que a TV exige)
   MainActivity.kt
+app/src/celular/    manifesto próprio + auto/ViperMediaService (Android Auto)
+app/src/tv/         manifesto próprio + o banner da tela inicial da TV
 app/src/main/res/layout/activity_player.xml   a tela de reprodução
 ```
 

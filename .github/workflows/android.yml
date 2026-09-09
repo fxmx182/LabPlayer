@@ -114,16 +114,30 @@ jobs:
             --title "Viper Player (Android) — build mais recente" \
             --notes "Compilado de ${GITHUB_SHA:0:7}.
 
-          **Baixe o \`ViperPlayer-Celular-e-TV.apk\`.** É um arquivo só para os dois:
-          o app percebe sozinho que está numa televisão (Chromecast com Google TV,
-          Fire TV, Nvidia Shield) e troca a interface.
+          | Arquivo | Para |
+          |---|---|
+          | \`ViperPlayer-TV.apk\` | **televisão** — Google TV, Fire TV, Shield |
+          | \`ViperPlayer-Celular.apk\` | celular deste lado de 2015 |
+          | \`ViperPlayer-Celular-Antigo.apk\` | celular anterior a isso |
 
-          Os outros são casos de exceção: \`Celular-Antigo-32-bits\` para aparelho
-          anterior a ~2015, e \`Emulador\` para quem for rodar no PC.
+          São variantes **exclusivas**: o de TV exige o recurso \`leanback\` e não
+          instala em celular; o de celular não aparece na tela inicial da TV.
+
+          O da TV é maior porque traz as **duas** arquiteturas ARM: muita caixinha de
+          Google TV e quase todo Fire Stick rodam Android de 32 bits sobre processador
+          de 64, e um APK só de arm64 é recusado por elas.
+
+          A variante de celular fala com o **Android Auto** — só áudio, que é tudo o
+          que a plataforma permite a app de terceiro — e toca em segundo plano com a
+          tela apagada.
+
+          **Não instale pela Play Store** — o app não está lá, e a loja da TV dirá que
+          ele é incompatível só por não o conhecer. Use o app **Downloader** com o
+          endereço abaixo, ou \`adb\`:
 
           \`\`\`
-          curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/ViperPlayer-Celular-e-TV.apk
-          adb install -r ViperPlayer-Celular-e-TV.apk
+          curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/ViperPlayer-TV.apk
+          adb install -r ViperPlayer-TV.apk
           \`\`\`
 
           Assinado com a chave do repositório (\`Android/keystore/viper.jks\`), sempre a mesma — atualizar por cima funciona." \
