@@ -103,10 +103,21 @@ Precisa de JDK 17 e do SDK do Android. Nada mais — nem Android Studio.
 ./gradlew assembleRelease
 ```
 
-Os APKs saem em `app/build/outputs/apk/release/`, um por arquitetura.
-**Instale o `app-arm64-v8a-release.apk`**: todo celular deste lado de 2015 é
-arm64. O `armeabi-v7a` é para aparelho antigo de 32 bits e o `x86_64`, para
-emulador.
+Os APKs prontos ficam em **`Android/dist/`**, com nome de aparelho:
+
+| Arquivo | Para quê |
+|---|---|
+| `ViperPlayer-Celular-e-TV.apk` | **o que você quer.** Todo celular deste lado de 2015 e toda caixinha de Android TV |
+| `ViperPlayer-Celular-Antigo-32-bits.apk` | aparelho anterior a isso |
+| `ViperPlayer-Emulador.apk` | rodar no PC |
+
+Um arquivo só serve celular e TV porque é literalmente o mesmo app — ele
+percebe onde está. Duplicá-lo com dois nomes custaria 67 MB para não dizer
+nada de novo.
+
+`app/build/outputs/apk/release/` continua tendo os mesmos arquivos com o nome
+que o Gradle dá (`app-arm64-v8a-release.apk`). É diretório de compilação: quem
+vai instalar usa o `dist/`.
 
 Não existe APK universal de propósito: o VLC vem compilado para cada
 arquitetura e os três juntos passam de 200 MB, dos quais o aparelho usaria um
@@ -121,7 +132,7 @@ num PC comum, e ela não vai no release porque não existe mais aparelho assim:
 ```
 
 ```bash
-adb install -r app/build/outputs/apk/release/app-arm64-v8a-release.apk
+adb install -r dist/ViperPlayer-Celular-e-TV.apk
 ```
 
 Um push na `main` faz o mesmo no GitHub Actions e publica em

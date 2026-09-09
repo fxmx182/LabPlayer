@@ -86,21 +86,19 @@ jobs:
           print(f"::error title=Erros de compilação ({len(errors)})::{enc}")
           PY
 
-      - name: Renomear os APKs
+      # Nada a renomear aqui: a tarefa `publicarApks` do Gradle já deixou os
+      # arquivos em Android/dist/ com nome de aparelho em vez de nome de
+      # arquitetura. Duplicar essa regra no workflow faria as duas versões
+      # divergirem no dia em que uma mudasse.
+      - name: Conferir os APKs
         working-directory: Android
-        run: |
-          mkdir -p ../dist
-          for apk in app/build/outputs/apk/release/*.apk; do
-            abi=$(basename "$apk" | sed -E 's/app-(.*)-release\.apk/\1/')
-            cp "$apk" "../dist/ViperPlayer-$abi.apk"
-          done
-          ls -lh ../dist
+        run: ls -lh dist/
 
       - name: Publicar artefato
         uses: actions/upload-artifact@v4
         with:
           name: ViperPlayer-apk
-          path: dist/*.apk
+          path: Android/dist/*.apk
           retention-days: 30
           if-no-files-found: error
 
@@ -112,18 +110,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete android-latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create android-latest dist/*.apk \
+          gh release create android-latest Android/dist/*.apk \
             --title "Viper Player (Android) — build mais recente" \
             --notes "Compilado de ${GITHUB_SHA:0:7}.
 
-          **Instale o \`ViperPlayer-arm64-v8a.apk\`** — serve todo celular deste lado de 2015
-          **e também a televisão** (Chromecast com Google TV, Fire TV, Nvidia Shield): é o
-          mesmo app, que troca a interface sozinho ao perceber que está numa TV.
-          O \`armeabi-v7a\` serve aparelhos antigos de 32 bits; o \`x86_64\`, só emulador.
+          **Baixe o \`ViperPlayer-Celular-e-TV.apk\`.** É um arquivo só para os dois:
+          o app percebe sozinho que está numa televisão (Chromecast com Google TV,
+          Fire TV, Nvidia Shield) e troca a interface.
+
+          Os outros são casos de exceção: \`Celular-Antigo-32-bits\` para aparelho
+          anterior a ~2015, e \`Emulador\` para quem for rodar no PC.
 
           \`\`\`
-          curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/ViperPlayer-arm64-v8a.apk
-          adb install -r ViperPlayer-arm64-v8a.apk
+          curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/ViperPlayer-Celular-e-TV.apk
+          adb install -r ViperPlayer-Celular-e-TV.apk
           \`\`\`
 
           Assinado com a chave do repositório (\`Android/keystore/viper.jks\`), sempre a mesma — atualizar por cima funciona." \

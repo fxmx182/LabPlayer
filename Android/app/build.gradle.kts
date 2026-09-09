@@ -117,6 +117,46 @@ android {
     }
 }
 
+/**
+ * Os APKs com nome de gente, em `Android/dist/`.
+ *
+ * O Gradle nomeia a saída pela arquitetura — `app-arm64-v8a-release.apk` — que
+ * é exatamente a informação que quem vai instalar não tem como usar. Aqui cada
+ * arquivo passa a dizer em que aparelho ele entra.
+ *
+ * O `arm64` aparece como "Celular e TV" porque é literalmente o mesmo arquivo
+ * nos dois: o app percebe sozinho que está numa televisão. Duplicá-lo com dois
+ * nomes custaria 67 MB para não dizer nada de novo.
+ */
+val nomePorArquitetura = mapOf(
+    "arm64-v8a" to "ViperPlayer-Celular-e-TV",
+    "armeabi-v7a" to "ViperPlayer-Celular-Antigo-32-bits",
+    "x86_64" to "ViperPlayer-Emulador",
+    "x86" to "ViperPlayer-Emulador-de-TV",
+)
+
+val publicarApks = tasks.register<Copy>("publicarApks") {
+    description = "Copia os APKs para Android/dist/ com nome de aparelho, não de arquitetura."
+    from(layout.buildDirectory.dir("outputs/apk/release")) { include("*.apk") }
+    into(rootProject.layout.projectDirectory.dir("dist"))
+    rename { arquivo ->
+        val abi = Regex("^app-(.+)-release\\.apk$").find(arquivo)?.groupValues?.get(1)
+        val nome = abi?.let { nomePorArquitetura[it] }
+        if (nome != null) "$nome.apk" else arquivo
+    }
+    doFirst {
+        // Nome antigo some junto: duas gerações de nomes na mesma pasta é
+        // pior que nenhuma, porque não dá para saber qual é a atual.
+        rootProject.layout.projectDirectory.dir("dist").asFile
+            .listFiles { f -> f.name.endsWith(".apk") }
+            ?.forEach { it.delete() }
+    }
+}
+
+tasks.whenTaskAdded {
+    if (name == "assembleRelease") finalizedBy(publicarApks)
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
