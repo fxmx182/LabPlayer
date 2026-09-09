@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A tela de reprodução.
+
+  Escrita em Views e não em Compose de propósito, pelo mesmo motivo que a do
+  iOS é UIKit e não SwiftUI: os gestos são a cara do app, precisam de controle
+  fino sobre cada toque, e não podem ser refeitos quando o motor mudar.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:keepScreenOn="true">
+
+    <!-- A superfície do VLC. Não recebe toque nenhum: tudo aqui é gesto ou
+         botão da barra, e uma superfície interativa engoliria os toques antes
+         de chegarem aos gestos — foi assim que a barra deixou de abrir no iOS. -->
+    <org.videolan.libvlc.util.VLCVideoLayout
+        android:id="@+id/video_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <!-- Modo noturno: escurecer além do mínimo do sistema, para assistir no
+         escuro sem queimar os olhos. -->
+    <View
+        android:id="@+id/dim_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:alpha="0" />
+
+    <TextView
+        android:id="@+id/subtitle_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="70dp"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="19sp"
+        android:textStyle="bold"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="4"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/buffering"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/viper_accent"
+        android:visibility="gone" />
+
+    <!-- ===================== Balão dos gestos ===================== -->
+    <LinearLayout
+        android:id="@+id/hud"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_hud"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp"
+        android:minWidth="130dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/hud_icon"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginBottom="7dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/hud_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/viper_text"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+        <ProgressBar
+            android:id="@+id/hud_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="110dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="10dp"
+            android:max="100"
+            android:progressDrawable="@drawable/hud_bar"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- ===================== Barra de cima ===================== -->
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_top_scrim"
+        android:paddingHorizontal="6dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="26dp">
+
+        <ImageButton
+            android:id="@+id/btn_close"
+            style="@style/PlayerIcon"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Voltar" />
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="6dp"
+            android:maxLines="1"
+            android:ellipsize="middle"
+            android:textColor="@color/viper_text"
+            android:textSize="15sp"
+            android:fontFamily="sans-serif-medium" />
+
+        <ImageButton
+            android:id="@+id/btn_lock"
+            style="@style/PlayerIcon"
+            android:src="@drawable/ic_unlock"
+            android:contentDescription="Bloquear tela" />
+
+        <ImageButton
+            android:id="@+id/btn_more"
+            style="@style/PlayerIcon"
+            android:src="@drawable/ic_more"
+            android:contentDescription="Mais" />
+    </LinearLayout>
+
+    <!-- ===================== Barra de baixo ===================== -->
+    <LinearLayout
+        android:id="@+id/bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@drawable/bg_bottom_scrim"
+        android:paddingHorizontal="10dp"
+        android:paddingTop="30dp"
+        android:paddingBottom="6dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_position"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="52dp"
+                android:gravity="end"
+                android:text="0:00"
+                android:textColor="@color/viper_text"
+                android:textSize="12sp"
+                android:fontFamily="monospace" />
+
+            <SeekBar
+                android:id="@+id/seek_bar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:max="10000"
+                android:progressDrawable="@drawable/seek_progress"
+                android:thumb="@drawable/seek_thumb"
+                android:splitTrack="false"
+                android:paddingHorizontal="8dp" />
+
+            <TextView
+                android:id="@+id/tv_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="52dp"
+                android:text="0:00"
+                android:textColor="@color/viper_muted"
+                android:textSize="12sp"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Todos com o mesmo peso, e não com um espaçador no meio
+                 separando transporte de ferramentas.
+                 São nove botões: em retrato, num aparelho comum, a soma das
+                 larguras fixas passa da tela e o último fica pela metade fora
+                 dela — cortado, e não escondido, que é a pior das duas coisas.
+                 Com peso, eles se apertam e continuam todos alcançáveis. -->
+            <ImageButton android:id="@+id/btn_prev" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_prev" android:contentDescription="Anterior" />
+            <ImageButton android:id="@+id/btn_rewind" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_rewind" android:contentDescription="Voltar 10 segundos" />
+            <ImageButton android:id="@+id/btn_play" style="@style/PlayerIconWeighted"
+                android:layout_height="52dp" android:padding="9dp"
+                android:src="@drawable/ic_play" android:contentDescription="Tocar" />
+            <ImageButton android:id="@+id/btn_forward" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_forward" android:contentDescription="Avançar 10 segundos" />
+            <ImageButton android:id="@+id/btn_next" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_next" android:contentDescription="Próximo" />
+            <ImageButton android:id="@+id/btn_audio" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_audio" android:contentDescription="Faixas de áudio" />
+            <ImageButton android:id="@+id/btn_subtitle" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_subtitle" android:contentDescription="Legendas" />
+            <ImageButton android:id="@+id/btn_aspect" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_aspect" android:contentDescription="Enquadrar" />
+            <ImageButton android:id="@+id/btn_pip" style="@style/PlayerIconWeighted"
+                android:src="@drawable/ic_pip" android:contentDescription="Janela flutuante" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Com a tela bloqueada só sobra o cadeado: é para isso que o bloqueio
+         serve, e um botão de destravar escondido seria o mesmo que não ter. -->
+    <ImageButton
+        android:id="@+id/btn_unlock"
+        style="@style/PlayerIcon"
+        android:layout_gravity="center_vertical|start"
+        android:layout_marginStart="12dp"
+        android:src="@drawable/ic_lock"
+        android:background="@drawable/bg_hud"
+        android:contentDescription="Desbloquear"
+        android:visibility="gone" />
+</FrameLayout>

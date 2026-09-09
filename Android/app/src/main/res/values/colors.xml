@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A mesma paleta do LabTheme do iOS: o amarelo veio do próprio ícone, e os
+     três níveis de texto são os do modo escuro do sistema. Repetidos aqui
+     porque os controles do player são Views, e View não enxerga o tema do
+     Compose. -->
+<resources>
+    <color name="viper_accent">#FBC501</color>
+    <color name="viper_background">#0E0E10</color>
+    <color name="viper_text">#F0FFFFFF</color>
+    <color name="viper_muted">#99EBEBF5</color>
+    <color name="viper_faint">#61EBEBF5</color>
+    <color name="viper_glass">#12FFFFFF</color>
+    <color name="viper_glass_border">#21FFFFFF</color>
+    <color name="viper_scrim">#99000000</color>
+    <color name="ic_launcher_background">#0A0A0C</color>
+</resources>

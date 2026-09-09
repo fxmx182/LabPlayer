@@ -1,0 +1,37 @@
+# Versões pinadas de propósito. O motor de vídeo é uma biblioteca nativa de
+# 90 MB com quatro ABIs dentro — subir de versão sem querer é a diferença
+# entre um APK que instala e um que quebra só no aparelho de alguém.
+[versions]
+agp = "8.11.2"
+kotlin = "2.2.10"
+composeBom = "2025.10.01"
+coreKtx = "1.17.0"
+lifecycle = "2.9.2"
+activityCompose = "1.10.1"
+media = "1.7.0"
+securityCrypto = "1.1.0"
+documentfile = "1.0.1"
+# libvlc-all traz TODOS os módulos: MKV, HEVC, AC-3/DTS, legenda ASS/PGS e o
+# acesso SMB nativo. É o mesmo motor do iOS, e é dele que vem o "abre tudo".
+libvlc = "3.7.5"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
+androidx-media = { group = "androidx.media", name = "media", version.ref = "media" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
+libvlc = { group = "org.videolan.android", name = "libvlc-all", version.ref = "libvlc" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

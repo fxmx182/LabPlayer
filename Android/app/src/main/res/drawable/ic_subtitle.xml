@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24"
+    android:tint="#FFFFFF">
+    <!-- Moldura vazada com duas linhas dentro. A versão anterior era um
+         retângulo cheio com as linhas por cima, na mesma cor: no tamanho de um
+         botão elas desapareciam e o ícone virava um bloco branco. Aqui o
+         aninhamento faz o trabalho — moldura, buraco, linhas. -->
+    <path android:fillType="evenOdd" android:fillColor="@android:color/white"
+        android:pathData="M2.5,5h19v14h-19z M4.5,7v10h15v-10z M6,13.6h6v2.2h-6z M13.4,13.6h4.6v2.2h-4.6z M6,10h3.4v2.2h-3.4z M10.8,10h7.2v2.2h-7.2z"/>
+</vector>

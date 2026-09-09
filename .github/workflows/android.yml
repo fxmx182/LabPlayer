@@ -1,0 +1,128 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Android/**"
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "Android/**"
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compilar e empacotar
+    # Ubuntu, não macOS: o runner Linux não conta 10× contra a cota e já vem
+    # com JDK e SDK do Android. O irmão de iOS não tem essa escolha; este tem,
+    # e é por isso que aqui um build custa minutos em vez de espera.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write   # para publicar o release "android-latest"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Cache do Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('Android/gradle/libs.versions.toml', 'Android/**/*.gradle.kts') }}
+          restore-keys: gradle-
+
+      - name: Compilar
+        working-directory: Android
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon \
+            -PviperCommit=${GITHUB_SHA:0:7} 2>&1 | tee build.log
+
+      # O log completo do job só é baixável por quem tem admin no repositório,
+      # mas as *anotações* de um repo público são lidas por qualquer um. Mesmo
+      # truque do workflow de iOS: republicar os erros como anotação deixa a
+      # falha diagnosticável de fora, sem token de acesso.
+      - name: Republicar erros do compilador como anotação
+        if: failure()
+        working-directory: Android
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          log = pathlib.Path("build.log")
+          if not log.exists():
+              print("::error title=Sem log::build.log não foi gerado")
+              raise SystemExit(0)
+
+          text = log.read_text(errors="replace")
+          seen, errors = set(), []
+          for line in text.splitlines():
+              if re.match(r"^e: |error:|^FAILURE|Caused by:", line.strip()):
+                  line = line.strip()
+                  if line not in seen:
+                      seen.add(line)
+                      errors.append(line)
+
+          if not errors:
+              errors = ["Nenhuma linha de erro encontrada. Fim do log:",
+                        "\n".join(text.splitlines()[-40:])]
+
+          body = "\n".join(errors)[:6000]
+          enc = body.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Erros de compilação ({len(errors)})::{enc}")
+          PY
+
+      - name: Renomear os APKs
+        working-directory: Android
+        run: |
+          mkdir -p ../dist
+          for apk in app/build/outputs/apk/release/*.apk; do
+            abi=$(basename "$apk" | sed -E 's/app-(.*)-release\.apk/\1/')
+            cp "$apk" "../dist/ViperPlayer-$abi.apk"
+          done
+          ls -lh ../dist
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: ViperPlayer-apk
+          path: dist/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      # Artefato só baixa autenticado; asset de release baixa com um curl seco
+      # — dá para puxar o APK direto do celular, sem navegador nem login.
+      - name: Publicar release "android-latest"
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create android-latest dist/*.apk \
+            --title "Viper Player (Android) — build mais recente" \
+            --notes "Compilado de ${GITHUB_SHA:0:7}.
+
+          **Instale o \`ViperPlayer-arm64-v8a.apk\`** — é o de todo celular deste lado de 2015.
+          O \`armeabi-v7a\` serve aparelhos antigos de 32 bits; o \`x86_64\`, só emulador.
+
+          \`\`\`
+          curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/ViperPlayer-arm64-v8a.apk
+          adb install -r ViperPlayer-arm64-v8a.apk
+          \`\`\`
+
+          Assinado com a chave do repositório (\`Android/keystore/viper.jks\`), sempre a mesma — atualizar por cima funciona." \
+            --prerelease
