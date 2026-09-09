@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    name: Compilar e empacotar
+    name: Compilar e empacotar o APK
     # Ubuntu, não macOS: o runner Linux não conta 10× contra a cota e já vem
     # com JDK e SDK do Android. O irmão de iOS não tem essa escolha; este tem,
     # e é por isso que aqui um build custa minutos em vez de espera.
