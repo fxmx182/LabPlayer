@@ -102,44 +102,77 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      # Artefato só baixa autenticado; asset de release baixa com um curl seco
-      # — dá para puxar o APK direto do celular, sem navegador nem login.
-      - name: Publicar release "android-latest"
+      # Um release NOVO a cada build, e não a mesma tag reescrita.
+      #
+      # Reescrever apagava o histórico: não dava para voltar à versão de ontem
+      # nem comparar o que mudou. Agora cada build vira um release próprio,
+      # etiquetado com a data e o commit, e o mais recente é marcado como
+      # "latest" — o que dá, de graça, uma URL fixa que sempre aponta para ele:
+      #
+      #   /releases/latest/download/ViperPlayer-TV.apk
+      #
+      # Assim o histórico existe e o link de instalar continua o mesmo.
+      - name: Publicar release
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          VERSAO=$(grep -oP 'versionName = "\K[^"]+' Android/app/build.gradle.kts)
+          DATA=$(date -u +%Y.%m.%d)
+          TAG="android-v${VERSAO}-${DATA}-${GITHUB_SHA:0:7}"
+          ASSUNTO=$(git log -1 --pretty=%s)
+
+          # A tag antiga de "sempre a mesma" sai de cena na primeira vez.
           gh release delete android-latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create android-latest Android/dist/*.apk \
-            --title "Viper Player (Android) — build mais recente" \
-            --notes "Compilado de ${GITHUB_SHA:0:7}.
 
-          | Arquivo | Para |
-          |---|---|
-          | \`ViperPlayer-TV.apk\` | **televisão** — Google TV, Fire TV, Shield |
-          | \`ViperPlayer-Celular.apk\` | celular deste lado de 2015 |
-          | \`ViperPlayer-Celular-Antigo.apk\` | celular anterior a isso |
-          | \`ViperPlayer-PC-x86_64.apk\` | PC e Chromebook — emulador, Waydroid, BlueStacks |
+          {
+            echo "$ASSUNTO"
+            echo
+            echo "| Arquivo | Para |"
+            echo "|---|---|"
+            echo "| \`ViperPlayer-TV.apk\` | **televisão** — Google TV, Fire TV, Shield |"
+            echo "| \`ViperPlayer-Celular.apk\` | **celular** deste lado de 2015 |"
+            echo "| \`ViperPlayer-Celular-Antigo.apk\` | celular anterior a isso |"
+            echo "| \`ViperPlayer-PC-x86_64.apk\` | PC e Chromebook — emulador, Waydroid, BlueStacks |"
+            echo
+            echo "São variantes **exclusivas**: a de TV exige \`leanback\` e não instala em celular;"
+            echo "a de celular não aparece na tela inicial da TV. A de celular fala com o Android Auto."
+            echo
+            echo "**Na TV, não use a Play Store** — o app não está publicado lá, e a loja dirá que é"
+            echo "incompatível só por não o conhecer. Use o app Downloader com o endereço abaixo, ou \`adb\`."
+            echo
+            echo '```'
+            echo "curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/ViperPlayer-TV.apk"
+            echo "adb install -r ViperPlayer-TV.apk"
+            echo '```'
+            echo
+            echo "Este link não muda: ele sempre entrega o build mais recente."
+            echo
+            echo "---"
+            echo
+            echo "Commit \`${GITHUB_SHA:0:7}\` · build ${GITHUB_RUN_NUMBER}"
+            echo
+            git log -1 --pretty=%b
+          } > notas.md
 
-          São variantes **exclusivas**: o de TV exige o recurso \`leanback\` e não
-          instala em celular; o de celular não aparece na tela inicial da TV.
+          gh release create "$TAG" Android/dist/*.apk \
+            --title "Viper Player Android — ${DATA} (${GITHUB_SHA:0:7})" \
+            --notes-file notas.md \
+            --latest
 
-          O da TV é maior porque traz as **duas** arquiteturas ARM: muita caixinha de
-          Google TV e quase todo Fire Stick rodam Android de 32 bits sobre processador
-          de 64, e um APK só de arm64 é recusado por elas.
-
-          A variante de celular fala com o **Android Auto** — só áudio, que é tudo o
-          que a plataforma permite a app de terceiro — e toca em segundo plano com a
-          tela apagada.
-
-          **Não instale pela Play Store** — o app não está lá, e a loja da TV dirá que
-          ele é incompatível só por não o conhecer. Use o app **Downloader** com o
-          endereço abaixo, ou \`adb\`:
-
-          \`\`\`
-          curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/ViperPlayer-TV.apk
-          adb install -r ViperPlayer-TV.apk
-          \`\`\`
-
-          Assinado com a chave do repositório (\`Android/keystore/viper.jks\`), sempre a mesma — atualizar por cima funciona." \
-            --prerelease
+      # O histórico é útil; guardá-lo inteiro não é. Cada build são 300 MB, e
+      # ninguém volta trinta versões — dez cobre "a de ontem quebrou, me devolve
+      # a de anteontem", que é para o que serve.
+      - name: Podar releases antigos
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --limit 100 --json tagName \
+            --jq '.[] | select(.tagName | startswith("android-v")) | .tagName' \
+            | tail -n +11 \
+            | while read -r tag; do
+                echo "removendo $tag"
+                gh release delete "$tag" --yes --cleanup-tag || true
+              done

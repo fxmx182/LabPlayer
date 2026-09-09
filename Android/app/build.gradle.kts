@@ -15,7 +15,19 @@ android {
         // atenderia aparelhos que sequer aguentam 1080p HEVC.
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
+        // O número da versão é o tempo, em minutos, desde o começo de 2026.
+        //
+        // Precisa ser monotônico e não pode depender de quem compilou: o
+        // Android recusa instalar por cima um APK com número menor, e um app
+        // que vem de dois lugares — o release do CI e a pasta `dist/` desta
+        // máquina — travaria na hora em que o menor chegasse depois. Com o
+        // relógio, o build mais recente é sempre o maior, seja lá onde tenha
+        // nascido.
+        //
+        // Em minutos, e não em segundos, para caber folgado num Int: dá ~4 mil
+        // anos de margem.
+        versionCode = (((System.currentTimeMillis() - 1_767_225_600_000L) / 60_000L)
+            .coerceAtLeast(1L)).toInt()
         versionName = "0.1.0"
         vectorDrawables { useSupportLibrary = true }
 

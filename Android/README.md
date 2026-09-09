@@ -237,9 +237,25 @@ num PC comum, e ela não vai no release porque não existe aparelho assim:
 adb install -r dist/ViperPlayer-Celular.apk
 ```
 
-Um push na `main` faz o mesmo no GitHub Actions e publica em
-`releases/download/android-latest/` — que baixa com um `curl` seco, sem login,
-direto do celular.
+Um push na `main` faz o mesmo no GitHub Actions e publica um **release novo a
+cada build**, etiquetado com a data e o commit. O mais recente é marcado como
+"latest", o que dá uma URL que nunca muda:
+
+```bash
+curl -L -O https://github.com/fxmx182/LabPlayer/releases/latest/download/ViperPlayer-TV.apk
+```
+
+Assim existem as duas coisas: histórico para voltar à versão de ontem, e um
+link fixo para instalar. Os dez últimos ficam guardados; os mais velhos são
+podados, porque cada build são 300 MB e ninguém volta trinta versões.
+
+### O número da versão é o relógio
+
+`versionCode` é o tempo em minutos desde o começo de 2026. Precisa ser
+monotônico e não pode depender de quem compilou: o Android recusa instalar por
+cima um APK com número menor, e o app vem de dois lugares — o release do CI e a
+pasta `dist/` desta máquina. Com o relógio, o build mais recente é sempre o
+maior, tenha nascido onde tiver.
 
 ### A chave de assinatura está no repositório
 
