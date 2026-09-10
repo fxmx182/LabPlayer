@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O disco atrás do play. Discreto quando parado, amarelo quando focado pelo
+     controle remoto — na TV ele continua sendo o alvo inicial. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="oval">
+            <solid android:color="#3DFBC501" />
+            <stroke android:width="2dp" android:color="@color/viper_accent" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="oval">
+            <solid android:color="#2EFFFFFF" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#1FFFFFFF" />
+        </shape>
+    </item>
+</selector>

@@ -215,9 +215,16 @@ class PlayerActivity : Activity() {
             val livre = insets.getInsets(
                 WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.systemBars()
             )
+            // Um piso de folga além do que o sistema informa.
+            //
+            // Há aparelho que declara recorte zero e mesmo assim tem câmera na
+            // tela, e há fabricante que arredonda o canto sem dizer. Oito
+            // pontos não atrapalham onde não são necessários e salvam o título
+            // onde são.
+            val piso = (8 * resources.displayMetrics.density).toInt()
             ui.topBar.updatePadding(
                 left = ladoCima + livre.left,
-                top = topoOriginal + livre.top,
+                top = topoOriginal + maxOf(livre.top, piso),
                 right = ladoCima + livre.right,
             )
             ui.bottomBar.updatePadding(
@@ -480,8 +487,6 @@ class PlayerActivity : Activity() {
         ui.btnNext.setOnClickListener { goToNext() }
         ui.btnAudio.setOnClickListener { showTracks(audio = true) }
         ui.btnSubtitle.setOnClickListener { showTracks(audio = false) }
-        ui.btnAspect.setOnClickListener { cycleAspect() }
-        ui.btnPip.setOnClickListener { enterPip() }
         ui.btnMore.setOnClickListener { showToolsMenu(it) }
         ui.btnLock.setOnClickListener { setLocked(true) }
         ui.btnUnlock.setOnClickListener { setLocked(false) }
@@ -528,7 +533,6 @@ class PlayerActivity : Activity() {
      */
     private fun prepararParaTv() {
         ui.btnLock.visibility = View.GONE
-        ui.btnPip.visibility = View.GONE
         // A barra fica mais tempo: a três metros, com um controle na mão, a
         // pessoa demora mais para decidir o que apertar do que com o dedo já
         // sobre o botão.
@@ -1096,6 +1100,8 @@ class PlayerActivity : Activity() {
         if (Playback.queue.size > 1) {
             item(if (isShuffling) "✓ Aleatório" else "Aleatório") { isShuffling = !isShuffling }
         }
+        item("Enquadrar: ${gravityModes[gravityIndex].second}") { cycleAspect() }
+        if (!isTv) item("Janela flutuante") { enterPip() }
         item("Velocidade (${playbackSpeed}×)") { showSpeedSheet() }
         item("Captura de tela") { takeSnapshot() }
         item("Ampliação normal") { resetZoom() }

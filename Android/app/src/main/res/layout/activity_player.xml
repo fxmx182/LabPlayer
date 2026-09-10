@@ -148,9 +148,9 @@
         android:layout_gravity="bottom"
         android:orientation="vertical"
         android:background="@drawable/bg_bottom_scrim"
-        android:paddingHorizontal="10dp"
-        android:paddingTop="30dp"
-        android:paddingBottom="6dp">
+        android:paddingHorizontal="12dp"
+        android:paddingTop="34dp"
+        android:paddingBottom="18dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -199,19 +199,18 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Todos com o mesmo peso, e não com um espaçador no meio
-                 separando transporte de ferramentas.
-                 São nove botões: em retrato, num aparelho comum, a soma das
-                 larguras fixas passa da tela e o último fica pela metade fora
-                 dela — cortado, e não escondido, que é a pior das duas coisas.
-                 Com peso, eles se apertam e continuam todos alcançáveis. -->
+            <!-- Sete botões, e não nove.
+                 Enquanto forem nove, aumentar um espreme o outro: no retrato
+                 de um celular cada fatia fica com ~40dp, e o ícone, que é
+                 escalado pela menor dimensão, encolhe até parecer achatado.
+                 "Enquadrar" e "Janela flutuante" foram para o menu ⋮ — são
+                 ajustes que se faz uma vez por vídeo, não a cada minuto —, e
+                 os sete que sobraram são os que a mão procura no escuro. -->
             <ImageButton android:id="@+id/btn_prev" style="@style/PlayerIconWeighted"
                 android:src="@drawable/ic_prev" android:contentDescription="Anterior" />
             <ImageButton android:id="@+id/btn_rewind" style="@style/PlayerIconWeighted"
                 android:src="@drawable/ic_rewind" android:contentDescription="Voltar 10 segundos" />
-            <ImageButton android:id="@+id/btn_play" style="@style/PlayerIconWeighted"
-                android:layout_height="62dp"
-                android:paddingHorizontal="4dp" android:paddingVertical="10dp"
+            <ImageButton android:id="@+id/btn_play" style="@style/PlayerIconPrimary"
                 android:src="@drawable/ic_play" android:contentDescription="Tocar" />
             <ImageButton android:id="@+id/btn_forward" style="@style/PlayerIconWeighted"
                 android:src="@drawable/ic_forward" android:contentDescription="Avançar 10 segundos" />
@@ -221,10 +220,6 @@
                 android:src="@drawable/ic_audio" android:contentDescription="Faixas de áudio" />
             <ImageButton android:id="@+id/btn_subtitle" style="@style/PlayerIconWeighted"
                 android:src="@drawable/ic_subtitle" android:contentDescription="Legendas" />
-            <ImageButton android:id="@+id/btn_aspect" style="@style/PlayerIconWeighted"
-                android:src="@drawable/ic_aspect" android:contentDescription="Enquadrar" />
-            <ImageButton android:id="@+id/btn_pip" style="@style/PlayerIconWeighted"
-                android:src="@drawable/ic_pip" android:contentDescription="Janela flutuante" />
         </LinearLayout>
     </LinearLayout>
 

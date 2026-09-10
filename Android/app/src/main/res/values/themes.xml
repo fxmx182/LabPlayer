@@ -36,8 +36,19 @@
     <style name="PlayerIconWeighted" parent="PlayerIcon">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:layout_height">56dp</item>
-        <item name="android:paddingHorizontal">5dp</item>
-        <item name="android:paddingVertical">11dp</item>
+        <item name="android:layout_height">60dp</item>
+        <item name="android:paddingHorizontal">6dp</item>
+        <item name="android:paddingVertical">12dp</item>
+    </style>
+
+    <!-- Tocar/pausar é o botão que a mão procura sem olhar: peso maior na
+         fileira e um disco por trás, para ele ser achado pela forma e não
+         pela posição. -->
+    <style name="PlayerIconPrimary" parent="PlayerIconWeighted">
+        <item name="android:layout_weight">1.35</item>
+        <item name="android:layout_height">66dp</item>
+        <item name="android:paddingHorizontal">10dp</item>
+        <item name="android:paddingVertical">13dp</item>
+        <item name="android:background">@drawable/btn_play</item>
     </style>
 </resources>
