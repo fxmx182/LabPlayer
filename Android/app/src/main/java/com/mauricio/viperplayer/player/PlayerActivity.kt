@@ -725,8 +725,18 @@ class PlayerActivity : Activity() {
      */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            // A ilha entra na conta junto com as barras.
+            //
+            // Faltava, e o efeito era o pior possível: o toque num botão dela
+            // caía na camada de gestos, que responde ao encostar do dedo
+            // escondendo os controles. Ou seja, o botão não fazia nada E a
+            // ilha sumia — parecia que o toque tinha "passado através" dela.
             touchStartedOnBars =
-                (controlsVisible && (dentroDe(ui.topBar, ev) || dentroDe(ui.bottomBar, ev))) ||
+                (controlsVisible && (
+                    dentroDe(ui.topBar, ev) ||
+                        dentroDe(ui.bottomBar, ev) ||
+                        dentroDe(ui.island, ev)
+                    )) ||
                     (isLocked && dentroDe(ui.btnUnlock, ev))
         }
 
@@ -1256,6 +1266,13 @@ class PlayerActivity : Activity() {
             addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             decorView.systemUiVisibility = window.decorView.systemUiVisibility
         }
+        // Tocar fora fecha, igual ao botão voltar do aparelho.
+        //
+        // Não vem de graça: o tema translúcido não liga o fechamento por toque
+        // externo, e sem isto o painel só saía pelo botão voltar — que é o
+        // caminho que ninguém tenta primeiro.
+        painel.setCanceledOnTouchOutside(true)
+        painel.setCancelable(true)
         painel.setOnDismissListener { scheduleControlsHide() }
         painel.show()
         painel.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
