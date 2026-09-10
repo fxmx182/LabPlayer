@@ -3,8 +3,10 @@ package com.mauricio.viperplayer.library
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import com.mauricio.viperplayer.core.MediaItem
+import com.mauricio.viperplayer.core.VideoGroup
 import com.mauricio.viperplayer.core.Prefs
 
 enum class LibraryLayout { LIST, GRID }
@@ -33,6 +35,35 @@ class LibraryOptions(context: Context) {
     )
     var ascending by mutableStateOf(prefs.getBoolean(K_ASC, true))
 
+    /**
+     * Quais pastas estão abertas.
+     *
+     * Guardado entre sessões de propósito: quem tem trinta pastas e assiste de
+     * uma delas não quer reabri-la toda vez que volta ao app. É o mesmo
+     * princípio do resto das preferências — o app lembra o que você fez.
+     */
+    private val abertas = mutableStateSetOf<String>().apply {
+        addAll(prefs.getStringSet(K_ABERTAS, emptySet()).orEmpty())
+    }
+
+    fun estaAberta(caminho: String) = caminho in abertas
+
+    fun alternar(caminho: String) {
+        if (!abertas.remove(caminho)) abertas.add(caminho)
+        prefs.edit().putStringSet(K_ABERTAS, abertas.toSet()).apply()
+    }
+
+    /**
+     * Uma pasta só abre sozinha.
+     *
+     * Recolher tudo é o certo em quem tem muitas pastas — é o motivo da
+     * mudança —, mas abrir o app numa única linha fechada, sem nada abaixo,
+     * parece tela vazia e não lista recolhida.
+     */
+    fun abrirSePastaUnica(grupos: List<VideoGroup>) {
+        if (grupos.size == 1 && abertas.isEmpty()) alternar(grupos.first().path)
+    }
+
     fun save() {
         prefs.edit()
             .putString(K_LAYOUT, layout.name)
@@ -57,5 +88,6 @@ class LibraryOptions(context: Context) {
         const val K_LAYOUT = "library.layout"
         const val K_SORT = "library.sort"
         const val K_ASC = "library.ascending"
+        const val K_ABERTAS = "library.abertas"
     }
 }

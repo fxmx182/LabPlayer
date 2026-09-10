@@ -1,6 +1,7 @@
 package com.mauricio.viperplayer.library
 
 import androidx.compose.foundation.Image
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Movie
@@ -49,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -96,6 +99,7 @@ fun LibraryScreen(onOpenServers: () -> Unit) {
     }
 
     LaunchedEffect(Unit) { varrer() }
+    LaunchedEffect(grupos) { opcoes.abrirSePastaUnica(grupos) }
 
     Scaffold(
         containerColor = LabTheme.background,
@@ -203,13 +207,17 @@ private fun Linhas(grupos: List<VideoGroup>, opcoes: LibraryOptions) {
     val contexto = LocalContext.current
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
         for (grupo in grupos) {
-            item(key = "h:${grupo.path}") { Cabecalho(grupo) }
-            val ordenados = opcoes.sorted(grupo.items)
-            items(ordenados, key = { it.id }) { item ->
-                // A lista de reprodução segue a ordem exibida — "próxima" deve
-                // ir para o que está à frente na tela, e não para uma ordem
-                // interna que ninguém vê.
-                LinhaDeVideo(item) { Playback.start(contexto, item, ordenados) }
+            item(key = "h:${grupo.path}") {
+                Cabecalho(grupo, opcoes.estaAberta(grupo.path)) { opcoes.alternar(grupo.path) }
+            }
+            if (opcoes.estaAberta(grupo.path)) {
+                val ordenados = opcoes.sorted(grupo.items)
+                items(ordenados, key = { it.id }) { item ->
+                    // A lista de reprodução segue a ordem exibida — "próxima"
+                    // deve ir para o que está à frente na tela, e não para uma
+                    // ordem interna que ninguém vê.
+                    LinhaDeVideo(item) { Playback.start(contexto, item, ordenados) }
+                }
             }
         }
     }
@@ -231,22 +239,36 @@ private fun Grade(grupos: List<VideoGroup>, opcoes: LibraryOptions) {
     ) {
         for (grupo in grupos) {
             item(key = "h:${grupo.path}", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                Cabecalho(grupo)
+                Cabecalho(grupo, opcoes.estaAberta(grupo.path)) { opcoes.alternar(grupo.path) }
             }
-            val ordenados = opcoes.sorted(grupo.items)
-            items(ordenados, key = { it.id }) { item ->
-                CartaoDeVideo(item) { Playback.start(contexto, item, ordenados) }
+            if (opcoes.estaAberta(grupo.path)) {
+                val ordenados = opcoes.sorted(grupo.items)
+                items(ordenados, key = { it.id }) { item ->
+                    CartaoDeVideo(item) { Playback.start(contexto, item, ordenados) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun Cabecalho(grupo: VideoGroup) {
+private fun Cabecalho(grupo: VideoGroup, aberta: Boolean, onAlternar: () -> Unit) {
+    // A seta gira em vez de trocar de desenho: o movimento diz que a mesma
+    // coisa mudou de estado, e não que apareceu outro botão.
+    val giro by animateFloatAsState(if (aberta) 90f else 0f, label = "seta da pasta")
+
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth()
+            .clickable(onClick = onAlternar)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Icon(
+            Icons.Filled.ChevronRight, null,
+            tint = if (aberta) LabTheme.accent else LabTheme.muted,
+            modifier = Modifier.size(18.dp).rotate(giro),
+        )
+        Spacer(Modifier.width(4.dp))
         Icon(Icons.Filled.Folder, null, tint = LabTheme.faint, modifier = Modifier.size(13.dp))
         Spacer(Modifier.width(6.dp))
         Text(grupo.name.uppercase(), style = LabTheme.sectionTitle)
