@@ -22,6 +22,9 @@ import android.view.WindowManager
 import android.widget.PopupMenu
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.mauricio.viperplayer.R
 import com.mauricio.viperplayer.core.MediaItem
 import com.mauricio.viperplayer.core.Device
@@ -140,6 +143,7 @@ class PlayerActivity : Activity() {
         isTv = Device.isTv(this)
 
         goFullscreen()
+        afastarDoRecorte()
 
         // "Abrir com": o vídeo veio de fora e não há lista em volta dele.
         intent?.data?.let { uri ->
@@ -189,8 +193,55 @@ class PlayerActivity : Activity() {
         ui.videoLayout.post { engine.updateSurfaces() }
     }
 
+    /**
+     * Afasta as barras do recorte da câmera e dos gestos do sistema.
+     *
+     * O vídeo ocupa a tela inteira, recorte incluído — é o que se quer numa
+     * imagem. Os **controles**, não: no retrato de um celular com câmera na
+     * tela, a barra de cima cai exatamente embaixo dela, e o título fica
+     * escondido atrás do furo. Deitado, o recorte muda de lado, por isso o
+     * afastamento vem dos quatro lados e não de um número fixo.
+     *
+     * O recuo de origem é lido uma vez e somado, em vez de substituído: os
+     * valores do XML continuam valendo, e o do sistema entra por cima.
+     */
+    private fun afastarDoRecorte() {
+        val topoOriginal = ui.topBar.paddingTop
+        val baseOriginal = ui.bottomBar.paddingBottom
+        val ladoCima = ui.topBar.paddingLeft
+        val ladoBaixo = ui.bottomBar.paddingLeft
+
+        ViewCompat.setOnApplyWindowInsetsListener(ui.root) { _, insets ->
+            val livre = insets.getInsets(
+                WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.systemBars()
+            )
+            ui.topBar.updatePadding(
+                left = ladoCima + livre.left,
+                top = topoOriginal + livre.top,
+                right = ladoCima + livre.right,
+            )
+            ui.bottomBar.updatePadding(
+                left = ladoBaixo + livre.left,
+                right = ladoBaixo + livre.right,
+                bottom = baseOriginal + livre.bottom,
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(ui.root)
+    }
+
     private fun goFullscreen() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        // Deixa a imagem entrar na faixa do recorte em vez de o sistema
+        // encolher a janela para fugir dele — quem se afasta são os controles,
+        // logo acima, e não o vídeo.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
         @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or

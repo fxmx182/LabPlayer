@@ -25,11 +25,19 @@
         <item name="android:background">@drawable/btn_player</item>
     </style>
 
-    <!-- Na fileira de baixo a largura é dividida, não fixada. -->
+    <!-- Na fileira de baixo a largura é dividida, não fixada.
+
+         O recuo é menor na horizontal do que na vertical, e isso não é
+         capricho: com nove botões dividindo a largura, cada um fica com ~40dp
+         no retrato de um celular. Um recuo igual dos quatro lados sobrava
+         18dp para o ícone — que o `fitCenter` encolhe pela menor dimensão — e
+         o resultado é o desenho pequeno num quadro largo, que se lê como
+         "achatado". Apertando só na horizontal, o ícone volta a ter ~30dp. -->
     <style name="PlayerIconWeighted" parent="PlayerIcon">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:layout_height">46dp</item>
-        <item name="android:padding">11dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:paddingHorizontal">5dp</item>
+        <item name="android:paddingVertical">11dp</item>
     </style>
 </resources>

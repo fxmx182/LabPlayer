@@ -210,7 +210,8 @@
             <ImageButton android:id="@+id/btn_rewind" style="@style/PlayerIconWeighted"
                 android:src="@drawable/ic_rewind" android:contentDescription="Voltar 10 segundos" />
             <ImageButton android:id="@+id/btn_play" style="@style/PlayerIconWeighted"
-                android:layout_height="52dp" android:padding="9dp"
+                android:layout_height="62dp"
+                android:paddingHorizontal="4dp" android:paddingVertical="10dp"
                 android:src="@drawable/ic_play" android:contentDescription="Tocar" />
             <ImageButton android:id="@+id/btn_forward" style="@style/PlayerIconWeighted"
                 android:src="@drawable/ic_forward" android:contentDescription="Avançar 10 segundos" />
