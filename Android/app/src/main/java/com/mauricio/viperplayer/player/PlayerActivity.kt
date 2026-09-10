@@ -22,7 +22,9 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.GridLayout
+import android.widget.LinearLayout
 import android.widget.ImageView
 import android.widget.ScrollView
 import android.widget.SeekBar
@@ -96,6 +98,7 @@ class PlayerActivity : Activity() {
     private enum class RepeatMode { OFF, ONE }
     private var repeatMode = RepeatMode.OFF
     private var isShuffling = false
+    private var rotacao = Rotacao.AUTOMATICA
     private var sleepDeadline: Long? = null
     private val sleepRunnable = Runnable {
         engine.pause()
@@ -151,6 +154,7 @@ class PlayerActivity : Activity() {
 
         goFullscreen()
         afastarDoRecorte()
+        arrumarParaOrientacao()
 
         // "Abrir com": o vídeo veio de fora e não há lista em volta dele.
         intent?.data?.let { uri ->
@@ -195,6 +199,7 @@ class PlayerActivity : Activity() {
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
+        arrumarParaOrientacao()
         // Sem isto, girar a tela deixa o vídeo com o enquadramento antigo — a
         // imagem fica esticada ou com tarja até a próxima troca de modo.
         ui.videoLayout.post { engine.updateSurfaces() }
@@ -214,7 +219,10 @@ class PlayerActivity : Activity() {
      */
     private fun afastarDoRecorte() {
         val topoOriginal = ui.topBar.paddingTop
-        val ilhaOriginal = (ui.island.layoutParams as android.widget.FrameLayout.LayoutParams).topMargin
+        // Só no retrato a ilha flutua. Deitada ela vive dentro da fileira de
+        // baixo, e mexer na margem dela ali seria empurrar um botão no meio
+        // de uma linha — além de estourar na conversão de tipo.
+        val ilhaBase = (76 * resources.displayMetrics.density).toInt()
         val baseOriginal = ui.bottomBar.paddingBottom
         val ladoCima = ui.topBar.paddingLeft
         val ladoBaixo = ui.bottomBar.paddingLeft
@@ -239,10 +247,79 @@ class PlayerActivity : Activity() {
             // A ilha desce o mesmo tanto que a barra de cima. Com recuo fixo
             // ela caía em cima do título assim que o recorte empurrava a barra
             // para baixo — duas coisas no mesmo lugar, e nenhuma legível.
-            ui.island.updateLayoutParams<android.widget.FrameLayout.LayoutParams> {
-                topMargin = ilhaOriginal + maxOf(livre.top, piso)
+            // Só quando ela flutua: deitada, a ilha vive dentro da fileira e
+            // mexer na margem ali empurraria um botão no meio da linha.
+            if (ui.island.layoutParams is FrameLayout.LayoutParams) {
+                ui.island.updateLayoutParams<FrameLayout.LayoutParams> {
+                    topMargin = ilhaBase + maxOf(livre.top, piso)
+                }
             }
             insets
+        }
+        ViewCompat.requestApplyInsets(ui.root)
+    }
+
+    /**
+     * A mesma tela, arrumada de dois jeitos.
+     *
+     * Deitado sobra largura e falta altura; em pé é o contrário. Então os
+     * botões mudam de lugar em vez de encolher:
+     *
+     * - **Deitado**, o transporte encosta à esquerda, junto do cadeado — é
+     *   onde o polegar esquerdo já está quando se segura o aparelho com as
+     *   duas mãos —, e a ilha se dissolve na fileira de baixo, onde há espaço
+     *   de sobra. Nada fica flutuando sobre a imagem.
+     * - **Em pé**, o transporte volta ao centro e a ilha volta a flutuar,
+     *   porque numa fileira estreita não caberia mais nada.
+     *
+     * Feito movendo as views, e não trocando de layout por qualificador de
+     * recurso: a atividade declara `configChanges` para o vídeo não reiniciar
+     * ao girar, e por isso o Android nunca reinfla nada — um `layout-land`
+     * ficaria no disco sem jamais ser usado.
+     */
+    private fun arrumarParaOrientacao() {
+        val deitado = resources.configuration.orientation ==
+            android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+        // Os dois espaçadores decidem onde o transporte fica: com o da
+        // esquerda zerado, o grupo encosta na borda.
+        ui.spaceLeft.updateLayoutParams<LinearLayout.LayoutParams> {
+            weight = if (deitado) 0f else 1f
+        }
+
+        val paiAtual = ui.island.parent as? ViewGroup
+        val paiDesejado: ViewGroup = if (deitado) ui.buttonRow else ui.root
+        if (paiAtual === paiDesejado) return
+
+        paiAtual?.removeView(ui.island)
+
+        if (deitado) {
+            ui.island.background = null
+            ui.island.setPadding(0, 0, 0, 0)
+            // Antes do enquadrar: as ferramentas de faixa ficam juntas, e as
+            // de imagem continuam na ponta.
+            val posicao = ui.buttonRow.indexOfChild(ui.btnAspect)
+            ui.buttonRow.addView(
+                ui.island, posicao,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { gravity = android.view.Gravity.CENTER_VERTICAL },
+            )
+        } else {
+            ui.island.setBackgroundResource(R.drawable.bg_island)
+            val recuo = (6 * resources.displayMetrics.density).toInt()
+            ui.island.setPadding(recuo, recuo / 2, recuo, recuo / 2)
+            ui.root.addView(
+                ui.island,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
+                    topMargin = (76 * resources.displayMetrics.density).toInt()
+                },
+            )
         }
         ViewCompat.requestApplyInsets(ui.root)
     }
@@ -648,7 +725,9 @@ class PlayerActivity : Activity() {
         ui.topBar.visibility = alvo
         ui.bottomBar.visibility = alvo
         // A ilha é parte dos controles: se ficasse fixa, seria a única coisa
-        // por cima do filme depois que tudo some.
+        // por cima do filme depois que tudo some. Deitada ela já mora dentro
+        // da barra e desapareceria junto de qualquer jeito — manter a regra
+        // aqui evita depender de onde ela está.
         ui.island.visibility = if (visivel && !isTv) View.VISIBLE else View.GONE
         if (visivel) {
             controlsVisibleSince = System.currentTimeMillis()
@@ -686,6 +765,9 @@ class PlayerActivity : Activity() {
         )
         ui.btnSpeed.setColorFilter(
             if (playbackSpeed != 1f) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
+        )
+        ui.btnRotate.setColorFilter(
+            if (rotacao != Rotacao.AUTOMATICA) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
         )
     }
 
@@ -1191,7 +1273,19 @@ class PlayerActivity : Activity() {
             // "Bloquear tela" não entra: o cadeado é botão fixo da barra de
             // baixo, e a mesma ação em dois lugares faz parar para escolher
             // entre coisas iguais.
-            if (!isTv) add(Ferramenta("Girar tela", R.drawable.ic_rotate) { toggleOrientation() })
+            if (!isTv) {
+                add(
+                    Ferramenta(
+                        when (rotacao) {
+                            Rotacao.AUTOMATICA -> "Girar: automático"
+                            Rotacao.PAISAGEM -> "Girar: deitado"
+                            Rotacao.RETRATO -> "Girar: em pé"
+                        },
+                        R.drawable.ic_rotate,
+                        rotacao != Rotacao.AUTOMATICA,
+                    ) { toggleOrientation() }
+                )
+            }
             add(Ferramenta("Ampliação normal", R.drawable.ic_zoom) { resetZoom() })
             add(Ferramenta("Ocultar barra: ${prefs.autoHide.title}", R.drawable.ic_timer) {
                 showAutoHideSheet()
@@ -1381,13 +1475,50 @@ class PlayerActivity : Activity() {
         showHud("Dormir em ${millis / 60000} min", "Temporizador", null)
     }
 
+    /**
+     * Três estados, e não dois.
+     *
+     * Antes o botão só alternava entre deitado e em pé — e o efeito colateral
+     * era permanente: pedir uma orientação fixa **desliga a rotação
+     * automática** até o app ser fechado. Quem tocasse uma vez para endireitar
+     * um vídeo ficava sem giro pelo resto da sessão, sem nenhuma pista de que
+     * tinha sido aquele toque.
+     *
+     * Com três, sempre existe o caminho de volta: automático → deitado → em pé
+     * → automático. E o ícone acende enquanto estiver travado, para o estado
+     * ser visível em vez de adivinhado.
+     */
+    private enum class Rotacao { AUTOMATICA, PAISAGEM, RETRATO }
+
     private fun toggleOrientation() {
-        requestedOrientation =
-            if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE)
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else
-                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        rotacao = when (rotacao) {
+            Rotacao.AUTOMATICA -> Rotacao.PAISAGEM
+            Rotacao.PAISAGEM -> Rotacao.RETRATO
+            Rotacao.RETRATO -> Rotacao.AUTOMATICA
+        }
+        aplicarRotacao()
+        showHud(
+            when (rotacao) {
+                Rotacao.AUTOMATICA -> "Rotação automática"
+                Rotacao.PAISAGEM -> "Travado deitado"
+                Rotacao.RETRATO -> "Travado em pé"
+            },
+            null, null,
+        )
+        hideHudAfter(1400)
         scheduleControlsHide()
+    }
+
+    private fun aplicarRotacao() {
+        requestedOrientation = when (rotacao) {
+            // `sensor`, e não `unspecified`: o vídeo gira mesmo com o bloqueio
+            // de rotação do sistema ligado, que é o que se espera de um player
+            // — ninguém desliga o bloqueio só para deitar o celular no sofá.
+            Rotacao.AUTOMATICA -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            Rotacao.PAISAGEM -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            Rotacao.RETRATO -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+        atualizarIlha()
     }
 
     private fun takeSnapshot() {

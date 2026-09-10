@@ -216,6 +216,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/button_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -229,7 +230,8 @@
             <ImageButton android:id="@+id/btn_lock" style="@style/PlayerIconFixed"
                 android:src="@drawable/ic_unlock" android:contentDescription="Bloquear tela" />
 
-            <Space android:layout_width="0dp" android:layout_height="1dp"
+            <Space android:id="@+id/space_left"
+                android:layout_width="0dp" android:layout_height="1dp"
                 android:layout_weight="1" />
 
             <ImageButton android:id="@+id/btn_prev" style="@style/PlayerIconFixed"
@@ -239,7 +241,8 @@
             <ImageButton android:id="@+id/btn_next" style="@style/PlayerIconFixed"
                 android:src="@drawable/ic_next" android:contentDescription="Próximo" />
 
-            <Space android:layout_width="0dp" android:layout_height="1dp"
+            <Space android:id="@+id/space_right"
+                android:layout_width="0dp" android:layout_height="1dp"
                 android:layout_weight="1" />
 
             <ImageButton android:id="@+id/btn_aspect" style="@style/PlayerIconFixed"
