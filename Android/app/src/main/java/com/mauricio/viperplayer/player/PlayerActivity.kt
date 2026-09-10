@@ -278,7 +278,10 @@ class PlayerActivity : Activity() {
      * ficaria no disco sem jamais ser usado.
      */
     private fun arrumarParaOrientacao() {
-        val deitado = resources.configuration.orientation ==
+        // Televisão é sempre deitada — e mesmo que um aparelho relate outra
+        // coisa, uma pastilha flutuando no meio da tela a três metros seria
+        // pior que a fileira.
+        val deitado = isTv || resources.configuration.orientation ==
             android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
         // Os dois espaçadores decidem onde o transporte fica: com o da
@@ -625,11 +628,19 @@ class PlayerActivity : Activity() {
      * Mantê-los seria oferecer dois caminhos que não levam a lugar nenhum.
      */
     private fun prepararParaTv() {
+        // Só sai o que não existe em televisão.
+        //
+        // Bloquear a tela responde ao dedo que encosta sem querer, e não há
+        // dedo aqui. A janela flutuante não existe em TV. E girar a tela é um
+        // botão que numa televisão só pode dar errado.
+        //
+        // As ferramentas de vídeo FICAM: eu as tinha escondido achando que o
+        // painel do ⋮ bastava, mas trocar faixa de áudio ou legenda é o tipo de
+        // coisa que se faz no meio do filme — dois toques a menos no controle
+        // remoto valem mais que a barra enxuta.
         ui.btnLock.visibility = View.GONE
-        // A janela flutuante não existe em televisão, e a ilha é redundante
-        // com o painel de ferramentas, que o controle abre pela tecla MENU.
         ui.btnPip.visibility = View.GONE
-        ui.island.visibility = View.GONE
+        ui.btnRotate.visibility = View.GONE
         // A barra fica mais tempo: a três metros, com um controle na mão, a
         // pessoa demora mais para decidir o que apertar do que com o dedo já
         // sobre o botão.
@@ -728,7 +739,7 @@ class PlayerActivity : Activity() {
         // por cima do filme depois que tudo some. Deitada ela já mora dentro
         // da barra e desapareceria junto de qualquer jeito — manter a regra
         // aqui evita depender de onde ela está.
-        ui.island.visibility = if (visivel && !isTv) View.VISIBLE else View.GONE
+        ui.island.visibility = if (visivel) View.VISIBLE else View.GONE
         if (visivel) {
             controlsVisibleSince = System.currentTimeMillis()
             goFullscreen()

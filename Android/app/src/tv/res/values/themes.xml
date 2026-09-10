@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ajustes que valem só na televisão.
+
+  Os botões de ferramenta usam, no celular, o realce padrão do Android — que é
+  discreto de propósito, porque lá o dedo já aponta para onde vai agir. A três
+  metros, com um controle remoto, discreto quer dizer invisível: sem borda
+  amarela, esses eram os únicos botões da barra que não davam sinal de estarem
+  selecionados.
+
+  Substituir o estilo aqui, e não no arquivo comum, mantém o app de celular
+  exatamente como está.
+-->
+<resources>
+    <style name="IslandIcon" parent="PlayerIcon">
+        <item name="android:layout_width">52dp</item>
+        <item name="android:layout_height">52dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:background">@drawable/btn_player</item>
+    </style>
+</resources>
