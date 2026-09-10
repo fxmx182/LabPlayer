@@ -128,16 +128,38 @@
             android:fontFamily="sans-serif-medium" />
 
         <ImageButton
-            android:id="@+id/btn_lock"
-            style="@style/PlayerIcon"
-            android:src="@drawable/ic_unlock"
-            android:contentDescription="Bloquear tela" />
-
-        <ImageButton
             android:id="@+id/btn_more"
             style="@style/PlayerIcon"
             android:src="@drawable/ic_more"
             android:contentDescription="Mais" />
+    </LinearLayout>
+
+    <!-- ===================== Ilha de ferramentas =====================
+         O que se mexe DURANTE o filme, a um toque: faixa de áudio, legenda,
+         repetir, girar e velocidade. Fica solta sobre a imagem, no topo, e
+         some junto com o resto — é parte dos controles, não um enfeite fixo. -->
+    <LinearLayout
+        android:id="@+id/island"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="76dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_island"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="4dp">
+
+        <ImageButton android:id="@+id/btn_audio" style="@style/IslandIcon"
+            android:src="@drawable/ic_audio_track" android:contentDescription="Faixas de áudio" />
+        <ImageButton android:id="@+id/btn_subtitle" style="@style/IslandIcon"
+            android:src="@drawable/ic_subtitle" android:contentDescription="Legendas" />
+        <ImageButton android:id="@+id/btn_repeat" style="@style/IslandIcon"
+            android:src="@drawable/ic_repeat" android:contentDescription="Repetir" />
+        <ImageButton android:id="@+id/btn_rotate" style="@style/IslandIcon"
+            android:src="@drawable/ic_rotate" android:contentDescription="Girar a tela" />
+        <ImageButton android:id="@+id/btn_speed" style="@style/IslandIcon"
+            android:src="@drawable/ic_speed" android:contentDescription="Velocidade" />
     </LinearLayout>
 
     <!-- ===================== Barra de baixo ===================== -->
@@ -199,27 +221,31 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Sete botões, e não nove.
-                 Enquanto forem nove, aumentar um espreme o outro: no retrato
-                 de um celular cada fatia fica com ~40dp, e o ícone, que é
-                 escalado pela menor dimensão, encolhe até parecer achatado.
-                 "Enquadrar" e "Janela flutuante" foram para o menu ⋮ — são
-                 ajustes que se faz uma vez por vídeo, não a cada minuto —, e
-                 os sete que sobraram são os que a mão procura no escuro. -->
-            <ImageButton android:id="@+id/btn_prev" style="@style/PlayerIconWeighted"
+            <!-- Três grupos, e não uma fileira uniforme.
+                 O cadeado à esquerda, o transporte no centro e as ferramentas
+                 de imagem à direita. Separar por função é o que deixa o dedo
+                 acertar sem olhar: no meio da tela está sempre o play, e a
+                 borda esquerda é sempre o cadeado — a posição vira memória. -->
+            <ImageButton android:id="@+id/btn_lock" style="@style/PlayerIconFixed"
+                android:src="@drawable/ic_unlock" android:contentDescription="Bloquear tela" />
+
+            <Space android:layout_width="0dp" android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageButton android:id="@+id/btn_prev" style="@style/PlayerIconFixed"
                 android:src="@drawable/ic_prev" android:contentDescription="Anterior" />
-            <ImageButton android:id="@+id/btn_rewind" style="@style/PlayerIconWeighted"
-                android:src="@drawable/ic_rewind" android:contentDescription="Voltar 10 segundos" />
             <ImageButton android:id="@+id/btn_play" style="@style/PlayerIconPrimary"
                 android:src="@drawable/ic_play" android:contentDescription="Tocar" />
-            <ImageButton android:id="@+id/btn_forward" style="@style/PlayerIconWeighted"
-                android:src="@drawable/ic_forward" android:contentDescription="Avançar 10 segundos" />
-            <ImageButton android:id="@+id/btn_next" style="@style/PlayerIconWeighted"
+            <ImageButton android:id="@+id/btn_next" style="@style/PlayerIconFixed"
                 android:src="@drawable/ic_next" android:contentDescription="Próximo" />
-            <ImageButton android:id="@+id/btn_audio" style="@style/PlayerIconWeighted"
-                android:src="@drawable/ic_audio" android:contentDescription="Faixas de áudio" />
-            <ImageButton android:id="@+id/btn_subtitle" style="@style/PlayerIconWeighted"
-                android:src="@drawable/ic_subtitle" android:contentDescription="Legendas" />
+
+            <Space android:layout_width="0dp" android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageButton android:id="@+id/btn_aspect" style="@style/PlayerIconFixed"
+                android:src="@drawable/ic_aspect" android:contentDescription="Enquadrar" />
+            <ImageButton android:id="@+id/btn_pip" style="@style/PlayerIconFixed"
+                android:src="@drawable/ic_pip" android:contentDescription="Janela flutuante" />
         </LinearLayout>
     </LinearLayout>
 

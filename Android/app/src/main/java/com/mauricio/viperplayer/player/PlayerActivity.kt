@@ -2,6 +2,7 @@ package com.mauricio.viperplayer.player
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Dialog
 import android.app.PictureInPictureParams
 import android.content.ContentValues
 import android.content.Intent
@@ -15,15 +16,21 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.util.Rational
 import android.view.KeyEvent
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.PopupMenu
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.ScrollView
 import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import com.mauricio.viperplayer.R
 import com.mauricio.viperplayer.core.MediaItem
@@ -207,6 +214,7 @@ class PlayerActivity : Activity() {
      */
     private fun afastarDoRecorte() {
         val topoOriginal = ui.topBar.paddingTop
+        val ilhaOriginal = (ui.island.layoutParams as android.widget.FrameLayout.LayoutParams).topMargin
         val baseOriginal = ui.bottomBar.paddingBottom
         val ladoCima = ui.topBar.paddingLeft
         val ladoBaixo = ui.bottomBar.paddingLeft
@@ -215,12 +223,8 @@ class PlayerActivity : Activity() {
             val livre = insets.getInsets(
                 WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.systemBars()
             )
-            // Um piso de folga além do que o sistema informa.
-            //
-            // Há aparelho que declara recorte zero e mesmo assim tem câmera na
-            // tela, e há fabricante que arredonda o canto sem dizer. Oito
-            // pontos não atrapalham onde não são necessários e salvam o título
-            // onde são.
+            // Um piso de folga além do que o sistema informa: há aparelho que
+            // declara recorte zero e mesmo assim tem câmera na tela.
             val piso = (8 * resources.displayMetrics.density).toInt()
             ui.topBar.updatePadding(
                 left = ladoCima + livre.left,
@@ -232,6 +236,12 @@ class PlayerActivity : Activity() {
                 right = ladoBaixo + livre.right,
                 bottom = baseOriginal + livre.bottom,
             )
+            // A ilha desce o mesmo tanto que a barra de cima. Com recuo fixo
+            // ela caía em cima do título assim que o recorte empurrava a barra
+            // para baixo — duas coisas no mesmo lugar, e nenhuma legível.
+            ui.island.updateLayoutParams<android.widget.FrameLayout.LayoutParams> {
+                topMargin = ilhaOriginal + maxOf(livre.top, piso)
+            }
             insets
         }
         ViewCompat.requestApplyInsets(ui.root)
@@ -476,20 +486,26 @@ class PlayerActivity : Activity() {
      * de mexer nos ajustes durante o vídeo.
      */
     private fun dialog(): AlertDialog.Builder =
-        AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        AlertDialog.Builder(this, R.style.Theme_Viper_Dialog)
 
     private fun bindControls() {
         ui.btnClose.setOnClickListener { finish() }
         ui.btnPlay.setOnClickListener { togglePlayPause() }
-        ui.btnRewind.setOnClickListener { jump(-Tuning.DOUBLE_TAP_SECONDS) }
-        ui.btnForward.setOnClickListener { jump(Tuning.DOUBLE_TAP_SECONDS) }
         ui.btnPrev.setOnClickListener { goToPrevious() }
         ui.btnNext.setOnClickListener { goToNext() }
-        ui.btnAudio.setOnClickListener { showTracks(audio = true) }
-        ui.btnSubtitle.setOnClickListener { showTracks(audio = false) }
-        ui.btnMore.setOnClickListener { showToolsMenu(it) }
+        ui.btnAspect.setOnClickListener { cycleAspect() }
+        ui.btnPip.setOnClickListener { enterPip() }
+        ui.btnMore.setOnClickListener { showToolsSheet() }
         ui.btnLock.setOnClickListener { setLocked(true) }
         ui.btnUnlock.setOnClickListener { setLocked(false) }
+
+        // A ilha: o que se mexe durante o filme, a um toque.
+        ui.btnAudio.setOnClickListener { showTracks(audio = true) }
+        ui.btnSubtitle.setOnClickListener { showTracks(audio = false) }
+        ui.btnRepeat.setOnClickListener { alternarRepeticao() }
+        ui.btnRotate.setOnClickListener { toggleOrientation() }
+        ui.btnSpeed.setOnClickListener { showSpeedSheet() }
+        atualizarIlha()
 
         ui.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(bar: SeekBar, valor: Int, doUsuario: Boolean) {
@@ -533,6 +549,10 @@ class PlayerActivity : Activity() {
      */
     private fun prepararParaTv() {
         ui.btnLock.visibility = View.GONE
+        // A janela flutuante não existe em televisão, e a ilha é redundante
+        // com o painel de ferramentas, que o controle abre pela tecla MENU.
+        ui.btnPip.visibility = View.GONE
+        ui.island.visibility = View.GONE
         // A barra fica mais tempo: a três metros, com um controle na mão, a
         // pessoa demora mais para decidir o que apertar do que com o dedo já
         // sobre o botão.
@@ -571,7 +591,7 @@ class PlayerActivity : Activity() {
 
         if (event.keyCode == KeyEvent.KEYCODE_MENU) {
             setControlsVisible(true)
-            ui.btnMore.post { showToolsMenu(ui.btnMore) }
+            ui.btnMore.post { showToolsSheet() }
             return true
         }
 
@@ -627,6 +647,9 @@ class PlayerActivity : Activity() {
         val alvo = if (visivel) View.VISIBLE else View.GONE
         ui.topBar.visibility = alvo
         ui.bottomBar.visibility = alvo
+        // A ilha é parte dos controles: se ficasse fixa, seria a única coisa
+        // por cima do filme depois que tudo some.
+        ui.island.visibility = if (visivel && !isTv) View.VISIBLE else View.GONE
         if (visivel) {
             controlsVisibleSince = System.currentTimeMillis()
             goFullscreen()
@@ -648,6 +671,33 @@ class PlayerActivity : Activity() {
         // botão de play.
         if (engine.state == PlaybackState.Paused) return@Runnable
         setControlsVisible(false)
+    }
+
+    /**
+     * O que a ilha mostra do estado atual.
+     *
+     * Repetir e velocidade são modos que ficam ligados: sem um sinal, a pessoa
+     * liga o repetir, esquece, e três horas depois o filme recomeça sozinho
+     * sem explicação. O amarelo é esse sinal.
+     */
+    private fun atualizarIlha() {
+        ui.btnRepeat.setColorFilter(
+            if (repeatMode == RepeatMode.ONE) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
+        )
+        ui.btnSpeed.setColorFilter(
+            if (playbackSpeed != 1f) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
+        )
+    }
+
+    private fun alternarRepeticao() {
+        repeatMode = if (repeatMode == RepeatMode.ONE) RepeatMode.OFF else RepeatMode.ONE
+        atualizarIlha()
+        showHud(
+            if (repeatMode == RepeatMode.ONE) "Repetindo este vídeo" else "Repetição desligada",
+            null, null,
+        )
+        hideHudAfter(1400)
+        scheduleControlsHide()
     }
 
     private fun setLocked(travado: Boolean) {
@@ -1080,59 +1130,135 @@ class PlayerActivity : Activity() {
 
     // MARK: - Menu de ferramentas
 
-    private fun showToolsMenu(ancora: View) {
+    /** Uma ferramenta do painel. */
+    private data class Ferramenta(
+        val rotulo: String,
+        val icone: Int,
+        /** Modo ligado: o ícone acende, para não se esquecer de um estado. */
+        val aceso: Boolean = false,
+        val acao: () -> Unit,
+    )
+
+    /**
+     * O painel de ferramentas, no lugar do menu de lista.
+     *
+     * Dezesseis itens em lista de texto é uma coluna que não cabe na tela e que
+     * se lê linha a linha, no escuro, com o filme parado. Em grade de quatro,
+     * tudo aparece de uma vez e o dedo vai direto ao desenho — e o rótulo
+     * embaixo resolve o que o desenho sozinho não diria ("taxa de proporção"
+     * não tem ícone óbvio em lugar nenhum).
+     */
+    private fun showToolsSheet() {
         cancelControlsHide()
-        val menu = PopupMenu(this, ancora)
-        val m = menu.menu
-        var id = 1
-        val acoes = LinkedHashMap<Int, () -> Unit>()
 
-        fun item(titulo: String, acao: () -> Unit) {
-            m.add(0, id, 0, titulo)
-            acoes[id] = acao
-            id++
+        val itens = buildList {
+            add(Ferramenta("Faixa de áudio", R.drawable.ic_audio_track) { showTracks(audio = true) })
+            add(Ferramenta("Legenda", R.drawable.ic_subtitle) { showTracks(audio = false) })
+            add(Ferramenta("Taxa de proporção", R.drawable.ic_aspect) { cycleAspect() })
+            add(Ferramenta("Velocidade (${playbackSpeed}×)", R.drawable.ic_speed, playbackSpeed != 1f) {
+                showSpeedSheet()
+            })
+            add(Ferramenta("Segurar para acelerar", R.drawable.ic_speed) { showHoldSpeedSheet() })
+            add(Ferramenta("Repetir", R.drawable.ic_repeat, repeatMode == RepeatMode.ONE) {
+                alternarRepeticao()
+            })
+            if (Playback.queue.size > 1) {
+                add(Ferramenta("Aleatório", R.drawable.ic_shuffle, isShuffling) {
+                    isShuffling = !isShuffling
+                })
+            }
+            add(Ferramenta("Mudo", R.drawable.ic_volume, engine.isMuted) {
+                engine.isMuted = !engine.isMuted
+            })
+            add(Ferramenta("Captura de tela", R.drawable.ic_camera) { takeSnapshot() })
+            if (!isTv) add(Ferramenta("Janela flutuante", R.drawable.ic_pip) { enterPip() })
+            add(Ferramenta("Modo noturno", R.drawable.ic_moon, ui.dimView.alpha > 0.01f) {
+                cycleNightMode()
+            })
+            add(Ferramenta("Tempo para dormir", R.drawable.ic_timer, sleepDeadline != null) {
+                showSleepSheet()
+            })
+            // "Bloquear tela" não entra: o cadeado é botão fixo da barra de
+            // baixo, e a mesma ação em dois lugares faz parar para escolher
+            // entre coisas iguais.
+            if (!isTv) add(Ferramenta("Girar tela", R.drawable.ic_rotate) { toggleOrientation() })
+            add(Ferramenta("Ampliação normal", R.drawable.ic_zoom) { resetZoom() })
+            add(Ferramenta("Ocultar barra: ${prefs.autoHide.title}", R.drawable.ic_timer) {
+                showAutoHideSheet()
+            })
+            add(Ferramenta("Quadro a quadro", R.drawable.ic_frame, prefs.preciseScrub) {
+                prefs.preciseScrub = !prefs.preciseScrub
+                showHud(
+                    if (prefs.preciseScrub) "Quadro a quadro" else "Por keyframe",
+                    "Rolagem", null,
+                )
+                hideHudAfter(1400)
+            })
         }
 
-        item(if (engine.isMuted) "✓ Mudo" else "Mudo") { engine.isMuted = !engine.isMuted }
-        item(if (repeatMode == RepeatMode.ONE) "✓ Repetir este vídeo" else "Repetir este vídeo") {
-            repeatMode = if (repeatMode == RepeatMode.ONE) RepeatMode.OFF else RepeatMode.ONE
-        }
-        if (Playback.queue.size > 1) {
-            item(if (isShuffling) "✓ Aleatório" else "Aleatório") { isShuffling = !isShuffling }
-        }
-        item("Enquadrar: ${gravityModes[gravityIndex].second}") { cycleAspect() }
-        if (!isTv) item("Janela flutuante") { enterPip() }
-        item("Velocidade (${playbackSpeed}×)") { showSpeedSheet() }
-        item("Captura de tela") { takeSnapshot() }
-        item("Ampliação normal") { resetZoom() }
-        // Girar e bloquear são respostas a problemas que só existem num
-        // aparelho de mão: a tela que vira sozinha e o dedo que encosta sem
-        // querer. Numa televisão as duas entradas seriam caminhos para lugar
-        // nenhum no meio de um menu curto.
-        if (!isTv) {
-            item("Girar tela") { toggleOrientation() }
-            item("Bloquear tela") { setLocked(true) }
-        }
-        item("Modo noturno") { cycleNightMode() }
-        item(sleepTimerTitle()) { showSleepSheet() }
-        item("Segurar para acelerar (${prefs.holdSpeed}×)") { showHoldSpeedSheet() }
-        item("Ocultar barra: ${prefs.autoHide.title}") { showAutoHideSheet() }
-        item(if (prefs.preciseScrub) "✓ Rolagem quadro a quadro" else "Rolagem quadro a quadro") {
-            prefs.preciseScrub = !prefs.preciseScrub
-            showHud(
-                if (prefs.preciseScrub) "Quadro a quadro" else "Por keyframe",
-                "Rolagem", null,
+        val vista = layoutInflater.inflate(R.layout.dialog_tools, null)
+        val grade = vista.findViewById<GridLayout>(R.id.tools_grid)
+
+        val painel = Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
+
+        for (ferramenta in itens) {
+            val item = layoutInflater.inflate(R.layout.item_tool, grade, false)
+            val icone = item.findViewById<ImageView>(R.id.tool_icon)
+            val rotulo = item.findViewById<TextView>(R.id.tool_label)
+
+            icone.setImageResource(ferramenta.icone)
+            icone.setColorFilter(
+                if (ferramenta.aceso) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
             )
-            hideHudAfter(1400)
+            rotulo.text = ferramenta.rotulo
+            rotulo.setTextColor(
+                if (ferramenta.aceso) getColor(R.color.viper_accent) else getColor(R.color.viper_text)
+            )
+            item.setOnClickListener {
+                painel.dismiss()
+                ferramenta.acao()
+            }
+
+            grade.addView(
+                item,
+                GridLayout.LayoutParams().apply {
+                    width = 0
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1f)
+                }
+            )
         }
 
-        menu.setOnMenuItemClickListener { escolhido ->
-            acoes[escolhido.itemId]?.invoke()
-            scheduleControlsHide()
-            true
+        // O painel não pode passar da tela.
+        //
+        // Com altura livre, a última fileira ficava cortada pela borda — e
+        // fileira cortada não se lê como "role para ver mais", se lê como
+        // defeito. Acima do teto, ele rola.
+        val rolagem = vista.findViewById<ScrollView>(R.id.tools_scroll)
+        rolagem.post {
+            val teto = (resources.displayMetrics.heightPixels * 0.60f).toInt()
+            if (rolagem.height > teto) {
+                rolagem.updateLayoutParams<ViewGroup.LayoutParams> { height = teto }
+            }
         }
-        menu.setOnDismissListener { scheduleControlsHide() }
-        menu.show()
+
+        painel.setContentView(vista)
+        painel.window?.apply {
+            setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+            )
+            setGravity(Gravity.BOTTOM)
+            setDimAmount(0.5f)
+            setBackgroundDrawableResource(android.R.color.transparent)
+            // Sem foco enquanto sobe: uma janela que toma o foco faz o sistema
+            // devolver as barras de status e navegação, e o filme atrás salta
+            // de tamanho. O foco entra depois que ela já está na tela.
+            addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            decorView.systemUiVisibility = window.decorView.systemUiVisibility
+        }
+        painel.setOnDismissListener { scheduleControlsHide() }
+        painel.show()
+        painel.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
     }
 
     private fun showSpeedSheet() {
@@ -1145,6 +1271,7 @@ class PlayerActivity : Activity() {
             .setItems(rotulos.toTypedArray()) { _, i ->
                 playbackSpeed = valores[i]
                 if (engine.state == PlaybackState.Playing) engine.rate = playbackSpeed
+                atualizarIlha()
                 showHud("${playbackSpeed}×", "Velocidade", null)
                 hideHudAfter(900)
             }

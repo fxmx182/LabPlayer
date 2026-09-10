@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A ilha: uma pastilha escura que flutua sobre a imagem.
+     Fundo mais opaco que o véu das barras porque ela fica no meio da cena, e
+     não na borda — precisa se separar de qualquer quadro que passe por baixo. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#CC121216" />
+    <corners android:radius="26dp" />
+    <stroke android:width="0.5dp" android:color="@color/viper_glass_border" />
+</shape>

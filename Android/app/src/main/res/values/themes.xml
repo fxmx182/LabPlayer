@@ -15,6 +15,15 @@
         <item name="android:windowBackground">@android:color/black</item>
     </style>
 
+    <!-- Os diálogos com a cor da marca.
+         O tema escuro do sistema traz o verde-água do Material, que sobre esta
+         paleta parece de outro aplicativo. -->
+    <style name="Theme.Viper.Dialog" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/viper_accent</item>
+        <item name="android:textColorPrimary">@color/viper_text</item>
+        <item name="android:colorBackground">@color/viper_background</item>
+    </style>
+
     <!-- Botões da barra: alvo grande de toque, ícone pequeno. O dedo erra o
          que tem 24dp; o olho se cansa do que tem 48. -->
     <style name="PlayerIcon">
@@ -41,14 +50,31 @@
         <item name="android:paddingVertical">12dp</item>
     </style>
 
+    <!-- Fora da divisão por peso: agora a fileira tem grupos, e botão de
+         largura fixa mantém o mesmo tamanho esteja a tela cheia ou estreita. -->
+    <style name="PlayerIconFixed" parent="PlayerIcon">
+        <item name="android:layout_width">52dp</item>
+        <item name="android:layout_height">52dp</item>
+        <item name="android:padding">12dp</item>
+    </style>
+
+    <!-- Os ícones da ilha, menores: ela flutua sobre a imagem e não deve
+         disputar atenção com o vídeo. -->
+    <style name="IslandIcon" parent="PlayerIcon">
+        <item name="android:layout_width">46dp</item>
+        <item name="android:layout_height">44dp</item>
+        <item name="android:padding">11dp</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+    </style>
+
     <!-- Tocar/pausar é o botão que a mão procura sem olhar: peso maior na
          fileira e um disco por trás, para ele ser achado pela forma e não
          pela posição. -->
-    <style name="PlayerIconPrimary" parent="PlayerIconWeighted">
-        <item name="android:layout_weight">1.35</item>
+    <style name="PlayerIconPrimary" parent="PlayerIcon">
+        <item name="android:layout_width">66dp</item>
         <item name="android:layout_height">66dp</item>
-        <item name="android:paddingHorizontal">10dp</item>
-        <item name="android:paddingVertical">13dp</item>
+        <item name="android:layout_marginHorizontal">10dp</item>
+        <item name="android:padding">16dp</item>
         <item name="android:background">@drawable/btn_play</item>
     </style>
 </resources>

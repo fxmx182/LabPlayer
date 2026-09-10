@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Uma ferramenta do painel: disco com o ícone, rótulo embaixo.
+
+  O rótulo não é enfeite. A fileira de baixo pode viver de ícones porque são
+  seis e sempre os mesmos; num painel de quinze, ícone sozinho vira adivinhação
+  — e "taxa de proporção" não tem desenho óbvio em desenho nenhum.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingVertical="10dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?android:attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/tool_icon"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:padding="15dp"
+        android:scaleType="fitCenter"
+        android:background="@drawable/bg_tool_circle" />
+
+    <TextView
+        android:id="@+id/tool_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textColor="@color/viper_text"
+        android:textSize="12sp" />
+</LinearLayout>

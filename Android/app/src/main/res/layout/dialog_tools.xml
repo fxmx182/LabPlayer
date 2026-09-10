@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O painel de ferramentas, no lugar do menu de lista.
+
+     Quinze itens numa lista de texto é uma coluna que não cabe na tela e que
+     se lê linha a linha. Em grade de quatro, tudo aparece de uma vez e o dedo
+     vai direto — que é como se procura ferramenta durante um filme. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_tools_sheet"
+    android:paddingTop="10dp"
+    android:paddingBottom="30dp">
+
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_hud"
+        android:alpha="0.5" />
+
+    <ScrollView
+        android:id="@+id/tools_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="false">
+
+        <GridLayout
+            android:id="@+id/tools_grid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="4"
+            android:paddingHorizontal="8dp" />
+    </ScrollView>
+</LinearLayout>
