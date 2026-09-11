@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer
+package com.mauricio.libertyx
 
 import android.app.Application
 
@@ -10,4 +10,4 @@ import android.app.Application
  * carregados antes de a primeira tela aparecer, e quem abre o app para ver a
  * lista paga isso sem ganhar nada. O motor sobe quando alguém toca num vídeo.
  */
-class ViperApp : Application()
+class LibertyXApp : Application()

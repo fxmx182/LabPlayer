@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.smb
+package com.mauricio.libertyx.smb
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -65,13 +65,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import com.mauricio.viperplayer.core.Device
-import com.mauricio.viperplayer.core.LabTheme
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.labCard
-import com.mauricio.viperplayer.player.Playback
-import com.mauricio.viperplayer.tv.setasTrocamDeCampo
-import com.mauricio.viperplayer.tv.tvFocus
+import com.mauricio.libertyx.core.Device
+import com.mauricio.libertyx.core.LabTheme
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.labCard
+import com.mauricio.libertyx.player.Playback
+import com.mauricio.libertyx.tv.setasTrocamDeCampo
+import com.mauricio.libertyx.tv.tvFocus
 import kotlinx.coroutines.withTimeoutOrNull
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -177,7 +177,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                 item {
                     Text(
                         "Nenhum servidor salvo ainda. Adicione o endereço do servidor de casa " +
-                            "e o Viper toca os vídeos direto de lá, sem baixar nada antes.",
+                            "e o LibertyX toca os vídeos direto de lá, sem baixar nada antes.",
                         color = LabTheme.muted, fontSize = 13.sp,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
                     )

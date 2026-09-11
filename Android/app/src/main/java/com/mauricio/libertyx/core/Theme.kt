@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.core
+package com.mauricio.libertyx.core
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
@@ -65,7 +65,7 @@ fun Modifier.labCard(radius: androidx.compose.ui.unit.Dp = LabTheme.radiusCard):
         .border(0.5.dp, LabTheme.glassBorder, RoundedCornerShape(radius))
 
 @Composable
-fun ViperTheme(content: @Composable () -> Unit) {
+fun LibertyXTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = LabTheme.accent,

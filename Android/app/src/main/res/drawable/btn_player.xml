@@ -11,7 +11,7 @@
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <solid android:color="#3DFBC501" />
-            <stroke android:width="2dp" android:color="@color/viper_accent" />
+            <stroke android:width="2dp" android:color="@color/libertyx_accent" />
             <corners android:radius="10dp" />
         </shape>
     </item>

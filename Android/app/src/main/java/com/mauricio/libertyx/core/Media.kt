@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.core
+package com.mauricio.libertyx.core
 
 import android.net.Uri
 import java.util.Locale

@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.tv
+package com.mauricio.libertyx.tv
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
@@ -24,7 +24,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.mauricio.viperplayer.core.LabTheme
+import com.mauricio.libertyx.core.LabTheme
 
 /**
  * O realce de foco — a peça que faz uma tela de TV ser usável.

@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mauricio.viperplayer"
+    namespace = "com.mauricio.libertyx"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.mauricio.viperplayer"
+        applicationId = "com.mauricio.libertyx"
         // 24 é onde o libVLC 3.x ainda roda bem e onde o Android já traz o
         // decodificador de HEVC por hardware. Descer mais custaria muito e
         // atenderia aparelhos que sequer aguentam 1080p HEVC.
@@ -41,7 +41,7 @@ android {
         buildConfigField(
             "String",
             "COMMIT",
-            "\"" + (project.findProperty("viperCommit")?.toString() ?: "local") + "\"",
+            "\"" + (project.findProperty("libertyxCommit")?.toString() ?: "local") + "\"",
         )
     }
 
@@ -71,7 +71,7 @@ android {
                 // O x86 de 32 bits continua só sob demanda: não existe aparelho
                 // assim, mas é a arquitetura das imagens de Android TV que
                 // rodam aceleradas num PC.
-                if (project.hasProperty("viperX86")) abiFilters += "x86"
+                if (project.hasProperty("libertyxX86")) abiFilters += "x86"
             }
         }
         create("tv") {
@@ -81,7 +81,7 @@ android {
                 abiFilters += listOf("arm64-v8a", "armeabi-v7a")
                 // As imagens de Android TV que rodam aceleradas num PC são
                 // todas x86; sem isto não há como testar esta variante.
-                if (project.hasProperty("viperX86")) abiFilters += listOf("x86", "x86_64")
+                if (project.hasProperty("libertyxX86")) abiFilters += listOf("x86", "x86_64")
             }
         }
     }
@@ -177,19 +177,19 @@ val publicarApks = tasks.register<Copy>("publicarApks") {
 
     from(saida.map { it.dir("tv/release") }) {
         include("*-universal-release.apk")
-        rename { "ViperPlayer-TV.apk" }
+        rename { "LibertyXPlayer-TV.apk" }
     }
     from(saida.map { it.dir("celular/release") }) {
         include("*-arm64-v8a-release.apk")
-        rename { "ViperPlayer-Celular.apk" }
+        rename { "LibertyXPlayer-Celular.apk" }
     }
     from(saida.map { it.dir("celular/release") }) {
         include("*-armeabi-v7a-release.apk")
-        rename { "ViperPlayer-Celular-Antigo.apk" }
+        rename { "LibertyXPlayer-Celular-Antigo.apk" }
     }
     from(saida.map { it.dir("celular/release") }) {
         include("*-x86_64-release.apk")
-        rename { "ViperPlayer-PC-x86_64.apk" }
+        rename { "LibertyXPlayer-PC-x86_64.apk" }
     }
 
     into(rootProject.layout.projectDirectory.dir("dist"))

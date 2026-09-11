@@ -8,14 +8,14 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">
         <shape android:shape="oval">
-            <solid android:color="@color/viper_accent" />
+            <solid android:color="@color/libertyx_accent" />
             <stroke android:width="3dp" android:color="#66FBC501" />
             <size android:width="26dp" android:height="26dp" />
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
-            <solid android:color="@color/viper_accent" />
+            <solid android:color="@color/libertyx_accent" />
             <size android:width="14dp" android:height="14dp" />
         </shape>
     </item>

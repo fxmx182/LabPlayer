@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.library
+package com.mauricio.libertyx.library
 
 import androidx.compose.foundation.Image
 import androidx.compose.animation.core.animateFloatAsState
@@ -61,16 +61,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mauricio.viperplayer.BuildConfig
-import com.mauricio.viperplayer.R
-import com.mauricio.viperplayer.core.LabTheme
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.ResumeStore
-import com.mauricio.viperplayer.core.TimeFormat
-import com.mauricio.viperplayer.core.VideoGroup
-import com.mauricio.viperplayer.core.labCard
-import com.mauricio.viperplayer.core.resumeKey
-import com.mauricio.viperplayer.player.Playback
+import com.mauricio.libertyx.BuildConfig
+import com.mauricio.libertyx.R
+import com.mauricio.libertyx.core.LabTheme
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.ResumeStore
+import com.mauricio.libertyx.core.TimeFormat
+import com.mauricio.libertyx.core.VideoGroup
+import com.mauricio.libertyx.core.labCard
+import com.mauricio.libertyx.core.resumeKey
+import com.mauricio.libertyx.player.Playback
 import kotlinx.coroutines.launch
 
 /**
@@ -105,7 +105,7 @@ fun LibraryScreen(onOpenServers: () -> Unit) {
         containerColor = LabTheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Viper", fontWeight = FontWeight.SemiBold) },
+                title = { Text("LibertyX", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     // O servidor à esquerda, separado das ações locais: são dois
                     // mundos diferentes, e misturá-los num menu só esconderia a
@@ -181,7 +181,7 @@ private fun Vazio(onOpenServers: () -> Unit) {
         Text("Nenhum vídeo no aparelho", color = LabTheme.text, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
         Text(
-            "O Viper varre tudo o que está indexado, inclusive o pendrive na USB-C. " +
+            "O LibertyX varre tudo o que está indexado, inclusive o pendrive na USB-C. " +
                 "Se você sabe que há vídeos aqui, confira a permissão de arquivos nos ajustes do Android.",
             color = LabTheme.muted,
             textAlign = TextAlign.Center,
@@ -442,7 +442,7 @@ private fun OpcoesDaBiblioteca(opcoes: LibraryOptions) {
         // Sem isto, "a mudança não funcionou" e "instalei o APK antigo" são a
         // mesma tela — e levam a investigações opostas.
         Text(
-            "Viper Player ${BuildConfig.VERSION_NAME} · ${BuildConfig.COMMIT}",
+            "LibertyX Player ${BuildConfig.VERSION_NAME} · ${BuildConfig.COMMIT}",
             color = LabTheme.faint,
             fontSize = 11.sp,
             modifier = Modifier.fillMaxWidth(),

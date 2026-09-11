@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.player
+package com.mauricio.libertyx.player
 
 import android.content.Context
 import org.videolan.libvlc.LibVLC

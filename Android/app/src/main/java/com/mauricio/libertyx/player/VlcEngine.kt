@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.player
+package com.mauricio.libertyx.player
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -8,10 +8,10 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.view.TextureView
 import android.view.ViewGroup
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.MediaOrigin
-import com.mauricio.viperplayer.smb.SmbBrowser
-import com.mauricio.viperplayer.smb.SmbServerStore
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.MediaOrigin
+import com.mauricio.libertyx.smb.SmbBrowser
+import com.mauricio.libertyx.smb.SmbServerStore
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.interfaces.IMedia

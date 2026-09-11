@@ -1,12 +1,12 @@
-package com.mauricio.viperplayer.library
+package com.mauricio.libertyx.library
 
 import android.content.ContentUris
 import android.content.Context
 import android.os.Build
 import android.provider.MediaStore
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.MediaOrigin
-import com.mauricio.viperplayer.core.VideoGroup
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.MediaOrigin
+import com.mauricio.libertyx.core.VideoGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

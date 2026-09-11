@@ -1,10 +1,10 @@
-package com.mauricio.viperplayer.smb
+package com.mauricio.libertyx.smb
 
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.mauricio.viperplayer.core.Prefs
+import com.mauricio.libertyx.core.Prefs
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -95,17 +95,17 @@ class SmbServerStore private constructor(context: Context) {
             .build()
         EncryptedSharedPreferences.create(
             context.applicationContext,
-            "viper.secrets",
+            "libertyx.secrets",
             chave,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
     }.getOrElse {
-        context.applicationContext.getSharedPreferences("viper.secrets.plain", Context.MODE_PRIVATE)
+        context.applicationContext.getSharedPreferences("libertyx.secrets.plain", Context.MODE_PRIVATE)
     }
 
     companion object {
-        private const val KEY = "viper.smbServers"
+        private const val KEY = "libertyx.smbServers"
 
         @Volatile private var instance: SmbServerStore? = null
 

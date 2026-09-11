@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.auto
+package com.mauricio.libertyx.auto
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -19,16 +19,16 @@ import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.app.NotificationCompat.MediaStyle
-import com.mauricio.viperplayer.MainActivity
-import com.mauricio.viperplayer.R
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.ResumeStore
-import com.mauricio.viperplayer.core.resumeKey
-import com.mauricio.viperplayer.library.MediaLibrary
-import com.mauricio.viperplayer.player.PlaybackState
-import com.mauricio.viperplayer.player.VlcEngine
-import com.mauricio.viperplayer.smb.SmbBrowser
-import com.mauricio.viperplayer.smb.SmbServerStore
+import com.mauricio.libertyx.MainActivity
+import com.mauricio.libertyx.R
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.ResumeStore
+import com.mauricio.libertyx.core.resumeKey
+import com.mauricio.libertyx.library.MediaLibrary
+import com.mauricio.libertyx.player.PlaybackState
+import com.mauricio.libertyx.player.VlcEngine
+import com.mauricio.libertyx.smb.SmbBrowser
+import com.mauricio.libertyx.smb.SmbServerStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,7 +36,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * O Viper dentro do carro — e no bolso, com a tela apagada.
+ * O LibertyX dentro do carro — e no bolso, com a tela apagada.
  *
  * **O que o Android Auto permite, e o que não permite.** Não existe vídeo:
  * a plataforma não entrega superfície de imagem a app de terceiro, e a política
@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
  *
  * Ele só existe na variante de celular. A televisão não tem carro nem bolso.
  */
-class ViperMediaService : MediaBrowserServiceCompat() {
+class LibertyXMediaService : MediaBrowserServiceCompat() {
 
     private lateinit var sessao: MediaSessionCompat
     private lateinit var engine: VlcEngine
@@ -87,12 +87,12 @@ class ViperMediaService : MediaBrowserServiceCompat() {
             onTimeUpdate = { publicarPosicao() }
         }
 
-        sessao = MediaSessionCompat(this, "Viper").apply {
+        sessao = MediaSessionCompat(this, "LibertyX").apply {
             setCallback(Comandos())
             setSessionActivity(
                 PendingIntent.getActivity(
-                    this@ViperMediaService, 0,
-                    Intent(this@ViperMediaService, MainActivity::class.java),
+                    this@LibertyXMediaService, 0,
+                    Intent(this@LibertyXMediaService, MainActivity::class.java),
                     PendingIntent.FLAG_IMMUTABLE,
                 )
             )
@@ -218,7 +218,7 @@ class ViperMediaService : MediaBrowserServiceCompat() {
             MediaDescriptionCompat.Builder()
                 .setMediaId(idDoItem(item))
                 .setTitle(item.title)
-                .setSubtitle(retomada?.let { "parou em ${com.mauricio.viperplayer.core.TimeFormat.clock(it)}" })
+                .setSubtitle(retomada?.let { "parou em ${com.mauricio.libertyx.core.TimeFormat.clock(it)}" })
                 .build(),
             BrowserItem.FLAG_PLAYABLE,
         )
@@ -305,7 +305,7 @@ class ViperMediaService : MediaBrowserServiceCompat() {
             MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, idDoItem(item))
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.title)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "Viper Player")
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "LibertyX Player")
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, ((item.duration ?: 0.0) * 1000).toLong())
                 .build()
         )
@@ -371,11 +371,11 @@ class ViperMediaService : MediaBrowserServiceCompat() {
 
     private fun atualizarNotificacao(emPrimeiroPlano: Boolean) {
         val titulo = sessao.controller?.metadata
-            ?.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: "Viper Player"
+            ?.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: "LibertyX Player"
 
         val aviso: Notification = NotificationCompat.Builder(this, CANAL)
             .setContentTitle(titulo)
-            .setContentText("Viper Player")
+            .setContentText("LibertyX Player")
             .setSmallIcon(R.drawable.ic_play)
             .setContentIntent(sessao.controller?.sessionActivity)
             .setStyle(MediaStyle().setMediaSession(sessao.sessionToken))
@@ -406,7 +406,7 @@ class ViperMediaService : MediaBrowserServiceCompat() {
     /**
      * O foco de áudio.
      *
-     * Sem pedir, o som do Viper se sobrepõe ao GPS e à ligação em vez de baixar
+     * Sem pedir, o som do LibertyX se sobrepõe ao GPS e à ligação em vez de baixar
      * ou parar — que é o tipo de coisa que faz desinstalar um app no carro.
      */
     private fun pedirFoco(): Boolean {
@@ -468,7 +468,7 @@ class ViperMediaService : MediaBrowserServiceCompat() {
         const val PASTA = "pasta"
         const val SMB = "smb"
         const val TOCAR = "tocar"
-        const val CANAL = "viper.playback"
+        const val CANAL = "libertyx.playback"
         const val ID_NOTIFICACAO = 41
     }
 }

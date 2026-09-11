@@ -1,11 +1,11 @@
-package com.mauricio.viperplayer.player
+package com.mauricio.libertyx.player
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.MediaOrigin
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.MediaOrigin
 
 /**
  * A fila de reprodução, entre a biblioteca e o player.

@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.smb
+package com.mauricio.libertyx.smb
 
 import android.content.Context
 import android.net.ConnectivityManager

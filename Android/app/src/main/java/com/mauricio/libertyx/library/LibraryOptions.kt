@@ -1,13 +1,13 @@
-package com.mauricio.viperplayer.library
+package com.mauricio.libertyx.library
 
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.VideoGroup
-import com.mauricio.viperplayer.core.Prefs
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.VideoGroup
+import com.mauricio.libertyx.core.Prefs
 
 enum class LibraryLayout { LIST, GRID }
 

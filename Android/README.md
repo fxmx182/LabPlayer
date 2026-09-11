@@ -1,4 +1,4 @@
-# Viper Player — Android
+# LibertyX Player — Android
 
 O mesmo player do iPhone, do outro lado. Mesmo nome, mesmo ícone, mesmos
 gestos, mesmo motor de vídeo — escrito de novo em Kotlin porque não há uma
@@ -75,7 +75,7 @@ inteira demorar.
 Só na variante de celular, e **só o áudio** — essa é a primeira coisa a dizer,
 porque a expectativa natural é outra. O Android Auto não entrega superfície de
 vídeo a app de terceiro, e a política do Google recusa app de vídeo no carro.
-Não é limitação do Viper: não existe player de vídeo de terceiro rodando na
+Não é limitação do LibertyX: não existe player de vídeo de terceiro rodando na
 tela do carro, de ninguém.
 
 O que existe, e é o que está implementado: o carro navega a biblioteca — as
@@ -84,7 +84,7 @@ relance, e toca a faixa de áudio do arquivo escolhido. Play, pausa, faixa
 anterior e próxima respondem no volante. Serve para show, documentário, aula
 gravada, podcast em vídeo: tudo que se ouve sem precisar ver.
 
-O mesmo serviço (`auto/ViperMediaService.kt`) resolve o **áudio em segundo
+O mesmo serviço (`auto/LibertyXMediaService.kt`) resolve o **áudio em segundo
 plano** no celular, que estava na lista de pendências — são o mesmo problema,
 tocar sem tela na frente, e escrevê-lo duas vezes seria desperdício.
 
@@ -124,7 +124,7 @@ esconder isso atrás de um ícone de canto seria enterrar justamente o que a
 pessoa ligou a televisão para ver.
 
 Serve Chromecast com Google TV, Fire TV, Nvidia Shield e as TVs com Google TV
-de fábrica — instale o **`ViperPlayer-TV.apk`**, que traz as duas arquiteturas
+de fábrica — instale o **`LibertyXPlayer-TV.apk`**, que traz as duas arquiteturas
 ARM. As teclas de mídia (play, avanço, faixa) valem também em teclado bluetooth
 e em controle de jogo.
 
@@ -138,7 +138,7 @@ funcionam:
 - **adb**, com a depuração pela rede ligada:
   ```bash
   adb connect IP-DA-TV:5555
-  adb install -r dist/ViperPlayer-TV.apk
+  adb install -r dist/LibertyXPlayer-TV.apk
   ```
 
 ## Gestos
@@ -173,10 +173,10 @@ Os APKs prontos ficam em **`Android/dist/`**, com nome de aparelho:
 
 | Arquivo | Para quê | Tamanho |
 |---|---|---|
-| `ViperPlayer-TV.apk` | **televisão** — Google TV, Fire TV, Shield | 106 MB |
-| `ViperPlayer-Celular.apk` | **celular** deste lado de 2015 | 67 MB |
-| `ViperPlayer-Celular-Antigo.apk` | celular anterior a isso | 53 MB |
-| `ViperPlayer-PC-x86_64.apk` | **PC e Chromebook** — emulador, Waydroid, BlueStacks | 75 MB |
+| `LibertyXPlayer-TV.apk` | **televisão** — Google TV, Fire TV, Shield | 106 MB |
+| `LibertyXPlayer-Celular.apk` | **celular** deste lado de 2015 | 67 MB |
+| `LibertyXPlayer-Celular-Antigo.apk` | celular anterior a isso | 53 MB |
+| `LibertyXPlayer-PC-x86_64.apk` | **PC e Chromebook** — emulador, Waydroid, BlueStacks | 75 MB |
 
 São **variantes exclusivas**, não o mesmo arquivo com dois nomes. O de TV exige
 o recurso `leanback`, que celular nenhum tem — então ele nem instala num
@@ -230,11 +230,11 @@ Para testar a versão de televisão no emulador é preciso acrescentar o x86 de
 num PC comum, e ela não vai no release porque não existe aparelho assim:
 
 ```bash
-./gradlew assembleRelease -PviperX86
+./gradlew assembleRelease -PlibertyxX86
 ```
 
 ```bash
-adb install -r dist/ViperPlayer-Celular.apk
+adb install -r dist/LibertyXPlayer-Celular.apk
 ```
 
 Um push na `main` faz o mesmo no GitHub Actions e publica um **release novo a
@@ -242,7 +242,7 @@ cada build**, etiquetado com a data e o commit. O mais recente é marcado como
 "latest", o que dá uma URL que nunca muda:
 
 ```bash
-curl -L -O https://github.com/fxmx182/LabPlayer/releases/latest/download/ViperPlayer-TV.apk
+curl -L -O https://github.com/fxmx182/LabPlayer/releases/latest/download/LibertyXPlayer-TV.apk
 ```
 
 Assim existem as duas coisas: histórico para voltar à versão de ontem, e um
@@ -271,14 +271,14 @@ repositório.
 ## Estrutura
 
 ```
-app/src/main/java/com/mauricio/viperplayer/
+app/src/main/java/com/mauricio/libertyx/
   core/      Media · Prefs · ResumeStore · Theme · Device (celular ou TV?)
   library/   MediaLibrary (MediaStore) · LibraryScreen · Thumbnails
   smb/       SmbServerStore · SmbBrowser · SmbScreens
   player/    VlcEngine · PlayerActivity · Playback · Vlc
   tv/        TvHomeScreen · TvFocus (o realce que a TV exige)
   MainActivity.kt
-app/src/celular/    manifesto próprio + auto/ViperMediaService (Android Auto)
+app/src/celular/    manifesto próprio + auto/LibertyXMediaService (Android Auto)
 app/src/tv/         manifesto próprio + o banner da tela inicial da TV
 app/src/main/res/layout/activity_player.xml   a tela de reprodução
 ```

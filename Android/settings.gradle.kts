@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ViperPlayer"
+rootProject.name = "LibertyXPlayer"
 include(":app")

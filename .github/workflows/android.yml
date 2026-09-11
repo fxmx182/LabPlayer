@@ -51,7 +51,7 @@ jobs:
           set -o pipefail
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon \
-            -PviperCommit=${GITHUB_SHA:0:7} 2>&1 | tee build.log
+            -PlibertyxCommit=${GITHUB_SHA:0:7} 2>&1 | tee build.log
 
       # O log completo do job só é baixável por quem tem admin no repositório,
       # mas as *anotações* de um repo público são lidas por qualquer um. Mesmo
@@ -97,7 +97,7 @@ jobs:
       - name: Publicar artefato
         uses: actions/upload-artifact@v4
         with:
-          name: ViperPlayer-apk
+          name: LibertyXPlayer-apk
           path: Android/dist/*.apk
           retention-days: 30
           if-no-files-found: error
@@ -109,7 +109,7 @@ jobs:
       # etiquetado com a data e o commit, e o mais recente é marcado como
       # "latest" — o que dá, de graça, uma URL fixa que sempre aponta para ele:
       #
-      #   /releases/latest/download/ViperPlayer-TV.apk
+      #   /releases/latest/download/LibertyXPlayer-TV.apk
       #
       # Assim o histórico existe e o link de instalar continua o mesmo.
       - name: Publicar release
@@ -131,10 +131,10 @@ jobs:
             echo
             echo "| Arquivo | Para |"
             echo "|---|---|"
-            echo "| \`ViperPlayer-TV.apk\` | **televisão** — Google TV, Fire TV, Shield |"
-            echo "| \`ViperPlayer-Celular.apk\` | **celular** deste lado de 2015 |"
-            echo "| \`ViperPlayer-Celular-Antigo.apk\` | celular anterior a isso |"
-            echo "| \`ViperPlayer-PC-x86_64.apk\` | PC e Chromebook — emulador, Waydroid, BlueStacks |"
+            echo "| \`LibertyXPlayer-TV.apk\` | **televisão** — Google TV, Fire TV, Shield |"
+            echo "| \`LibertyXPlayer-Celular.apk\` | **celular** deste lado de 2015 |"
+            echo "| \`LibertyXPlayer-Celular-Antigo.apk\` | celular anterior a isso |"
+            echo "| \`LibertyXPlayer-PC-x86_64.apk\` | PC e Chromebook — emulador, Waydroid, BlueStacks |"
             echo
             echo "São variantes **exclusivas**: a de TV exige \`leanback\` e não instala em celular;"
             echo "a de celular não aparece na tela inicial da TV. A de celular fala com o Android Auto."
@@ -143,8 +143,8 @@ jobs:
             echo "incompatível só por não o conhecer. Use o app Downloader com o endereço abaixo, ou \`adb\`."
             echo
             echo '```'
-            echo "curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/ViperPlayer-TV.apk"
-            echo "adb install -r ViperPlayer-TV.apk"
+            echo "curl -L -O https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/LibertyXPlayer-TV.apk"
+            echo "adb install -r LibertyXPlayer-TV.apk"
             echo '```'
             echo
             echo "Este link não muda: ele sempre entrega o build mais recente."
@@ -157,7 +157,7 @@ jobs:
           } > notas.md
 
           gh release create "$TAG" Android/dist/*.apk \
-            --title "Viper Player Android — ${DATA} (${GITHUB_SHA:0:7})" \
+            --title "LibertyX Player Android — ${DATA} (${GITHUB_SHA:0:7})" \
             --notes-file notas.md \
             --latest
 

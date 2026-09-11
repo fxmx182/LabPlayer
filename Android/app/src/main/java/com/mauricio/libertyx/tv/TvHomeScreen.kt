@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.tv
+package com.mauricio.libertyx.tv
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -46,17 +46,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mauricio.viperplayer.core.LabTheme
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.ResumeStore
-import com.mauricio.viperplayer.core.TimeFormat
-import com.mauricio.viperplayer.core.VideoGroup
-import com.mauricio.viperplayer.core.resumeKey
-import com.mauricio.viperplayer.library.MediaLibrary
-import com.mauricio.viperplayer.library.Thumbnails
-import com.mauricio.viperplayer.player.Playback
-import com.mauricio.viperplayer.smb.SmbServer
-import com.mauricio.viperplayer.smb.SmbServerStore
+import com.mauricio.libertyx.core.LabTheme
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.ResumeStore
+import com.mauricio.libertyx.core.TimeFormat
+import com.mauricio.libertyx.core.VideoGroup
+import com.mauricio.libertyx.core.resumeKey
+import com.mauricio.libertyx.library.MediaLibrary
+import com.mauricio.libertyx.library.Thumbnails
+import com.mauricio.libertyx.player.Playback
+import com.mauricio.libertyx.smb.SmbServer
+import com.mauricio.libertyx.smb.SmbServerStore
 
 /**
  * A tela inicial na televisão.
@@ -140,7 +140,7 @@ private fun Cabecalho() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "VIPER",
+            "LIBERTYX",
             color = LabTheme.accent,
             fontSize = 30.sp,
             fontWeight = FontWeight.Black,

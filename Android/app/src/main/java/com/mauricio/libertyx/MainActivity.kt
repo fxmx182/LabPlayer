@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer
+package com.mauricio.libertyx
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -29,14 +29,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.mauricio.viperplayer.core.Device
-import com.mauricio.viperplayer.core.LabTheme
-import com.mauricio.viperplayer.core.ViperTheme
-import com.mauricio.viperplayer.library.LibraryScreen
-import com.mauricio.viperplayer.tv.TvHomeScreen
-import com.mauricio.viperplayer.smb.SmbBrowserScreen
-import com.mauricio.viperplayer.smb.SmbServer
-import com.mauricio.viperplayer.smb.SmbServersScreen
+import com.mauricio.libertyx.core.Device
+import com.mauricio.libertyx.core.LabTheme
+import com.mauricio.libertyx.core.LibertyXTheme
+import com.mauricio.libertyx.library.LibraryScreen
+import com.mauricio.libertyx.tv.TvHomeScreen
+import com.mauricio.libertyx.smb.SmbBrowserScreen
+import com.mauricio.libertyx.smb.SmbServer
+import com.mauricio.libertyx.smb.SmbServersScreen
 
 /**
  * A navegação do app, em três telas.
@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ViperTheme {
+            LibertyXTheme {
                 Surface(color = LabTheme.background, modifier = Modifier.fillMaxSize()) {
                     App()
                 }
@@ -70,7 +70,7 @@ private fun App() {
     var tela by remember { mutableStateOf<Screen>(Screen.Library) }
 
     // O botão "voltar" do Android tem que voltar dentro do app, e não sair
-    // dele. Sem isto, sair da tela de servidores fecha o Viper — e como a
+    // dele. Sem isto, sair da tela de servidores fecha o LibertyX — e como a
     // navegação é um estado e não uma pilha de atividades, o sistema não tem
     // como adivinhar sozinho.
     BackHandler(enabled = tela is Screen.Servers) { tela = Screen.Library }
@@ -137,7 +137,7 @@ private fun ComPermissao(bloqueia: Boolean = true, conteudo: @Composable () -> U
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "O Viper precisa de acesso aos vídeos do aparelho para montar a biblioteca. " +
+                "O LibertyX precisa de acesso aos vídeos do aparelho para montar a biblioteca. " +
                     "Nada sai daqui — a varredura é local.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = LabTheme.muted,

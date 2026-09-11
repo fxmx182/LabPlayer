@@ -32,6 +32,6 @@
         android:gravity="center"
         android:maxLines="2"
         android:ellipsize="end"
-        android:textColor="@color/viper_text"
+        android:textColor="@color/libertyx_text"
         android:textSize="12sp" />
 </LinearLayout>

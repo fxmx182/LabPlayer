@@ -1,10 +1,10 @@
-package com.mauricio.viperplayer.smb
+package com.mauricio.libertyx.smb
 
 import android.content.Context
 import android.net.Uri
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.library.MediaLibrary
-import com.mauricio.viperplayer.player.Vlc
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.library.MediaLibrary
+import com.mauricio.libertyx.player.Vlc
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -153,7 +153,7 @@ object SmbBrowser {
                 MediaItem(
                     id = "smb:${server.id}:$share:$caminho",
                     title = entrada.name,
-                    origin = com.mauricio.viperplayer.core.MediaOrigin.Smb(
+                    origin = com.mauricio.libertyx.core.MediaOrigin.Smb(
                         serverId = server.id, host = server.host, share = share, path = caminho,
                     ),
                     duration = (entrada.durationMs / 1000.0).takeIf { entrada.durationMs > 0 },

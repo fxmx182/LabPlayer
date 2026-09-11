@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.player
+package com.mauricio.libertyx.player
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -34,14 +34,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
-import com.mauricio.viperplayer.R
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.Device
-import com.mauricio.viperplayer.core.PlayerPreferences
-import com.mauricio.viperplayer.core.ResumeStore
-import com.mauricio.viperplayer.core.TimeFormat
-import com.mauricio.viperplayer.core.resumeKey
-import com.mauricio.viperplayer.databinding.ActivityPlayerBinding
+import com.mauricio.libertyx.R
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.Device
+import com.mauricio.libertyx.core.PlayerPreferences
+import com.mauricio.libertyx.core.ResumeStore
+import com.mauricio.libertyx.core.TimeFormat
+import com.mauricio.libertyx.core.resumeKey
+import com.mauricio.libertyx.databinding.ActivityPlayerBinding
 import org.videolan.libvlc.MediaPlayer
 import kotlin.math.abs
 import kotlin.math.max
@@ -566,7 +566,7 @@ class PlayerActivity : Activity() {
      * de mexer nos ajustes durante o vídeo.
      */
     private fun dialog(): AlertDialog.Builder =
-        AlertDialog.Builder(this, R.style.Theme_Viper_Dialog)
+        AlertDialog.Builder(this, R.style.Theme_LibertyX_Dialog)
 
     private fun bindControls() {
         ui.btnClose.setOnClickListener { finish() }
@@ -772,13 +772,13 @@ class PlayerActivity : Activity() {
      */
     private fun atualizarIlha() {
         ui.btnRepeat.setColorFilter(
-            if (repeatMode == RepeatMode.ONE) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
+            if (repeatMode == RepeatMode.ONE) getColor(R.color.libertyx_accent) else android.graphics.Color.WHITE
         )
         ui.btnSpeed.setColorFilter(
-            if (playbackSpeed != 1f) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
+            if (playbackSpeed != 1f) getColor(R.color.libertyx_accent) else android.graphics.Color.WHITE
         )
         ui.btnRotate.setColorFilter(
-            if (rotacao != Rotacao.AUTOMATICA) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
+            if (rotacao != Rotacao.AUTOMATICA) getColor(R.color.libertyx_accent) else android.graphics.Color.WHITE
         )
     }
 
@@ -1323,11 +1323,11 @@ class PlayerActivity : Activity() {
 
             icone.setImageResource(ferramenta.icone)
             icone.setColorFilter(
-                if (ferramenta.aceso) getColor(R.color.viper_accent) else android.graphics.Color.WHITE
+                if (ferramenta.aceso) getColor(R.color.libertyx_accent) else android.graphics.Color.WHITE
             )
             rotulo.text = ferramenta.rotulo
             rotulo.setTextColor(
-                if (ferramenta.aceso) getColor(R.color.viper_accent) else getColor(R.color.viper_text)
+                if (ferramenta.aceso) getColor(R.color.libertyx_accent) else getColor(R.color.libertyx_text)
             )
             item.setOnClickListener {
                 painel.dismiss()
@@ -1545,12 +1545,12 @@ class PlayerActivity : Activity() {
     }
 
     private fun salvarNaGaleria(imagem: Bitmap): Boolean = runCatching {
-        val nome = "viper_${System.currentTimeMillis()}.jpg"
+        val nome = "libertyx_${System.currentTimeMillis()}.jpg"
         val valores = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, nome)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Viper")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/LibertyX")
             }
         }
         val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, valores)

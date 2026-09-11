@@ -45,14 +45,14 @@
     <uses-feature android:name="android.hardware.screen.landscape" android:required="false" />
 
     <application
-        android:name=".ViperApp"
+        android:name=".LibertyXApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:largeHeap="true"
-        android:theme="@style/Theme.Viper"
+        android:theme="@style/Theme.LibertyX"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="36">
 
@@ -60,7 +60,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
-            android:theme="@style/Theme.Viper">
+            android:theme="@style/Theme.LibertyX">
         </activity>
 
         <activity
@@ -71,7 +71,7 @@
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|layoutDirection|density"
-            android:theme="@style/Theme.Viper.Player">
+            android:theme="@style/Theme.LibertyX.Player">
 
             <!-- "Abrir com" para qualquer vídeo, como no Info.plist do iOS. -->
             <intent-filter android:priority="1">

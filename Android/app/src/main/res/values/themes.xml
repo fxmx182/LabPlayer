@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.Viper" parent="android:Theme.Material.NoActionBar">
-        <item name="android:colorBackground">@color/viper_background</item>
+    <style name="Theme.LibertyX" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorBackground">@color/libertyx_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
@@ -10,7 +10,7 @@
 
     <!-- O player é preto de verdade, não o cinza do fundo do app: qualquer
          claridade em volta da imagem aparece no escuro. -->
-    <style name="Theme.Viper.Player" parent="Theme.Viper">
+    <style name="Theme.LibertyX.Player" parent="Theme.LibertyX">
         <item name="android:colorBackground">@android:color/black</item>
         <item name="android:windowBackground">@android:color/black</item>
     </style>
@@ -18,10 +18,10 @@
     <!-- Os diálogos com a cor da marca.
          O tema escuro do sistema traz o verde-água do Material, que sobre esta
          paleta parece de outro aplicativo. -->
-    <style name="Theme.Viper.Dialog" parent="android:Theme.Material.Dialog.Alert">
-        <item name="android:colorAccent">@color/viper_accent</item>
-        <item name="android:textColorPrimary">@color/viper_text</item>
-        <item name="android:colorBackground">@color/viper_background</item>
+    <style name="Theme.LibertyX.Dialog" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/libertyx_accent</item>
+        <item name="android:textColorPrimary">@color/libertyx_text</item>
+        <item name="android:colorBackground">@color/libertyx_background</item>
     </style>
 
     <!-- Botões da barra: alvo grande de toque, ícone pequeno. O dedo erra o

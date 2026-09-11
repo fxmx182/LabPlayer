@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.core
+package com.mauricio.libertyx.core
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -6,7 +6,7 @@ import org.json.JSONObject
 
 /** Um lugar só para abrir as preferências, para não espalhar o nome do arquivo. */
 object Prefs {
-    private const val FILE = "viper.prefs"
+    private const val FILE = "libertyx.prefs"
 
     @Volatile private var instance: SharedPreferences? = null
 
@@ -152,7 +152,7 @@ class ResumeStore private constructor(context: Context) {
     }
 
     companion object {
-        private const val KEY = "viper.resume"
+        private const val KEY = "libertyx.resume"
         private const val LIMITE = 300
 
         @Volatile private var instance: ResumeStore? = null

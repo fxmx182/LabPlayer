@@ -1,4 +1,4 @@
-package com.mauricio.viperplayer.library
+package com.mauricio.libertyx.library
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,8 +6,8 @@ import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.util.LruCache
 import android.util.Size
-import com.mauricio.viperplayer.core.MediaItem
-import com.mauricio.viperplayer.core.MediaOrigin
+import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.MediaOrigin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
