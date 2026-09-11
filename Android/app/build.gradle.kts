@@ -153,6 +153,9 @@ android {
                 "META-INF/{AL2.0,LGPL2.1}",
                 "META-INF/DEPENDENCIES",
                 "META-INF/*.kotlin_module",
+                // Manifesto OSGi que o Bouncy Castle (do smbj) e o jspecify
+                // trazem no mesmo caminho; o Android não usa nenhum dos dois.
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
             )
         }
         // As .so do VLC ficam comprimidas: economiza espaço no download e o
@@ -238,4 +241,12 @@ dependencies {
     // de falhar mais irritante possível seria normal: a pasta abre, o vídeo
     // não. Com um motor só, o que lista é o mesmo que toca.
     implementation(libs.libvlc)
+
+    // Tamanho e data dos arquivos do servidor — e só isso.
+    //
+    // A listagem continua sendo a do VLC, pelo motivo acima. Mas ele não conta
+    // tamanho nem data do arquivo, e sem os dois a pasta de rede não ordenaria
+    // como a biblioteca local. Se este cliente falhar, a pasta abre igual, só
+    // sem esses dois campos.
+    implementation("com.hierynomus:smbj:0.14.0")
 }

@@ -17,6 +17,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshots.Snapshot
+import com.mauricio.libertyx.library.CartaoDeVideo
+import com.mauricio.libertyx.library.LibraryLayout
+import com.mauricio.libertyx.library.LibraryOptions
+import com.mauricio.libertyx.library.LinhaDeVideo
+import com.mauricio.libertyx.library.OpcoesDaBiblioteca
+import com.mauricio.libertyx.library.Thumbnails
+import kotlinx.coroutines.async
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +70,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
@@ -94,8 +111,10 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
     LaunchedEffect(Unit) {
         procurando = true
         runCatching {
-            withTimeoutOrNull(20_000) {
-                SmbDiscovery(contexto).procurar { achado ->
+            // Mais folga que antes: numa rede virtual (Android de PC) a busca
+            // também percorre as redes de casa mais comuns — ver SmbDiscovery.
+            withTimeoutOrNull(30_000) {
+                SmbDiscovery(contexto, store.servers.map { it.host }).procurar { achado ->
                     val jaTem = encontrados.indexOfFirst { it.host == achado.host }
                     when {
                         // O mDNS tem prioridade: traz nome legível, e a
@@ -264,10 +283,13 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                 }
             }
 
-            if (!procurando && novos.isEmpty() && servidores.isEmpty()) {
+            // Silêncio no fim da busca parece busca quebrada. Diz o que houve —
+            // inclusive quando ela achou, mas só o que já estava salvo.
+            if (!procurando && novos.isEmpty()) {
                 item {
                     Text(
-                        "Nada encontrado na rede. Isso é comum quando o servidor não se anuncia — " +
+                        if (encontrados.isNotEmpty()) "Na rede só apareceram servidores que já estão salvos."
+                        else "Nada encontrado na rede. Isso é comum quando o servidor não se anuncia — " +
                             "adicione o endereço à mão acima.",
                         color = LabTheme.faint, fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
@@ -419,6 +441,14 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
     val store = remember { SmbServerStore.get(contexto) }
     val senha = remember(server.id) { store.password(server) }
     val credenciais = remember(server.id) { SmbBrowser.credenciais(server, senha) }
+    val escopo = rememberCoroutineScope()
+    val naTv = remember { Device.isTv(contexto) }
+
+    // As mesmas opções da biblioteca local, e não um conjunto à parte: quem
+    // escolheu grade e ordem por data espera encontrar a pasta de rede igual.
+    val opcoes = remember { LibraryOptions(contexto) }
+    var mostrandoOpcoes by remember { mutableStateOf(false) }
+    var metadados by remember { mutableStateOf<Map<String, SmbMetadados.Info>>(emptyMap()) }
 
     var caminho by remember { mutableStateOf(listOf<String>()) }
     var entradas by remember { mutableStateOf<List<SmbBrowser.Entry>>(emptyList()) }
@@ -433,6 +463,12 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
         } else {
             SmbBrowser.uri(server, caminho.first(), caminho.drop(1).joinToString("/"))
         }
+        // Tamanho e data vêm por outro caminho, em paralelo com a listagem —
+        // ver SmbMetadados. Se não chegarem a tempo, a pasta abre sem eles.
+        metadados = emptyMap()
+        val pedidoDeMetadados = if (caminho.isEmpty()) null else escopo.async {
+            SmbMetadados.listar(server, senha, caminho.first(), caminho.drop(1).joinToString("/"))
+        }
         val resultado = SmbBrowser.list(contexto, uri, credenciais)
         if (resultado == null) {
             erro = if (caminho.isEmpty()) {
@@ -443,6 +479,7 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
             }
             entradas = emptyList()
         } else {
+            metadados = pedidoDeMetadados?.let { withTimeoutOrNull(3_000) { it.await() } }.orEmpty()
             entradas = resultado
         }
         carregando = false
@@ -477,9 +514,19 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
+                actions = {
+                    // Na TV a barra de cima fica fora do alcance do foco; lá
+                    // as opções são a primeira linha da pasta.
+                    if (!naTv && caminho.isNotEmpty()) {
+                        IconButton(onClick = { mostrandoOpcoes = true }) {
+                            Icon(Icons.Filled.Tune, contentDescription = "Visualização")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = LabTheme.background,
                     titleContentColor = LabTheme.text,
+                    actionIconContentColor = LabTheme.muted,
                     navigationIconContentColor = LabTheme.muted,
                 ),
             )
@@ -506,37 +553,164 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
                     modifier = Modifier.align(Alignment.Center).padding(32.dp),
                 )
 
-                entradas.isEmpty() -> Text(
-                    "Pasta vazia.",
-                    color = LabTheme.muted,
-                    modifier = Modifier.align(Alignment.Center),
+                else -> PastaDoServidor(
+                    server = server,
+                    caminho = caminho,
+                    entradas = entradas,
+                    metadados = metadados,
+                    opcoes = opcoes,
+                    naTv = naTv,
+                    onAbrirPasta = { nome -> caminho = caminho + nome },
+                    onOpcoes = { mostrandoOpcoes = true },
                 )
+            }
+        }
+    }
 
-                else -> {
-                    // A fila de reprodução é só o que dá para tocar nesta pasta,
-                    // na ordem em que aparece — pastas não entram.
-                    val fila = remember(entradas, caminho) {
-                        if (caminho.isEmpty()) emptyList()
-                        else SmbBrowser.playableItems(
-                            server, caminho.first(), caminho.drop(1).joinToString("/"), entradas,
-                        )
-                    }
+    if (mostrandoOpcoes) {
+        val fechar = {
+            mostrandoOpcoes = false
+            opcoes.save()
+        }
+        // Na TV, diálogo: a folha que sobe de baixo é gesto de dedo, e com o
+        // controle remoto o foco não tem por onde entrar nela com segurança.
+        if (naTv) {
+            AlertDialog(
+                onDismissRequest = fechar,
+                containerColor = LabTheme.surface,
+                text = { OpcoesDaBiblioteca(opcoes) },
+                confirmButton = { TextButton(onClick = fechar) { Text("Fechar") } },
+            )
+        } else {
+            ModalBottomSheet(onDismissRequest = fechar, containerColor = LabTheme.surface) {
+                OpcoesDaBiblioteca(opcoes)
+            }
+        }
+    }
+}
 
-                    LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp)) {
-                        items(entradas, key = { it.uri.toString() }) { entrada ->
-                            LinhaDoServidor(entrada) {
-                                if (entrada.isDirectory) {
-                                    caminho = caminho + entrada.name
-                                } else {
-                                    val item = fila.firstOrNull { it.title == entrada.name }
-                                    if (item != null) Playback.start(contexto, item, fila)
-                                }
-                            }
-                        }
-                    }
+/**
+ * Uma pasta do servidor, com a cara da biblioteca local.
+ *
+ * A mesma grade ou lista, a mesma miniatura e a mesma ordenação, escolhidas nas
+ * mesmas opções: duas telas de vídeo com regras diferentes pareceriam dois
+ * apps. Só os vídeos aparecem, como na biblioteca — legenda e capa ao lado do
+ * arquivo são o VLC que encontra, não o usuário.
+ *
+ * As subpastas ficam sempre em cima e em ordem de nome: são caminho, não
+ * conteúdo, e ordená-las por tamanho ou duração não diria nada.
+ */
+@Composable
+private fun PastaDoServidor(
+    server: SmbServer,
+    caminho: List<String>,
+    entradas: List<SmbBrowser.Entry>,
+    metadados: Map<String, SmbMetadados.Info>,
+    opcoes: LibraryOptions,
+    naTv: Boolean,
+    onAbrirPasta: (String) -> Unit,
+    onOpcoes: () -> Unit,
+) {
+    val contexto = LocalContext.current
+    val pastas = remember(entradas) { entradas.filter { it.isDirectory } }
+
+    // A fila de reprodução segue a ordem da tela: "próximo" vai para o vídeo
+    // que está à frente, e não para uma ordem que ninguém vê.
+    val videos = remember(caminho, entradas, metadados, opcoes.sort, opcoes.ascending) {
+        val itens = SmbBrowser.playableItems(
+            server, caminho.first(), caminho.drop(1).joinToString("/"), entradas, metadados,
+        )
+        // A duração no servidor só se conhece depois da miniatura. Lida sem
+        // observar: a que chegar depois aparece no cartão, mas não reordena a
+        // lista debaixo do dedo.
+        Snapshot.withoutReadObservation {
+            opcoes.sorted(itens.map { it.copy(duration = it.duration ?: Thumbnails.duracao(contexto, it)) })
+        }
+    }
+
+    if (pastas.isEmpty() && videos.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Nenhum vídeo nesta pasta.", color = LabTheme.muted)
+        }
+        return
+    }
+
+    if (opcoes.layout == LibraryLayout.GRID) {
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 158.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (naTv) {
+                item(key = "opcoes", span = { GridItemSpan(maxLineSpan) }) {
+                    LinhaDeOpcoes(opcoes, onOpcoes, focoInicial = true)
+                }
+            }
+            items(pastas, key = { it.uri.toString() }, span = { GridItemSpan(maxLineSpan) }) { entrada ->
+                LinhaDoServidor(entrada) { onAbrirPasta(entrada.name) }
+            }
+            items(videos, key = { it.id }) { item ->
+                Box(Modifier.padding(bottom = 8.dp)) {
+                    CartaoDeVideo(item) { Playback.start(contexto, item, videos) }
                 }
             }
         }
+    } else {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 12.dp)) {
+            if (naTv) {
+                item(key = "opcoes") {
+                    Box(Modifier.padding(horizontal = 12.dp)) {
+                        LinhaDeOpcoes(opcoes, onOpcoes, focoInicial = true)
+                    }
+                }
+            }
+            items(pastas, key = { it.uri.toString() }) { entrada ->
+                Box(Modifier.padding(horizontal = 12.dp)) {
+                    LinhaDoServidor(entrada) { onAbrirPasta(entrada.name) }
+                }
+            }
+            items(videos, key = { it.id }) { item ->
+                LinhaDeVideo(item) { Playback.start(contexto, item, videos) }
+            }
+        }
+    }
+}
+
+/** O atalho das opções na TV, onde o botão da barra de cima não é alcançável. */
+@Composable
+private fun LinhaDeOpcoes(opcoes: LibraryOptions, onClick: () -> Unit, focoInicial: Boolean = false) {
+    // Sem foco inicial, a primeira seta do controle cai no botão de voltar da
+    // barra de cima — e o OK seguinte sai da pasta em vez de entrar nela. O
+    // pedido sai quando a linha já está posicionada: numa grade preguiçosa,
+    // pedir antes disso falhava em silêncio na primeira abertura da pasta.
+    val foco = remember { FocusRequester() }
+    var pedido by remember { mutableStateOf(false) }
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            .focusRequester(foco)
+            .onGloballyPositioned {
+                if (focoInicial && !pedido) {
+                    pedido = true
+                    runCatching { foco.requestFocus() }
+                }
+            }
+            .tvFocus(LabTheme.radiusSmall, scale = 1.02f)
+            .clip(RoundedCornerShape(LabTheme.radiusSmall))
+            .background(LabTheme.glass, RoundedCornerShape(LabTheme.radiusSmall))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Tune, null, tint = LabTheme.accent, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(12.dp))
+        val layout = if (opcoes.layout == LibraryLayout.GRID) "grade" else "lista"
+        val sentido = if (opcoes.ascending) "crescente" else "decrescente"
+        Text(
+            "Exibição: $layout · ${opcoes.sort.label.lowercase()}, $sentido",
+            color = LabTheme.text, fontSize = 14.sp,
+        )
     }
 }
 

@@ -37,11 +37,6 @@ minutos de espera. Aqui o compilador está na máquina.
 
 Honestidade primeiro, porque descobrir isso sozinho custa mais caro:
 
-- **Miniatura de vídeo no servidor SMB.** Gerar uma exigiria baixar o começo de
-  cada arquivo pela rede ao abrir a pasta. Quem navega no servidor vê o ícone
-  de filme — e a lista abre na hora.
-- **Tamanho e data dos arquivos no servidor.** Quem lista é o próprio VLC, que
-  responde nome e tipo, não metadados.
 - **Legenda externa escolhida à mão.** O motor já aceita
   (`VlcEngine.addSubtitle`), mas não há botão. Legenda ao lado do arquivo com o
   mesmo nome já entra sozinha.
@@ -69,6 +64,15 @@ em uso é o sistema, e aí funciona no celular, na TV e com VPN ligada.
 A varredura é 32 endereços por vez, com 700 ms de prazo cada: numa rede local
 quem responde responde em milissegundos, e esperar mais só faria a busca
 inteira demorar.
+
+**No Android de PC** (emulador, BlueStacks, Waydroid) as duas técnicas batiam
+num muro: o Android fica numa rede virtual atrás do PC, o anúncio mDNS não
+atravessa, e a varredura só enxergava a própria rede virtual — enquanto o
+endereço digitado à mão conectava normalmente. Por isso, além da rede do
+aparelho, a varredura percorre a rede dos servidores já salvos e, quando a rede
+do aparelho é uma das virtuais conhecidas (10.0.2, 10.0.3, 192.168.240,
+172.16–31), as faixas de fábrica dos roteadores de casa — 96 por vez e 400 ms
+de prazo, porque a maioria delas não existe.
 
 ## No carro (Android Auto)
 
@@ -320,3 +324,19 @@ A alternativa daria erros de senha mais legíveis e o tamanho dos arquivos. Em
 troca traria o pior modo de falhar possível: navegação e reprodução com
 implementações diferentes de SMB, dialetos diferentes, e a pasta abrindo com o
 vídeo recusando. Com um motor só, o que lista é o mesmo que toca.
+
+A pasta de rede tem a cara da biblioteca local — grade ou lista, miniatura,
+ordenação por título, data, tamanho ou duração, nas mesmas opções. Duas peças
+tornam isso possível, e nenhuma decide o que aparece ou o que toca:
+
+- **A miniatura no servidor é o VLC também** (`QuadroDoVlc`): uma reprodução
+  muda que desenha num `ImageReader` fora da tela, com busca a um terço do
+  arquivo. Duas armadilhas já pagas: o VLC entrega os pixels em RGBX, e um
+  `ImageReader` criado em RGBA recusa todo quadro; e o decodificador de
+  hardware escreve numa superfície própria, então a extração decodifica em
+  software e sai por OpenGL. A miniatura fica em cache no disco, com a duração
+  descoberta no caminho, e espera enquanto um vídeo está tocando.
+- **Tamanho e data vêm do `smbj`**, porque o VLC não os informa. Se ele falhar,
+  a pasta abre igual, só sem esses dois campos. Em sessão de convidado ele
+  quebra no SMB 3 (não há chave de sessão para derivar as de assinatura), então
+  convidado conversa em SMB 2.1.

@@ -169,6 +169,9 @@ class PlayerActivity : Activity() {
             return
         }
         item = atual
+        // Miniaturas do servidor esperam: disputariam a rede com o filme
+        // justamente no começo, quando ele mais precisa dela.
+        com.mauricio.libertyx.library.Thumbnails.pausar(true)
 
         engine = VlcEngine(this)
         engine.attach(ui.videoLayout)
@@ -189,6 +192,7 @@ class PlayerActivity : Activity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        com.mauricio.libertyx.library.Thumbnails.pausar(false)
         main.removeCallbacksAndMessages(null)
         if (::engine.isInitialized) {
             saveResumeNow()

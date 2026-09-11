@@ -71,6 +71,7 @@ import com.mauricio.libertyx.core.VideoGroup
 import com.mauricio.libertyx.core.labCard
 import com.mauricio.libertyx.core.resumeKey
 import com.mauricio.libertyx.player.Playback
+import com.mauricio.libertyx.tv.tvFocus
 import kotlinx.coroutines.launch
 
 /**
@@ -287,10 +288,10 @@ private fun Cabecalho(grupo: VideoGroup, aberta: Boolean, onAlternar: () -> Unit
 }
 
 @Composable
-private fun LinhaDeVideo(item: MediaItem, onClick: () -> Unit) {
+internal fun LinhaDeVideo(item: MediaItem, onClick: () -> Unit) {
     val contexto = LocalContext.current
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick)
+        Modifier.fillMaxWidth().tvFocus(LabTheme.radiusSmall, scale = 1.02f).clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -322,10 +323,10 @@ private fun LinhaDeVideo(item: MediaItem, onClick: () -> Unit) {
 }
 
 @Composable
-private fun CartaoDeVideo(item: MediaItem, onClick: () -> Unit) {
+internal fun CartaoDeVideo(item: MediaItem, onClick: () -> Unit) {
     val contexto = LocalContext.current
     Column(
-        Modifier.clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
+        Modifier.tvFocus(LabTheme.radiusCard).clip(RoundedCornerShape(LabTheme.radiusCard)).labCard()
             .clickable(onClick = onClick),
     ) {
         Box {
@@ -334,7 +335,9 @@ private fun CartaoDeVideo(item: MediaItem, onClick: () -> Unit) {
                 Modifier.fillMaxWidth().height(96.dp),
                 RoundedCornerShape(topStart = LabTheme.radiusCard, topEnd = LabTheme.radiusCard),
             )
-            item.duration?.let { duracao ->
+            // No servidor a duração só se descobre ao tirar a miniatura, e
+            // aparece aqui assim que ela fica pronta.
+            (item.duration ?: Thumbnails.duracao(contexto, item))?.let { duracao ->
                 Text(
                     TimeFormat.clock(duracao),
                     color = androidx.compose.ui.graphics.Color.White,
@@ -401,7 +404,7 @@ private fun Miniatura(item: MediaItem, modifier: Modifier, forma: RoundedCornerS
 
 /** Folha de opções, no espírito da do MX Player. */
 @Composable
-private fun OpcoesDaBiblioteca(opcoes: LibraryOptions) {
+internal fun OpcoesDaBiblioteca(opcoes: LibraryOptions) {
     Column(Modifier.padding(20.dp).padding(bottom = 24.dp)) {
         Text("Layout", color = LabTheme.text, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(10.dp))
@@ -454,7 +457,7 @@ private fun OpcoesDaBiblioteca(opcoes: LibraryOptions) {
 @Composable
 private fun Pilula(texto: String, ativo: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Row(
-        modifier.clip(RoundedCornerShape(10.dp))
+        modifier.tvFocus(10.dp, scale = 1.03f).clip(RoundedCornerShape(10.dp))
             .background(
                 if (ativo) LabTheme.accent.copy(alpha = 0.18f) else LabTheme.glass,
                 RoundedCornerShape(10.dp),

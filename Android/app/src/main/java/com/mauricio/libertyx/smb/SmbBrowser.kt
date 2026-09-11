@@ -145,17 +145,31 @@ object SmbBrowser {
             }
         }
 
-    /** Só os vídeos de uma listagem, já como itens tocáveis. */
-    fun playableItems(server: SmbServer, share: String, dirPath: String, entries: List<Entry>): List<MediaItem> =
+    /**
+     * Só os vídeos de uma listagem, já como itens tocáveis.
+     *
+     * `metadados` completa tamanho e data quando o [SmbMetadados] conseguiu
+     * lê-los; sem eles o item existe igual, só não ordena por esses campos.
+     */
+    fun playableItems(
+        server: SmbServer,
+        share: String,
+        dirPath: String,
+        entries: List<Entry>,
+        metadados: Map<String, SmbMetadados.Info> = emptyMap(),
+    ): List<MediaItem> =
         entries.filter { !it.isDirectory && MediaItem.isVideo(it.name) }
             .map { entrada ->
                 val caminho = if (dirPath.isEmpty()) entrada.name else "$dirPath/${entrada.name}"
+                val info = metadados[entrada.name]
                 MediaItem(
                     id = "smb:${server.id}:$share:$caminho",
                     title = entrada.name,
                     origin = com.mauricio.libertyx.core.MediaOrigin.Smb(
                         serverId = server.id, host = server.host, share = share, path = caminho,
                     ),
+                    fileSize = info?.tamanho,
+                    modifiedAt = info?.modificadoEm,
                     duration = (entrada.durationMs / 1000.0).takeIf { entrada.durationMs > 0 },
                 )
             }
