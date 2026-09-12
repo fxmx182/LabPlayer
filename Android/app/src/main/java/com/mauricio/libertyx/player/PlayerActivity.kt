@@ -46,6 +46,8 @@ import org.videolan.libvlc.MediaPlayer
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
+import kotlin.math.sign
 import kotlin.random.Random
 
 /**
@@ -62,8 +64,16 @@ class PlayerActivity : Activity() {
     private object Tuning {
         /** Quantos segundos de vídeo por largura de tela arrastada. */
         const val SEEK_SECONDS_PER_SCREEN_WIDTH = 120.0
-        /** Fração da altura da tela para percorrer 0→100% de brilho/volume. */
-        const val VERTICAL_TRAVEL_FRACTION = 0.6f
+        /**
+         * Quantos dp de arrasto percorrem 0→100% de brilho/volume.
+         *
+         * Em distância real, e não em fração da tela: deitado a altura é menos
+         * da metade da de pé, e a mesma fração fazia o mesmo dedo valer o
+         * dobro — o volume ia de ponta a ponta em quatro centímetros. Assim a
+         * mão faz o mesmo gesto nas duas posições, e cada nível de volume
+         * custa cerca de um centímetro de dedo.
+         */
+        const val VERTICAL_TRAVEL_DP = 600f
         const val DOUBLE_TAP_SECONDS = 10.0
     }
 
@@ -981,9 +991,12 @@ class PlayerActivity : Activity() {
     // MARK: - Brilho e volume
 
     private fun updateVerticalPan(dy: Float) {
+        // Desconta o limiar que decidiu o eixo: sem isso o valor já nasce
+        // deslocado no instante em que o gesto é reconhecido.
+        val andado = dy - axisLockThreshold * sign(dy)
         // Para cima aumenta: invertemos porque dy cresce para baixo.
-        val curso = ui.root.height * Tuning.VERTICAL_TRAVEL_FRACTION
-        val fracao = -dy / curso
+        val curso = Tuning.VERTICAL_TRAVEL_DP * resources.displayMetrics.density
+        val fracao = -andado / curso
 
         if (panIsOnLeftHalf) {
             val valor = (panStartBrightness + fracao).coerceIn(0.01f, 1f)
@@ -993,10 +1006,15 @@ class PlayerActivity : Activity() {
             ui.hudIcon.visibility = View.VISIBLE
         } else {
             val maximo = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-            val valor = (panStartVolume + fracao * maximo).toInt().coerceIn(0, maximo)
+            // Arredondar, e não truncar: truncando, descer um décimo de passo
+            // já baixava o volume enquanto subir o mesmo tanto não fazia nada,
+            // e o gesto respondia diferente para cada lado.
+            val valor = (panStartVolume + fracao * maximo).roundToInt().coerceIn(0, maximo)
             // Volume do aparelho, o mesmo dos botões laterais — e sem a régua
             // do sistema por cima, porque o balão do gesto já diz o mesmo.
-            audio.setStreamVolume(AudioManager.STREAM_MUSIC, valor, 0)
+            if (valor != audio.getStreamVolume(AudioManager.STREAM_MUSIC)) {
+                audio.setStreamVolume(AudioManager.STREAM_MUSIC, valor, 0)
+            }
             showHud("${valor * 100 / maximo}%", "Volume", valor * 100 / maximo)
             ui.hudIcon.setImageResource(R.drawable.ic_volume)
             ui.hudIcon.visibility = View.VISIBLE

@@ -354,10 +354,40 @@ class VlcEngine(private val context: Context) {
     val currentAudioTrack: Int? get() = player.audioTrack.takeIf { it >= 0 }
     val currentSubtitleTrack: Int? get() = player.spuTrack.takeIf { it >= 0 }
 
-    fun selectAudioTrack(id: Int) { player.setAudioTrack(id) }
+    /**
+     * Troca a faixa de áudio — sem esperar o cache antigo acabar.
+     *
+     * Ao trocar, o VLC passa a decodificar a faixa nova de onde o **leitor**
+     * está, e num arquivo de rede ele fica cinco segundos à frente do que se
+     * vê. Até a imagem alcançar esse ponto o filme corre mudo, e parece que o
+     * app ignorou o toque. Uma busca exata para o instante atual joga fora o
+     * que estava adiantado e refaz o mesmo trecho já com a faixa escolhida: o
+     * som volta no tempo de encher o buffer, e a imagem não sai do lugar.
+     */
+    fun selectAudioTrack(id: Int) {
+        if (id == player.audioTrack) return
+        player.setAudioTrack(id)
+        ressincronizar()
+    }
 
     /** `null` desliga a legenda. */
-    fun selectSubtitleTrack(id: Int?) { player.setSpuTrack(id ?: -1) }
+    fun selectSubtitleTrack(id: Int?) {
+        val alvo = id ?: -1
+        if (alvo == player.spuTrack) return
+        player.setSpuTrack(alvo)
+        // Desligar não faz esperar por nada; ligar tem a mesma espera do áudio.
+        if (id != null) ressincronizar()
+    }
+
+    /** Refaz o trecho atual para a faixa recém-escolhida valer já. */
+    private fun ressincronizar() {
+        val agora = player.time
+        if (duration <= 0 || agora <= 0 || !player.isSeekable) return
+        // `false` é o `fast` do VLC: busca exata, para voltar ao mesmo quadro
+        // em vez de recuar até o keyframe anterior.
+        player.setTime(agora, false)
+        marcarBusca(agora / 1000.0)
+    }
 
     /** Legenda de um arquivo ao lado, escolhido pelo usuário. */
     fun addSubtitle(uri: Uri, selecionar: Boolean = true): Boolean =
