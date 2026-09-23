@@ -1363,11 +1363,23 @@ class PlayerActivity : Activity() {
 
     // MARK: - Menu de ferramentas
 
+    /** "2×" em vez de "2.0×": o zero à direita não diz nada e polui a placa. */
+    private fun velocidadeEmTexto(valor: Float): String =
+        if (valor % 1f == 0f) "${valor.toInt()}×" else "%.1f×".format(valor)
+
     /** Uma ferramenta do painel. */
     private data class Ferramenta(
         val rotulo: String,
         val icone: Int,
-        /** Modo ligado: o ícone acende, para não se esquecer de um estado. */
+        /**
+         * Em que ponto ela está, quando tem um: "1.5×", "deitado", "10 s".
+         *
+         * À mostra na placa de propósito: sem isso, saber a velocidade em que
+         * o filme está exigia abrir a ferramenta — e o painel existe
+         * justamente para não precisar abrir nada para olhar.
+         */
+        val valor: String? = null,
+        /** Modo ligado: a placa inteira acende, para não se esquecer de um estado. */
         val aceso: Boolean = false,
         val acao: () -> Unit,
     )
@@ -1384,93 +1396,161 @@ class PlayerActivity : Activity() {
     private fun showToolsSheet() {
         cancelControlsHide()
 
-        val itens = buildList {
-            add(Ferramenta("Faixa de áudio", R.drawable.ic_audio_track) { showTracks(audio = true) })
-            add(Ferramenta("Legenda", R.drawable.ic_subtitle) { showTracks(audio = false) })
-            add(Ferramenta("Taxa de proporção", R.drawable.ic_aspect) { cycleAspect() })
-            add(Ferramenta("Velocidade (${playbackSpeed}×)", R.drawable.ic_speed, playbackSpeed != 1f) {
-                showSpeedSheet()
-            })
-            add(Ferramenta("Segurar para acelerar", R.drawable.ic_speed) { showHoldSpeedSheet() })
-            add(Ferramenta("Repetir", R.drawable.ic_repeat, repeatMode == RepeatMode.ONE) {
-                alternarRepeticao()
-            })
-            if (Playback.queue.size > 1) {
-                add(Ferramenta("Aleatório", R.drawable.ic_shuffle, isShuffling) {
-                    isShuffling = !isShuffling
-                })
-            }
-            add(Ferramenta("Mudo", R.drawable.ic_volume, engine.isMuted) {
-                engine.isMuted = !engine.isMuted
-            })
-            add(Ferramenta("Captura de tela", R.drawable.ic_camera) { takeSnapshot() })
-            if (!isTv) add(Ferramenta("Janela flutuante", R.drawable.ic_pip) { enterPip() })
-            add(Ferramenta("Modo noturno", R.drawable.ic_moon, ui.dimView.alpha > 0.01f) {
-                cycleNightMode()
-            })
-            add(Ferramenta("Tempo para dormir", R.drawable.ic_timer, sleepDeadline != null) {
-                showSleepSheet()
-            })
-            // "Bloquear tela" não entra: o cadeado é botão fixo da barra de
-            // baixo, e a mesma ação em dois lugares faz parar para escolher
-            // entre coisas iguais.
-            if (!isTv) {
-                add(
-                    Ferramenta(
-                        when (rotacao) {
-                            Rotacao.AUTOMATICA -> "Girar: automático"
-                            Rotacao.PAISAGEM -> "Girar: deitado"
-                            Rotacao.RETRATO -> "Girar: em pé"
-                        },
-                        R.drawable.ic_rotate,
-                        rotacao != Rotacao.AUTOMATICA,
-                    ) { toggleOrientation() }
-                )
-            }
-            add(Ferramenta("Ampliação normal", R.drawable.ic_zoom) { resetZoom() })
-            add(Ferramenta("Ocultar barra: ${prefs.autoHide.title}", R.drawable.ic_timer) {
-                showAutoHideSheet()
-            })
-            add(Ferramenta("Quadro a quadro", R.drawable.ic_frame, prefs.preciseScrub) {
-                prefs.preciseScrub = !prefs.preciseScrub
-                showHud(
-                    if (prefs.preciseScrub) "Quadro a quadro" else "Por keyframe",
-                    "Rolagem", null,
-                )
-                hideHudAfter(1400)
-            })
+        // Em grupos, e não numa grade corrida de dezesseis.
+        //
+        // Quinze desenhos iguais em fileiras iguais obrigam a ler tudo para
+        // achar um. Três assuntos com nome em cima dizem onde olhar antes de o
+        // olho percorrer a grade — e o filme continua parado esperando.
+        val grupos = buildList<Pair<String, List<Ferramenta>>> {
+            add(
+                "Som e legenda" to buildList {
+                    add(Ferramenta("Faixa de áudio", R.drawable.ic_audio_track) { showTracks(audio = true) })
+                    add(Ferramenta("Legenda", R.drawable.ic_subtitle) { showTracks(audio = false) })
+                    add(Ferramenta("Mudo", R.drawable.ic_volume, aceso = engine.isMuted) {
+                        engine.isMuted = !engine.isMuted
+                    })
+                }
+            )
+            add(
+                "Imagem" to buildList {
+                    add(Ferramenta("Proporção", R.drawable.ic_aspect) { cycleAspect() })
+                    add(Ferramenta("Ampliação", R.drawable.ic_zoom) { resetZoom() })
+                    add(Ferramenta("Modo noturno", R.drawable.ic_moon, aceso = ui.dimView.alpha > 0.01f) {
+                        cycleNightMode()
+                    })
+                    add(Ferramenta("Captura de tela", R.drawable.ic_camera) { takeSnapshot() })
+                    // "Bloquear tela" não entra: o cadeado é botão fixo da
+                    // barra de baixo, e a mesma ação em dois lugares faz parar
+                    // para escolher entre coisas iguais.
+                    if (!isTv) {
+                        add(
+                            Ferramenta(
+                                "Girar",
+                                R.drawable.ic_rotate,
+                                valor = when (rotacao) {
+                                    Rotacao.AUTOMATICA -> "automático"
+                                    Rotacao.PAISAGEM -> "deitado"
+                                    Rotacao.RETRATO -> "em pé"
+                                },
+                                aceso = rotacao != Rotacao.AUTOMATICA,
+                            ) { toggleOrientation() }
+                        )
+                        add(Ferramenta("Janela flutuante", R.drawable.ic_pip) { enterPip() })
+                    }
+                }
+            )
+            add(
+                "Reprodução" to buildList {
+                    add(
+                        Ferramenta(
+                            "Velocidade", R.drawable.ic_speed,
+                            valor = velocidadeEmTexto(playbackSpeed), aceso = playbackSpeed != 1f,
+                        ) { showSpeedSheet() }
+                    )
+                    add(
+                        Ferramenta("Ao segurar", R.drawable.ic_speed, valor = velocidadeEmTexto(prefs.holdSpeed)) {
+                            showHoldSpeedSheet()
+                        }
+                    )
+                    add(Ferramenta("Repetir", R.drawable.ic_repeat, aceso = repeatMode == RepeatMode.ONE) {
+                        alternarRepeticao()
+                    })
+                    if (Playback.queue.size > 1) {
+                        add(Ferramenta("Aleatório", R.drawable.ic_shuffle, aceso = isShuffling) {
+                            isShuffling = !isShuffling
+                        })
+                    }
+                    add(Ferramenta("Quadro a quadro", R.drawable.ic_frame, aceso = prefs.preciseScrub) {
+                        prefs.preciseScrub = !prefs.preciseScrub
+                        showHud(
+                            if (prefs.preciseScrub) "Quadro a quadro" else "Por keyframe",
+                            "Rolagem", null,
+                        )
+                        hideHudAfter(1400)
+                    })
+                    add(Ferramenta("Tempo para dormir", R.drawable.ic_timer, aceso = sleepDeadline != null) {
+                        showSleepSheet()
+                    })
+                    add(Ferramenta("Ocultar barra", R.drawable.ic_timer, valor = prefs.autoHide.title) {
+                        showAutoHideSheet()
+                    })
+                }
+            )
         }
 
         val vista = layoutInflater.inflate(R.layout.dialog_tools, null)
-        val grade = vista.findViewById<GridLayout>(R.id.tools_grid)
+        val container = vista.findViewById<LinearLayout>(R.id.tools_container)
 
         val painel = Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
+        val margem = (5 * resources.displayMetrics.density).toInt()
 
-        for (ferramenta in itens) {
-            val item = layoutInflater.inflate(R.layout.item_tool, grade, false)
-            val icone = item.findViewById<ImageView>(R.id.tool_icon)
-            val rotulo = item.findViewById<TextView>(R.id.tool_label)
+        for ((titulo, ferramentas) in grupos) {
+            if (ferramentas.isEmpty()) continue
 
-            icone.setImageResource(ferramenta.icone)
-            icone.setColorFilter(
-                if (ferramenta.aceso) getColor(R.color.libertyx_accent) else android.graphics.Color.WHITE
+            val cabecalho = layoutInflater.inflate(R.layout.item_tool_section, container, false) as TextView
+            cabecalho.text = titulo
+            container.addView(cabecalho)
+
+            val grade = GridLayout(this).apply { columnCount = 4 }
+            container.addView(
+                grade,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ),
             )
-            rotulo.text = ferramenta.rotulo
-            rotulo.setTextColor(
-                if (ferramenta.aceso) getColor(R.color.libertyx_accent) else getColor(R.color.libertyx_text)
-            )
-            item.setOnClickListener {
-                painel.dismiss()
-                ferramenta.acao()
+
+            for (ferramenta in ferramentas) {
+                val item = layoutInflater.inflate(R.layout.item_tool, grade, false)
+                val icone = item.findViewById<ImageView>(R.id.tool_icon)
+                val rotulo = item.findViewById<TextView>(R.id.tool_label)
+                val valor = item.findViewById<TextView>(R.id.tool_value)
+
+                icone.setImageResource(ferramenta.icone)
+                icone.setColorFilter(
+                    if (ferramenta.aceso) getColor(R.color.libertyx_accent) else android.graphics.Color.WHITE
+                )
+                rotulo.text = ferramenta.rotulo
+                rotulo.setTextColor(
+                    if (ferramenta.aceso) getColor(R.color.libertyx_accent) else getColor(R.color.libertyx_text)
+                )
+                // O espaço do valor fica reservado mesmo vazio: é o que mantém
+                // todas as placas da mesma altura, e a grade alinhada.
+                valor.text = ferramenta.valor.orEmpty()
+                valor.visibility = if (ferramenta.valor == null) View.INVISIBLE else View.VISIBLE
+                // A placa acesa é feita pelo próprio fundo, e não por uma cor
+                // extra em código: um estado, um desenho.
+                item.isSelected = ferramenta.aceso
+
+                item.setOnClickListener {
+                    painel.dismiss()
+                    ferramenta.acao()
+                }
+
+                grade.addView(
+                    item,
+                    GridLayout.LayoutParams().apply {
+                        width = 0
+                        columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1f)
+                        setMargins(margem, margem, margem, margem)
+                    }
+                )
             }
 
-            grade.addView(
-                item,
-                GridLayout.LayoutParams().apply {
-                    width = 0
-                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1f)
-                }
-            )
+            // Células vazias para fechar a última fileira.
+            //
+            // Cada grupo tem a sua grade, e uma grade de três itens reparte a
+            // largura entre três: as placas do grupo de cima saíam mais largas
+            // que as de baixo, e a folha inteira parecia desalinhada.
+            repeat((4 - ferramentas.size % 4) % 4) {
+                grade.addView(
+                    View(this),
+                    GridLayout.LayoutParams().apply {
+                        width = 0
+                        columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1f)
+                    }
+                )
+            }
         }
 
         // O painel não pode passar da tela.

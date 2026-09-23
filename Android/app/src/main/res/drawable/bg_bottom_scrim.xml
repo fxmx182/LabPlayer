@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Véu escuro sob a fileira de baixo.
+
+     Com um degradê de duas paradas, o escuro morava só no rodapé e os botões
+     ficavam no meio do caminho: numa cena clara — céu, neve, uma tela de
+     testes — o cadeado e o play sumiam dentro da imagem. A parada do meio
+     puxa o escuro para onde os botões estão, e o topo continua transparente
+     para não cortar a cena com uma faixa. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient android:angle="90" android:startColor="#C6000000" android:endColor="#00000000" />
+    <gradient
+        android:angle="90"
+        android:startColor="#E6000000"
+        android:centerColor="#9E000000"
+        android:endColor="#00000000" />
 </shape>

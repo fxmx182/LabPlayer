@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A ilha: um véu leve sobre a imagem.
-     Era uma pastilha escura e sólida no alto da cena, e chamava mais atenção
-     que o filme. Agora mal aparece: o suficiente para os ícones não sumirem
-     num quadro claro, e nada além disso. -->
+<!-- A ilha: uma lâmina de vidro escuro sobre a imagem.
+
+     Um degradê de cima para baixo em vez de cor chapada — é o que faz uma
+     superfície parecer vidro e não adesivo —, com um fio claro na borda para
+     ela existir mesmo sobre um quadro claro. Sem peso: o filme continua sendo
+     o assunto. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#59121216" />
+    <gradient
+        android:angle="270"
+        android:startColor="#6B1A1714"
+        android:endColor="#66080706" />
     <corners android:radius="26dp" />
+    <stroke android:width="1dp" android:color="#1FFFFFFF" />
 </shape>

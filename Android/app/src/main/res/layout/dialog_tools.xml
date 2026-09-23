@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- O painel de ferramentas, no lugar do menu de lista.
+<!-- O painel de ferramentas.
 
-     Quinze itens numa lista de texto é uma coluna que não cabe na tela e que
+     Dezesseis itens em lista de texto é uma coluna que não cabe na tela e que
      se lê linha a linha. Em grade de quatro, tudo aparece de uma vez e o dedo
-     vai direto — que é como se procura ferramenta durante um filme. -->
+     vai direto — e os grupos dizem onde olhar antes de o olho percorrer tudo. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/bg_tools_sheet"
-    android:paddingTop="10dp"
-    android:paddingBottom="30dp">
+    android:paddingTop="12dp"
+    android:paddingBottom="26dp">
 
     <View
-        android:layout_width="36dp"
+        android:layout_width="40dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/bg_hud"
-        android:alpha="0.5" />
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/bg_pega" />
 
     <ScrollView
         android:id="@+id/tools_scroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fillViewport="false">
+        android:scrollbars="none"
+        android:paddingHorizontal="12dp"
+        android:clipToPadding="false">
 
-        <GridLayout
-            android:id="@+id/tools_grid"
+        <LinearLayout
+            android:id="@+id/tools_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="4"
-            android:paddingHorizontal="8dp" />
+            android:orientation="vertical" />
     </ScrollView>
 </LinearLayout>
