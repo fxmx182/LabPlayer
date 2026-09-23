@@ -18,6 +18,7 @@ import android.util.Rational
 import android.view.KeyEvent
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
@@ -62,8 +63,11 @@ class PlayerActivity : Activity() {
 
     /** Ajustes de sensibilidade. */
     private object Tuning {
-        /** Quantos segundos de vídeo por largura de tela arrastada. */
-        const val SEEK_SECONDS_PER_SCREEN_WIDTH = 120.0
+        /**
+         * Teto da rolagem fina: quantos segundos uma largura de tela vale com
+         * o dedo devagar. A aceleração multiplica isso quando o dedo corre.
+         */
+        const val SEEK_SECONDS_PER_SCREEN_WIDTH = 90.0
         /**
          * Quantos dp de arrasto percorrem 0→100% de brilho/volume.
          *
@@ -124,6 +128,16 @@ class PlayerActivity : Activity() {
     private var panStartTime = 0.0
     private var panStartBrightness = 0.5f
     private var panStartVolume = 0
+
+    /**
+     * Destino acumulado do arrasto na tela, e onde o dedo estava no evento
+     * anterior — o movimento é somado aos pedaços, cada um com a sua escala.
+     */
+    private var panSeekTarget = 0.0
+    private var panUltimoX = 0f
+
+    /** Mede a rapidez do dedo, que é o que decide a escala do arrasto. */
+    private var rastreador: VelocityTracker? = null
     private var panIsOnLeftHalf = true
     private var touchStartedOnBars = false
     private var axisLockThreshold = 12f
@@ -629,6 +643,43 @@ class PlayerActivity : Activity() {
             }
         })
 
+        // O dedo na barra passa por aqui, e não pelo ouvinte acima: a rolagem
+        // fina precisa de movimento relativo, que o SeekBar não sabe fazer. As
+        // setas do controle remoto continuam no ouvinte.
+        ui.seekBar.aoComecar = {
+            isBarScrubbing = true
+            suppressBuffering = true
+            ui.buffering.visibility = View.GONE
+            cancelControlsHide()
+            engine.beginScrub()
+        }
+        ui.seekBar.aoArrastar = { valor ->
+            if (engine.duration > 0) {
+                val alvo = engine.duration * valor / ui.seekBar.max
+                ui.tvPosition.text = TimeFormat.clock(alvo)
+                engine.scrub(alvo, prefs.preciseScrub)
+            }
+        }
+        ui.seekBar.aoSoltar = {
+            engine.endScrub(prefs.preciseScrub)
+            isBarScrubbing = false
+            suppressBuffering = false
+            ui.tvPrecisao.visibility = View.GONE
+            scheduleControlsHide()
+        }
+        ui.seekBar.aoMudarPrecisao = { precisao ->
+            if (precisao >= 1f) {
+                ui.tvPrecisao.visibility = View.GONE
+            } else {
+                ui.tvPrecisao.text = when {
+                    precisao > 0.4f -> "precisão ½ — afaste o dedo para afinar"
+                    precisao > 0.2f -> "precisão ¼"
+                    else -> "precisão ⅒"
+                }
+                ui.tvPrecisao.visibility = View.VISIBLE
+            }
+        }
+
         applyGravity(anunciar = false)
         setControlsVisible(true)
     }
@@ -872,6 +923,10 @@ class PlayerActivity : Activity() {
                 panStartX = ev.x
                 panStartY = ev.y
                 panStartTime = engine.currentTime
+                panSeekTarget = panStartTime
+                panUltimoX = 0f
+                rastreador?.recycle()
+                rastreador = VelocityTracker.obtain().apply { addMovement(ev) }
                 panStartBrightness = brilhoAtual()
                 panStartVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
                 panIsOnLeftHalf = ev.x < ui.root.width / 2f
@@ -915,23 +970,31 @@ class PlayerActivity : Activity() {
                     if (ev.pointerCount >= 2) handlePinch(ev)
                     return
                 }
+                rastreador?.addMovement(ev)
                 val dx = ev.x - panStartX
                 val dy = ev.y - panStartY
 
                 if (panAxis == PanAxis.UNDECIDED) {
                     if (max(abs(dx), abs(dy)) <= axisLockThreshold) return
                     cancelarToqueLongo()
+                    // Se o segurar já tinha acelerado, o dedo que começou a
+                    // andar mudou de ideia: desfaz o 2× antes de virar busca
+                    // ou volume. Quem encosta com cuidado para mirar um tempo
+                    // fica parado o bastante para o 2× entrar, e o arrasto
+                    // seguinte acontecia com o vídeo correndo.
+                    desfazerAceleracao()
                     panAxis = if (abs(dx) > abs(dy)) PanAxis.HORIZONTAL else PanAxis.VERTICAL
                     // Qualquer gesto em curso segura os controles na tela.
                     cancelControlsHide()
                     if (panAxis == PanAxis.HORIZONTAL) {
                         suppressBuffering = true
                         ui.buffering.visibility = View.GONE
+                        engine.beginScrub()
                     }
                 }
 
                 when (panAxis) {
-                    PanAxis.HORIZONTAL -> updateSeekPan(dx)
+                    PanAxis.HORIZONTAL -> updateSeekPan(dx, velocidadeDoDedo())
                     PanAxis.VERTICAL -> updateVerticalPan(dy)
                     else -> {}
                 }
@@ -939,12 +1002,13 @@ class PlayerActivity : Activity() {
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 cancelarToqueLongo()
-                if (holdActive) {
-                    holdActive = false
-                    engine.rate = rateBeforeHold
-                    hideHudAfter(400)
+                desfazerAceleracao()
+                if (panAxis == PanAxis.HORIZONTAL) {
+                    engine.endScrub(prefs.preciseScrub)
+                    suppressBuffering = false
                 }
-                if (panAxis == PanAxis.HORIZONTAL) suppressBuffering = false
+                rastreador?.recycle()
+                rastreador = null
                 if (panAxis == PanAxis.MULTITOUCH) encaixarZoom()
                 panAxis = PanAxis.UNDECIDED
                 scheduleControlsHide()
@@ -961,15 +1025,34 @@ class PlayerActivity : Activity() {
 
     // MARK: - Rolagem horizontal
 
-    private fun updateSeekPan(dx: Float) {
+    /**
+     * Arrasto na tela com aceleração.
+     *
+     * Antes a distância valia sempre o mesmo, e as duas pontas saíam perdendo:
+     * devagar era grosseiro demais para parar num minuto, e depressa não ia
+     * longe — num filme de duas horas, voltar meia hora pedia quinze arrastos,
+     * o que parecia o vídeo "não voltar".
+     *
+     * Agora a escala depende da rapidez do dedo, como o ponteiro de um
+     * computador: devagar, uma largura de tela vale até um minuto e meio, e dá
+     * para parar no segundo; correndo, até doze vezes isso. O mesmo gesto leva
+     * perto e depois afina, sem soltar o dedo.
+     */
+    private fun updateSeekPan(dx: Float, rapidez: Float) {
         if (engine.duration <= 0) return
 
-        // Escala a sensibilidade com a duração: num vídeo de 3 h, arrastar a
-        // tela inteira por 2 min é inútil; num clipe de 40 s, 2 min é grosseiro.
-        val span = (engine.duration / 4).coerceIn(30.0, Tuning.SEEK_SECONDS_PER_SCREEN_WIDTH * 4)
-        val segundosPorPixel =
-            min(span, Tuning.SEEK_SECONDS_PER_SCREEN_WIDTH) / ui.root.width
-        val alvo = (panStartTime + dx * segundosPorPixel).coerceIn(0.0, engine.duration)
+        val passo = dx - panUltimoX
+        panUltimoX = dx
+
+        // Vídeo curto não precisa de tanto: um clipe de 40 s não deve
+        // atravessar inteiro num milímetro.
+        val base = (engine.duration / 20).coerceIn(10.0, Tuning.SEEK_SECONDS_PER_SCREEN_WIDTH)
+        val segundosPorPixel = base / max(ui.root.width, 1)
+        val fator = (1 + (rapidez - 250) / 250).coerceIn(1f, 12f)
+
+        panSeekTarget = (panSeekTarget + passo * segundosPorPixel * fator)
+            .coerceIn(0.0, engine.duration)
+        val alvo = panSeekTarget
 
         showHud(
             TimeFormat.clock(alvo),
@@ -986,6 +1069,31 @@ class PlayerActivity : Activity() {
         // controlado pelo motor. Sem isso o vídeo pula de keyframe em keyframe,
         // que é a queixa que originou o projeto.
         engine.scrub(alvo, prefs.preciseScrub)
+    }
+
+    /**
+     * A rapidez do dedo em dp por segundo.
+     *
+     * Em dp, e não em pixels: a mesma mão num aparelho mais denso geraria um
+     * número maior, e a aceleração responderia diferente em cada celular.
+     */
+    private fun velocidadeDoDedo(): Float {
+        val medidor = rastreador ?: return 0f
+        medidor.computeCurrentVelocity(1000)
+        return abs(medidor.xVelocity) / resources.displayMetrics.density
+    }
+
+    /**
+     * Volta à velocidade de antes, uma vez só.
+     *
+     * Pode ser pedido por dois caminhos — soltar o dedo e começar a arrastar —,
+     * e restaurar duas vezes gravaria a velocidade errada.
+     */
+    private fun desfazerAceleracao() {
+        if (!holdActive) return
+        holdActive = false
+        engine.rate = rateBeforeHold
+        hideHudAfter(400)
     }
 
     // MARK: - Brilho e volume

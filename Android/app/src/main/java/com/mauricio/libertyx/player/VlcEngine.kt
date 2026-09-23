@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.os.ParcelFileDescriptor
 import android.view.TextureView
 import android.view.ViewGroup
@@ -16,6 +17,7 @@ import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.interfaces.IMedia
 import org.videolan.libvlc.util.VLCVideoLayout
+import kotlin.math.abs
 
 sealed interface PlaybackState {
     data object Idle : PlaybackState
@@ -120,6 +122,29 @@ class VlcEngine(private val context: Context) {
 
     private var tamanhoDoArquivo: Long? = null
 
+    /** De onde vem o que está tocando: no servidor tudo demora mais. */
+    private var origemAtual: MediaOrigin? = null
+    private val naRede: Boolean
+        get() = origemAtual is MediaOrigin.Smb || origemAtual is MediaOrigin.Remote
+
+    /**
+     * Destino de uma busca que o VLC ainda não alcançou.
+     *
+     * Enquanto uma busca não termina, o VLC continua respondendo o tempo
+     * **antigo** — em rede, por um ou dois segundos. É a causa do "às vezes não
+     * volta": solta-se o dedo lá atrás, o VLC ainda diz o ponto de antes, a
+     * barra pula de volta para ele, e um segundo arrasto nesse intervalo parte
+     * do lugar errado. Até o VLC chegar, quem responde é o destino.
+     */
+    private data class Alvo(val tempo: Double, val desde: Long, val tentativas: Int)
+    private var alvoPendente: Alvo? = null
+
+    /** O último ponto pedido pelo dedo — o fim do arrasto tem a palavra final. */
+    private var alvoDaRolagem: Double? = null
+
+    /** Com o dedo arrastando, o tempo que o VLC informa não vai para a tela. */
+    private var emRolagem = false
+
     /**
      * Quantos bytes já tinham sido lidos quando a posição atual começou.
      *
@@ -133,7 +158,15 @@ class VlcEngine(private val context: Context) {
         bytesNaBusca = lidos to instante
     }
 
-    val currentTime: Double get() = player.time / 1000.0
+    val currentTime: Double get() = alvoPendente?.tempo ?: tempoDoVlc
+
+    private val tempoDoVlc: Double get() = player.time / 1000.0
+
+    /** Toda ida a um ponto passa por aqui, para o destino ficar registrado. */
+    private fun irPara(alvo: Double, precise: Boolean) {
+        player.setTime((alvo * 1000).toLong(), !precise)
+        alvoPendente = Alvo(alvo, SystemClock.uptimeMillis(), 0)
+    }
     val duration: Double get() = player.length.takeIf { it > 0 }?.let { it / 1000.0 } ?: 0.0
     val isSeekable: Boolean get() = player.isSeekable
 
@@ -211,6 +244,7 @@ class VlcEngine(private val context: Context) {
             }
         }
 
+        origemAtual = item.origin
         media.setHWDecoderEnabled(true, false)
         if (audioOnly) media.addOption(":no-video")
         configureBuffer(media, item.origin)
@@ -253,7 +287,15 @@ class VlcEngine(private val context: Context) {
         when (origin) {
             is MediaOrigin.Local -> media.addOption(":file-caching=500")
             else -> {
-                media.addOption(":network-caching=5000")
+                // Um segundo e meio, e não cinco.
+                //
+                // Este número é quanto o VLC espera acumular antes de mostrar
+                // imagem — no começo do vídeo e **depois de cada busca**. Com
+                // cinco segundos, cada soltada do dedo na barra virava cinco
+                // segundos de tela parada, e a troca de faixa de áudio, que
+                // também busca, pagava o mesmo. Quem segura a reprodução sem
+                // engasgar é o prefetch logo abaixo, que lê adiantado.
+                media.addOption(":network-caching=1500")
                 // 32 MB adiantados: uns 20 segundos de um 1080p comum.
                 media.addOption(":prefetch-buffer-size=32768")
                 // Blocos de 256 KB em vez dos 16 KB padrão.
@@ -289,7 +331,7 @@ class VlcEngine(private val context: Context) {
     fun seek(time: Double, precise: Boolean = true) {
         if (duration <= 0) return
         val alvo = time.coerceIn(0.0, duration)
-        player.setTime((alvo * 1000).toLong(), !precise)
+        irPara(alvo, precise)
         marcarBusca(alvo)
         onTimeUpdate?.invoke(alvo)
     }
@@ -312,20 +354,57 @@ class VlcEngine(private val context: Context) {
         if (duration <= 0) return
         val alvo = time.coerceIn(0.0, duration)
         pendingScrub = alvo
+        alvoDaRolagem = alvo
         onTimeUpdate?.invoke(alvo)
 
         val agora = System.currentTimeMillis()
-        if (agora - lastScrubApplied >= 80) {
+        if (agora - lastScrubApplied >= cadenciaDeRolagem) {
             aplicarScrub(alvo, precise, agora)
         } else {
             agendarScrubPendente(precise)
         }
     }
 
+    /** O dedo encostou na barra ou na tela para arrastar. */
+    fun beginScrub() {
+        emRolagem = true
+        alvoDaRolagem = null
+    }
+
+    /**
+     * Ao soltar o dedo, vai exatamente ao último ponto pedido.
+     *
+     * Sempre, e não só quando havia algo agendado: a busca que já tinha saído
+     * pode ter sido abortada pela seguinte, e sem repetir aqui o vídeo ficaria
+     * num ponto intermediário do caminho do dedo.
+     */
+    fun endScrub(precise: Boolean) {
+        scrubScheduled = false
+        pendingScrub = null
+        emRolagem = false
+        val alvo = alvoDaRolagem ?: return
+        alvoDaRolagem = null
+        lastScrubApplied = System.currentTimeMillis()
+        irPara(alvo, precise)
+        marcarBusca(alvo)
+        onTimeUpdate?.invoke(alvo)
+    }
+
+    /**
+     * Intervalo mínimo entre buscas durante o arrasto.
+     *
+     * No arquivo local, 80 ms: o disco responde a tempo de mostrar o quadro
+     * antes da busca seguinte. No servidor não — cada busca descarta o buffer e
+     * pede um bloco novo pela rede, e com buscas a cada 80 ms nenhuma chega a
+     * terminar: o VLC aborta uma para começar a outra e a imagem congela até o
+     * dedo parar. A 300 ms cada uma tem chance de mostrar algo.
+     */
+    private val cadenciaDeRolagem: Long get() = if (naRede) 300L else 80L
+
     private fun aplicarScrub(alvo: Double, precise: Boolean, agora: Long) {
         lastScrubApplied = agora
         pendingScrub = null
-        player.setTime((alvo * 1000).toLong(), !precise)
+        irPara(alvo, precise)
         marcarBusca(alvo)
     }
 
@@ -339,7 +418,7 @@ class VlcEngine(private val context: Context) {
         main.postDelayed({
             scrubScheduled = false
             pendingScrub?.let { aplicarScrub(it, precise, System.currentTimeMillis()) }
-        }, 80)
+        }, cadenciaDeRolagem)
     }
 
     // MARK: - Faixas
@@ -466,7 +545,37 @@ class VlcEngine(private val context: Context) {
                 // Tempo andando é a prova de que não está carregando — mais
                 // confiável que o estado anunciado.
                 buffering = false
-                onTimeUpdate?.invoke(evento.timeChanged / 1000.0)
+                val doVlc = evento.timeChanged / 1000.0
+
+                val pendente = alvoPendente
+                if (pendente != null) {
+                    if (abs(doVlc - pendente.tempo) < 3) {
+                        alvoPendente = null
+                    } else {
+                        // Não chegou. Passado o prazo, pede de novo uma vez —
+                        // busca abortada no meio de uma rajada é o caso comum —
+                        // e, se ainda assim não chegar, aceita onde o VLC está,
+                        // para a tela não mentir para sempre.
+                        val prazo = if (naRede) 2_500L else 1_200L
+                        if (SystemClock.uptimeMillis() - pendente.desde > prazo) {
+                            if (pendente.tentativas == 0) {
+                                player.setTime((pendente.tempo * 1000).toLong(), false)
+                                alvoPendente = pendente.copy(
+                                    desde = SystemClock.uptimeMillis(), tentativas = 1,
+                                )
+                            } else {
+                                alvoPendente = null
+                            }
+                        }
+                        if (alvoPendente != null) return
+                    }
+                }
+
+                // Com o dedo arrastando, quem manda na tela é o dedo. O tempo
+                // do VLC pula de quadro-chave em quadro-chave e brigava com o
+                // destino: a barra e o número tremiam entre os dois.
+                if (emRolagem) return
+                onTimeUpdate?.invoke(doVlc)
             }
             MediaPlayer.Event.ESAdded, MediaPlayer.Event.ESDeleted -> onTracksChange?.invoke()
         }
