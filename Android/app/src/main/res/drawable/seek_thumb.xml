@@ -16,7 +16,7 @@
     <item>
         <shape android:shape="oval">
             <solid android:color="@color/libertyx_accent" />
-            <size android:width="14dp" android:height="14dp" />
+            <size android:width="16dp" android:height="16dp" />
         </shape>
     </item>
 </selector>

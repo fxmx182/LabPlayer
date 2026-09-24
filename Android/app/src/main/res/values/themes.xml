@@ -75,10 +75,24 @@
          fileira e um disco por trás, para ele ser achado pela forma e não
          pela posição. -->
     <style name="PlayerIconPrimary" parent="PlayerIcon">
-        <item name="android:layout_width">66dp</item>
-        <item name="android:layout_height">66dp</item>
-        <item name="android:layout_marginHorizontal">10dp</item>
-        <item name="android:padding">16dp</item>
+        <item name="android:layout_width">64dp</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:layout_marginHorizontal">14dp</item>
+        <item name="android:padding">13dp</item>
         <item name="android:background">@drawable/btn_play</item>
+    </style>
+
+    <!-- Texto que flutua sobre o filme sem caixa: branco, negrito e com uma
+         sombra larga, que é o que o mantém legível sobre um quadro claro. -->
+    <style name="AvisoSemCaixa">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:shadowColor">#E6000000</item>
+        <item name="android:shadowRadius">10</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">1</item>
     </style>
 </resources>

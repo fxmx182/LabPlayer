@@ -96,6 +96,90 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <!-- ===================== Toque duplo: o salto ===================== -->
+    <!-- De cada lado, onde o dedo tocou: um halo com a seta dupla e quantos
+         segundos já foram. Tocar de novo soma — +10, +20, +30 —, e o número
+         acompanha o dedo em vez de piscar o mesmo "+10" três vezes. -->
+    <LinearLayout
+        android:id="@+id/salto_esq"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center_vertical|start"
+        android:layout_marginStart="12dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_salto"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:src="@drawable/ic_duplo_tras" />
+
+        <TextView
+            android:id="@+id/salto_esq_texto"
+            style="@style/AvisoSemCaixa"
+            android:layout_marginTop="6dp"
+            android:textSize="19sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/salto_dir"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center_vertical|end"
+        android:layout_marginEnd="12dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_salto"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:src="@drawable/ic_duplo_frente" />
+
+        <TextView
+            android:id="@+id/salto_dir_texto"
+            style="@style/AvisoSemCaixa"
+            android:layout_marginTop="6dp"
+            android:textSize="19sp" />
+    </LinearLayout>
+
+    <!-- ===================== Segurar para acelerar ===================== -->
+    <!-- No alto, sem caixa: só a seta dupla e a velocidade, com sombra para
+         ler sobre qualquer quadro. Caixa no meio da cena tapava justamente o
+         que se está acelerando para ver. -->
+    <LinearLayout
+        android:id="@+id/acelerando"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="96dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_duplo_frente" />
+
+        <TextView
+            android:id="@+id/acelerando_valor"
+            style="@style/AvisoSemCaixa"
+            android:textColor="@color/libertyx_accent"
+            android:textSize="17sp" />
+
+        <TextView
+            style="@style/AvisoSemCaixa"
+            android:layout_marginStart="6dp"
+            android:text="acelerado"
+            android:textStyle="normal"
+            android:textSize="15sp" />
+    </LinearLayout>
+
     <!-- ===================== Barra de cima ===================== -->
     <LinearLayout
         android:id="@+id/top_bar"
@@ -211,6 +295,8 @@
                 android:layout_weight="1"
                 android:layout_marginHorizontal="8dp"
                 android:max="10000"
+                android:minHeight="3dp"
+                android:maxHeight="3dp"
                 android:progressDrawable="@drawable/seek_progress"
                 android:background="@drawable/seek_focus"
                 android:thumb="@drawable/seek_thumb"

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O anel de cada ferramenta.
+
+     Traço fino e vazio por dentro: o ícone respira e a folha inteira fica
+     leve, em vez de um tabuleiro de discos preenchidos. Ligada, a ferramenta
+     troca o branco pelo dourado da marca; tocada, o anel se enche. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="oval">
+            <solid android:color="#33FBC501" />
+            <stroke android:width="2.5dp" android:color="@color/libertyx_accent" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="oval">
+            <solid android:color="#2EFFFFFF" />
+            <stroke android:width="1.5dp" android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <item android:state_selected="true">
+        <shape android:shape="oval">
+            <solid android:color="#14FBC501" />
+            <stroke android:width="1.5dp" android:color="@color/libertyx_accent" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@android:color/transparent" />
+            <stroke android:width="1.5dp" android:color="#D0FFFFFF" />
+        </shape>
+    </item>
+</selector>

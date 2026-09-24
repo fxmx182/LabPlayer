@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- O disco atrás do play. Discreto quando parado, amarelo quando focado pelo
-     controle remoto — na TV ele continua sendo o alvo inicial. -->
+<!-- O play sem disco em repouso: o ícone largo basta, e o disco cinza pesava
+     no meio da fileira. O círculo só aparece no toque — e, na TV, o anel
+     dourado de foco continua sendo o alvo inicial do controle. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">
         <shape android:shape="oval">
@@ -10,12 +11,12 @@
     </item>
     <item android:state_pressed="true">
         <shape android:shape="oval">
-            <solid android:color="#2EFFFFFF" />
+            <solid android:color="#26FFFFFF" />
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
-            <solid android:color="#1FFFFFFF" />
+            <solid android:color="@android:color/transparent" />
         </shape>
     </item>
 </selector>

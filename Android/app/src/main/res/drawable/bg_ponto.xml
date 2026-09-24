@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O ponto de "ligado" no canto do anel, com um aro preto para se destacar
+     do traço que ele sobrepõe. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="@color/libertyx_accent" />
+    <stroke android:width="2dp" android:color="#FF000000" />
+</shape>

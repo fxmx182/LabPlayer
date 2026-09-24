@@ -1,52 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Uma ferramenta do painel: ícone, nome e, quando existe, o valor em que ela
-  está. O valor à mostra é o que evita abrir a ferramenta só para descobrir em
-  quanto ela está — velocidade, rotação, tempo da barra.
+  Uma ferramenta: anel fino com o ícone dentro, nome embaixo.
 
-  O nome ocupa sempre duas linhas e o valor sempre uma, mesmo vazios: assim
-  todas as placas da grade têm a mesma altura, e a grade fica alinhada em vez
-  de serrilhada.
+  Onde o valor diz mais que o desenho — a velocidade —, é o próprio valor que
+  vai dentro do anel ("1,5×"), e não um velocímetro genérico: lê-se o estado
+  sem abrir nada. O nome ocupa sempre duas linhas, para as fileiras ficarem
+  alinhadas; quando há valor além do nome, ele entra na segunda linha.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="0dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:paddingTop="12dp"
+    android:paddingTop="10dp"
     android:paddingBottom="8dp"
-    android:paddingHorizontal="6dp"
     android:clickable="true"
     android:focusable="true"
-    android:background="@drawable/bg_tool_tile">
+    android:background="@null">
 
-    <ImageView
-        android:id="@+id/tool_icon"
-        android:layout_width="26dp"
-        android:layout_height="26dp"
-        android:scaleType="fitCenter" />
+    <FrameLayout
+        android:layout_width="58dp"
+        android:layout_height="58dp"
+        android:duplicateParentState="true">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:duplicateParentState="true"
+            android:background="@drawable/bg_tool_ring" />
+
+        <ImageView
+            android:id="@+id/tool_icon"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/tool_ring_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="#FFFFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:visibility="gone" />
+
+        <View
+            android:id="@+id/tool_dot"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="1dp"
+            android:background="@drawable/bg_ponto"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tool_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:gravity="center"
+        android:paddingHorizontal="2dp"
+        android:gravity="top|center_horizontal"
         android:lines="2"
         android:ellipsize="end"
         android:lineSpacingExtra="1dp"
-        android:textColor="#D9FFFFFF"
-        android:textSize="11.5sp" />
-
-    <TextView
-        android:id="@+id/tool_value"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:gravity="center_horizontal"
-        android:lines="1"
-        android:ellipsize="end"
-        android:textColor="@color/libertyx_accent"
-        android:textSize="10.5sp"
-        android:fontFamily="sans-serif-medium" />
+        android:textColor="#F2FFFFFF"
+        android:textSize="12.5sp" />
 </LinearLayout>

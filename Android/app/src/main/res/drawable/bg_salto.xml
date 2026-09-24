@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O brilho atrás do aviso de salto.
+
+     Um halo que se desfaz nas bordas, e não um círculo de borda dura: diz
+     "aqui" sem desenhar mais uma forma sobre o filme. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="50%"
+        android:startColor="#47FFFFFF"
+        android:centerColor="#1AFFFFFF"
+        android:endColor="#00FFFFFF" />
+</shape>

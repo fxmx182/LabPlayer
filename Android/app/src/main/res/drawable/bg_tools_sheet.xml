@@ -1,34 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A folha de ferramentas.
-
-     Preto quente, e não cinza-azulado: é o preto da própria marca, o mesmo do
-     ícone. Em cima, um fio de luz dourada que atravessa a borda e some nas
-     pontas — a única cor da folha em repouso, e o que a separa do filme sem
-     precisar de moldura. -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <!-- Opaca, e com degradê.
-                 Translúcida, o filme passava por trás das placas e a folha
-                 virava vidro sujo: aparecia o relógio da barra e os quadros
-                 coloridos no meio dos nomes. O degradê é o que impede que uma
-                 superfície grande e chapada pareça um bloco colado na tela. -->
-            <gradient
-                android:angle="270"
-                android:startColor="#FF16110B"
-                android:endColor="#FF0A0806" />
-            <corners android:topLeftRadius="30dp" android:topRightRadius="30dp" />
-            <stroke android:width="1dp" android:color="#1FFFFFFF" />
-        </shape>
-    </item>
-    <item android:height="2dp" android:left="56dp" android:right="56dp" android:top="0dp">
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="0"
-                android:startColor="#00FBC501"
-                android:centerColor="#99FBC501"
-                android:endColor="#00FBC501" />
-            <corners android:radius="1dp" />
-        </shape>
-    </item>
-</layer-list>
+<!-- A folha de ferramentas: preto de verdade, como a tela ao redor do filme.
+     Qualquer cinza aqui virava um bloco sobre a imagem; o preto some e deixa
+     só os anéis à vista. Um fio quase invisível marca a borda de cima. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FF000000" />
+    <corners android:topLeftRadius="18dp" android:topRightRadius="18dp" />
+    <stroke android:width="1dp" android:color="#14FFFFFF" />
+</shape>
