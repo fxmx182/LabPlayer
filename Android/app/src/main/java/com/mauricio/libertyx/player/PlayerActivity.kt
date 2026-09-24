@@ -629,17 +629,41 @@ class PlayerActivity : Activity() {
         }
     }
 
-    private fun mostrarAceleracao() {
-        ui.acelerandoValor.text = velocidadeEmTexto(prefs.holdSpeed)
-        ui.acelerando.animate().cancel()
-        ui.acelerando.alpha = 0f
-        ui.acelerando.visibility = View.VISIBLE
-        ui.acelerando.animate().alpha(1f).setDuration(160).start()
+    /**
+     * O aviso de segurar, no meio da borda do lado em que se anda: a
+     * velocidade em dourado e, voltando, o ponto em que se está — que é o que
+     * se procura quando se volta.
+     */
+    private fun mostrarAceleracao(frente: Boolean) {
+        main.removeCallbacks(esconderSalto)
+        saltoSomado = 0.0
+        val vista = if (frente) ui.saltoDir else ui.saltoEsq
+        (if (frente) ui.saltoEsq else ui.saltoDir).visibility = View.GONE
+        (if (frente) ui.saltoDirTexto else ui.saltoEsqTexto).text = textoDaAceleracao(frente)
+        vista.animate().cancel()
+        vista.alpha = 0f
+        vista.scaleX = 0.8f
+        vista.scaleY = 0.8f
+        vista.visibility = View.VISIBLE
+        vista.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(160).start()
     }
 
+    private fun textoDaAceleracao(frente: Boolean): CharSequence =
+        SpannableStringBuilder(velocidadeEmTexto(prefs.holdSpeed)).apply {
+            setSpan(
+                ForegroundColorSpan(getColor(R.color.libertyx_accent)),
+                0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+            if (!frente) {
+                val de = length
+                append("\n").append(TimeFormat.clock(alvoDaVolta))
+                setSpan(RelativeSizeSpan(0.72f), de, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+
     private fun esconderAceleracao() {
-        ui.acelerando.animate().alpha(0f).setDuration(200)
-            .withEndAction { ui.acelerando.visibility = View.GONE }.start()
+        main.removeCallbacks(esconderSalto)
+        main.post(esconderSalto)
     }
 
     // MARK: - Controles
@@ -1150,7 +1174,14 @@ class PlayerActivity : Activity() {
     private fun desfazerAceleracao() {
         if (!holdActive) return
         holdActive = false
-        engine.rate = rateBeforeHold
+        if (voltando) {
+            voltando = false
+            main.removeCallbacks(passoDaVolta)
+            engine.endScrub(prefs.preciseScrub)
+            engine.play()
+        } else {
+            engine.rate = rateBeforeHold
+        }
         esconderAceleracao()
     }
 
@@ -1244,12 +1275,60 @@ class PlayerActivity : Activity() {
         lastTapX = ev.x
     }
 
+    /**
+     * Segurar acelera — para frente em quase toda a tela, para trás no terço
+     * esquerdo, o mesmo lado que no toque duplo volta dez segundos.
+     */
     private val toqueLongo = Runnable {
         if (engine.state != PlaybackState.Playing) return@Runnable
         holdActive = true
-        rateBeforeHold = engine.rate
-        engine.rate = prefs.holdSpeed
-        mostrarAceleracao()
+        if (panStartX < ui.root.width / 3f) {
+            comecarVolta()
+        } else {
+            rateBeforeHold = engine.rate
+            engine.rate = prefs.holdSpeed
+            mostrarAceleracao(frente = true)
+        }
+    }
+
+    // MARK: - Voltar acelerado
+
+    /**
+     * Voltar acelerado não existe no VLC — ele não toca de trás para frente.
+     *
+     * O que se faz é o que os players de mesa fazem: o vídeo pausa e o ponto
+     * anda para trás na velocidade escolhida, com a mesma busca da rolagem por
+     * arrasto. A cada passo a imagem mostra onde se está; ao soltar, o vídeo
+     * volta a tocar dali.
+     */
+    private var voltando = false
+    private var alvoDaVolta = 0.0
+    private var ultimoPassoDaVolta = 0L
+
+    private fun comecarVolta() {
+        voltando = true
+        engine.pause()
+        engine.beginScrub()
+        alvoDaVolta = engine.currentTime
+        ultimoPassoDaVolta = android.os.SystemClock.uptimeMillis()
+        mostrarAceleracao(frente = false)
+        main.postDelayed(passoDaVolta, 100)
+    }
+
+    private val passoDaVolta = object : Runnable {
+        override fun run() {
+            if (!voltando) return
+            // Pelo relógio, e não por um passo fixo: um quadro atrasado não
+            // pode deixar a volta mais lenta que a velocidade prometida.
+            val agora = android.os.SystemClock.uptimeMillis()
+            val decorrido = (agora - ultimoPassoDaVolta) / 1000.0
+            ultimoPassoDaVolta = agora
+            alvoDaVolta = (alvoDaVolta - prefs.holdSpeed * decorrido).coerceAtLeast(0.0)
+            engine.scrub(alvoDaVolta, prefs.preciseScrub)
+            ui.saltoEsqTexto.text = textoDaAceleracao(frente = false)
+            // No começo do vídeo, para: continuar segurando não faz nada.
+            if (alvoDaVolta > 0.0) main.postDelayed(this, 100)
+        }
     }
 
     private fun agendarToqueLongo() = main.postDelayed(toqueLongo, 350)
