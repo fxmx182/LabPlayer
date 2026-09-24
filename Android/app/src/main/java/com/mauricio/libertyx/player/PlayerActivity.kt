@@ -1610,7 +1610,12 @@ class PlayerActivity : Activity() {
                 WindowManager.LayoutParams.WRAP_CONTENT,
             )
             setGravity(Gravity.BOTTOM)
-            setDimAmount(0.5f)
+            // O véu da janela é o que separa os anéis do filme agora que a folha
+            // é transparente: escurece a cena por igual sem escondê-la. O tema
+            // translúcido não liga o véu sozinho — sem a flag, a quantidade
+            // acima não fazia nada.
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setDimAmount(0.45f)
             setBackgroundDrawableResource(android.R.color.transparent)
             // Sem foco enquanto sobe: uma janela que toma o foco faz o sistema
             // devolver as barras de status e navegação, e o filme atrás salta
@@ -1625,7 +1630,14 @@ class PlayerActivity : Activity() {
         // caminho que ninguém tenta primeiro.
         painel.setCanceledOnTouchOutside(true)
         painel.setCancelable(true)
-        painel.setOnDismissListener { scheduleControlsHide() }
+        // Os controles do player saem enquanto o painel está aberto: com a
+        // folha transparente, a barra de baixo aparecia atrás da última
+        // fileira e os nomes se embolavam com o relógio e o play.
+        setControlsVisible(false)
+        painel.setOnDismissListener {
+            setControlsVisible(true)
+            scheduleControlsHide()
+        }
         painel.show()
         painel.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
     }

@@ -45,6 +45,8 @@
             android:textSize="15sp"
             android:textStyle="bold"
             android:fontFamily="sans-serif-medium"
+            android:shadowColor="#CC000000"
+            android:shadowRadius="6"
             android:visibility="gone" />
 
         <View
@@ -68,6 +70,10 @@
         android:lines="2"
         android:ellipsize="end"
         android:lineSpacingExtra="1dp"
-        android:textColor="#F2FFFFFF"
-        android:textSize="12.5sp" />
+        android:textColor="#FFFFFFFF"
+        android:textSize="12.5sp"
+        android:shadowColor="#F2000000"
+        android:shadowRadius="8"
+        android:shadowDx="0"
+        android:shadowDy="1" />
 </LinearLayout>
