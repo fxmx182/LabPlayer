@@ -100,7 +100,7 @@
     <!-- ===================== Toque duplo e segurar ===================== -->
     <!-- De cada lado, no meio da borda: um halo com a seta dupla. No toque
          duplo, quantos segundos já foram — tocar de novo soma, +10, +20, +30.
-         Ao segurar, a velocidade: à direita para frente, à esquerda para trás.
+         Ao segurar, a velocidade, sempre à direita — segurar só acelera para frente.
          No meio da borda, e não no alto, porque lá em cima fica a ilha. -->
     <LinearLayout
         android:id="@+id/salto_esq"
