@@ -316,13 +316,6 @@ private fun Estante(
             CapaDePasta(grupo) { onAbrir(grupo) }
         }
 
-        inteiro("rede") {
-            Column {
-                Spacer(Modifier.height(6.dp))
-                Secao("Na rede")
-                CartaoDaRede(onServidores)
-            }
-        }
     }
 }
 
