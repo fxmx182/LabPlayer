@@ -124,6 +124,27 @@ class ResumeStore private constructor(context: Context) {
         return marca.position
     }
 
+    /** Quanto já foi visto, de 0 a 1 — só quando há o que retomar. */
+    fun progress(key: String): Float? {
+        val posicao = position(key) ?: return null
+        val duracao = marcas[key]?.duration ?: return null
+        if (duracao <= 0) return null
+        return (posicao / duracao).toFloat().coerceIn(0f, 1f)
+    }
+
+    /** Quanto falta, em segundos — o que interessa a quem vai continuar. */
+    fun remaining(key: String): Double? {
+        val posicao = position(key) ?: return null
+        val duracao = marcas[key]?.duration ?: return null
+        return if (duracao > posicao) duracao - posicao else null
+    }
+
+    /** As chaves com retomada, da mais recente para a mais antiga. */
+    fun recent(): List<String> =
+        marcas.entries.filter { position(it.key) != null }
+            .sortedByDescending { it.value.updatedAt }
+            .map { it.key }
+
     fun save(position: Double, duration: Double, key: String) {
         if (!position.isFinite() || position <= 0) return
         marcas[key] = Marca(position, duration, System.currentTimeMillis())

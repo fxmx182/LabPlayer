@@ -11,7 +11,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.Typography
+import com.mauricio.libertyx.R
 
 /**
  * A linguagem visual do app.
@@ -45,6 +49,23 @@ object LabTheme {
     val background = Color(0xFF0E0E10)
     val surface = Color(0xFF17171B)
 
+    /**
+     * A letra do app.
+     *
+     * A Roboto do sistema é a letra de todo app de Android — e de nenhum em
+     * particular. A Manrope tem o mesmo desenho limpo, mas com o "a" e o "g"
+     * mais abertos e números de largura constante, o que deixa a duração e o
+     * tamanho alinhados sem esforço. Estática em cinco pesos, e não variável:
+     * a variável só varia do Android 8 em diante, e o app vai até o 7.
+     */
+    val font = FontFamily(
+        Font(R.font.manrope_regular, FontWeight.Normal),
+        Font(R.font.manrope_medium, FontWeight.Medium),
+        Font(R.font.manrope_semibold, FontWeight.SemiBold),
+        Font(R.font.manrope_bold, FontWeight.Bold),
+        Font(R.font.manrope_extrabold, FontWeight.ExtraBold),
+    )
+
     val radiusCard = 18.dp
     val radiusSmall = 12.dp
 
@@ -52,10 +73,21 @@ object LabTheme {
      *  tipografia do corpo, que é apertada. A diferença entre as duas é o que
      *  organiza a tela sem precisar de linha divisória. */
     val sectionTitle = TextStyle(
+        fontFamily = font,
         fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.8.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.6.sp,
         color = faint,
+    )
+
+    /** O título grande de cada tela — pesado e apertado, como capa de revista. */
+    val headline = TextStyle(
+        fontFamily = font,
+        fontSize = 32.sp,
+        lineHeight = 36.sp,
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-0.8).sp,
+        color = text,
     )
 }
 
@@ -78,6 +110,30 @@ fun LibertyXTheme(content: @Composable () -> Unit) {
             onSurfaceVariant = LabTheme.muted,
             error = LabTheme.red,
         ),
+        typography = tipografia(),
         content = content,
+    )
+}
+
+/** Todos os estilos do Material com a letra do app — assim nenhum texto escapa. */
+private fun tipografia(): Typography {
+    val base = Typography()
+    fun TextStyle.nossa() = copy(fontFamily = LabTheme.font)
+    return Typography(
+        displayLarge = base.displayLarge.nossa(),
+        displayMedium = base.displayMedium.nossa(),
+        displaySmall = base.displaySmall.nossa(),
+        headlineLarge = base.headlineLarge.nossa(),
+        headlineMedium = base.headlineMedium.nossa(),
+        headlineSmall = base.headlineSmall.nossa(),
+        titleLarge = base.titleLarge.nossa(),
+        titleMedium = base.titleMedium.nossa(),
+        titleSmall = base.titleSmall.nossa(),
+        bodyLarge = base.bodyLarge.nossa(),
+        bodyMedium = base.bodyMedium.nossa(),
+        bodySmall = base.bodySmall.nossa(),
+        labelLarge = base.labelLarge.nossa(),
+        labelMedium = base.labelMedium.nossa(),
+        labelSmall = base.labelSmall.nossa(),
     )
 }

@@ -96,6 +96,23 @@ object TimeFormat {
             i++
         }
         return if (i <= 1) String.format(Locale.ROOT, "%.0f %s", valor, unidades[i])
-        else String.format(Locale.ROOT, "%.1f %s", valor, unidades[i])
+        else String.format(Locale.ROOT, "%.1f %s", valor, unidades[i]).replace('.', ',')
+    }
+
+    /** "12 min", "1 h 05" — duração dita como se fala, e não como relógio. */
+    fun spoken(seconds: Double): String {
+        val minutos = (seconds / 60).toLong().coerceAtLeast(1)
+        return if (minutos < 60) "$minutos min"
+        else String.format(Locale.ROOT, "%d h %02d", minutos / 60, minutos % 60)
+    }
+
+    /** "3 set", ou "3 set 2024" quando não é deste ano. */
+    fun date(millis: Long?): String? {
+        if (millis == null || millis <= 0) return null
+        val brasil = Locale.forLanguageTag("pt-BR")
+        val agora = java.util.Calendar.getInstance()
+        val entao = java.util.Calendar.getInstance().apply { timeInMillis = millis }
+        val padrao = if (agora.get(java.util.Calendar.YEAR) == entao.get(java.util.Calendar.YEAR)) "d MMM" else "d MMM yyyy"
+        return java.text.SimpleDateFormat(padrao, brasil).format(java.util.Date(millis)).replace(".", "")
     }
 }

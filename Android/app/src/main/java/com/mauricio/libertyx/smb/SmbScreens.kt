@@ -26,7 +26,10 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.ChevronRight
 import com.mauricio.libertyx.library.CartaoDeVideo
+import com.mauricio.libertyx.library.FundoDeCapa
 import com.mauricio.libertyx.library.LibraryLayout
 import com.mauricio.libertyx.library.LibraryOptions
 import com.mauricio.libertyx.library.LinhaDeVideo
@@ -135,8 +138,12 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
     // poltrona isso não se distingue de uma tela travada.
     LaunchedEffect(Unit) { runCatching { primeiroFoco.requestFocus() } }
 
+    // O mesmo fundo da biblioteca: passar para a rede não pode parecer
+    // trocar de app.
+    Box(Modifier.fillMaxSize()) {
+    FundoDeCapa(null)
     Scaffold(
-        containerColor = LabTheme.background,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Servidores", fontWeight = FontWeight.SemiBold) },
@@ -157,7 +164,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = LabTheme.background,
+                    containerColor = Color.Transparent,
                     titleContentColor = LabTheme.text,
                     actionIconContentColor = LabTheme.muted,
                     navigationIconContentColor = LabTheme.muted,
@@ -297,6 +304,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                 }
             }
         }
+    }
     }
 
     val emEdicao = editando ?: criando
@@ -491,8 +499,12 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
 
     val titulo = if (caminho.isEmpty()) server.name else caminho.last()
 
+    // O mesmo fundo da biblioteca: passar para a rede não pode parecer
+    // trocar de app.
+    Box(Modifier.fillMaxSize()) {
+    FundoDeCapa(null)
     Scaffold(
-        containerColor = LabTheme.background,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -524,7 +536,7 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = LabTheme.background,
+                    containerColor = Color.Transparent,
                     titleContentColor = LabTheme.text,
                     actionIconContentColor = LabTheme.muted,
                     navigationIconContentColor = LabTheme.muted,
@@ -565,6 +577,7 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
                 )
             }
         }
+    }
     }
 
     if (mostrandoOpcoes) {
@@ -717,29 +730,47 @@ private fun LinhaDeOpcoes(opcoes: LibraryOptions, onClick: () -> Unit, focoInici
 @Composable
 private fun LinhaDoServidor(entrada: SmbBrowser.Entry, onClick: () -> Unit) {
     val ehVideo = MediaItem.isVideo(entrada.name)
+    val ativa = entrada.isDirectory || ehVideo
     Row(
         Modifier.fillMaxWidth().padding(bottom = 8.dp)
-            .tvFocus(LabTheme.radiusSmall, scale = 1.02f)
-            .clip(RoundedCornerShape(LabTheme.radiusSmall))
-            .background(LabTheme.glass, RoundedCornerShape(LabTheme.radiusSmall))
-            .clickable(enabled = entrada.isDirectory || ehVideo, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .tvFocus(LabTheme.radiusCard, scale = 1.02f)
+            .clip(RoundedCornerShape(LabTheme.radiusCard))
+            .labCard()
+            .clickable(enabled = ativa, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            if (entrada.isDirectory) Icons.Filled.Folder else Icons.Filled.Movie,
-            null,
-            tint = if (entrada.isDirectory) LabTheme.accent else LabTheme.muted,
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(Modifier.width(12.dp))
+        // O ícone num ladrilho, e não solto: dá à linha um ponto de apoio à
+        // esquerda e deixa a pasta de rede com a mesma família visual do
+        // cartão "Servidores SMB" da biblioteca.
+        Box(
+            Modifier.size(40.dp).clip(RoundedCornerShape(11.dp))
+                .background(
+                    if (entrada.isDirectory) LabTheme.accent.copy(alpha = 0.14f)
+                    else Color.White.copy(alpha = 0.06f)
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (entrada.isDirectory) Icons.Filled.Folder else Icons.Filled.Movie,
+                null,
+                tint = if (entrada.isDirectory) LabTheme.accent else LabTheme.muted,
+                modifier = Modifier.size(21.dp),
+            )
+        }
+        Spacer(Modifier.width(14.dp))
         Text(
             entrada.name,
-            color = if (entrada.isDirectory || ehVideo) LabTheme.text else LabTheme.faint,
-            fontSize = 14.sp,
+            color = if (ativa) LabTheme.text else LabTheme.faint,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
+        if (entrada.isDirectory) {
+            Icon(Icons.Filled.ChevronRight, null, tint = LabTheme.faint, modifier = Modifier.size(20.dp))
+        }
     }
 }
 
