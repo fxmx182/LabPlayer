@@ -229,16 +229,21 @@
         android:paddingBottom="18dp">
 
         <!-- Sem aviso, a rolagem fina parece a barra emperrando: o dedo anda e
-             ela anda menos. Dizendo a precisão, vira ferramenta. -->
+             ela anda menos. Dizendo a precisão, vira ferramenta. Numa pastilha
+             escura, e não solto: deitado ele cai em cima da imagem, e letra
+             dourada sobre um quadro claro some. -->
         <TextView
             android:id="@+id/tv_precisao"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="2dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/bg_hud"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="3dp"
             android:textColor="@color/libertyx_accent"
             android:textSize="12sp"
-            android:fontFamily="@font/manrope_semibold"
+            android:fontFamily="@font/manrope_bold"
             android:visibility="gone" />
 
         <LinearLayout

@@ -6,6 +6,9 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
+        <!-- A letra do app também no que é View e não Compose: player,
+             diálogos e menus. -->
+        <item name="android:fontFamily">@font/manrope_semibold</item>
     </style>
 
     <!-- O player é preto de verdade, não o cinza do fundo do app: qualquer
@@ -26,6 +29,7 @@
              não parecerem de outro app. -->
         <item name="android:windowBackground">@drawable/bg_dialogo</item>
         <item name="android:backgroundDimAmount">0.55</item>
+        <item name="android:fontFamily">@font/manrope_semibold</item>
     </style>
 
     <!-- Botões da barra: alvo grande de toque, ícone pequeno. O dedo erra o

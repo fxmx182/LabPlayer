@@ -865,6 +865,22 @@ class PlayerActivity : Activity() {
         scheduleControlsHide()
     }
 
+    /**
+     * Na TV, o foco da abertura vai para o play.
+     *
+     * Sem isto o Android escolhe o primeiro botão da tela — o de voltar, no
+     * canto de cima —, e o primeiro OK do controle, que qualquer um aperta
+     * para pausar, fechava o filme.
+     */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && isTv && !focoInicialDado) {
+            focoInicialDado = true
+            if (controlsVisible) ui.btnPlay.post { ui.btnPlay.requestFocus() }
+        }
+    }
+    private var focoInicialDado = false
+
     private fun updateProgress(tempo: Double) {
         val duracao = engine.duration
         ui.tvPosition.text = TimeFormat.clock(tempo)
