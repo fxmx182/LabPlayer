@@ -89,7 +89,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textColor">#FFFFFFFF</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/manrope_extrabold</item>
+        <item name="android:fontFeatureSettings">tnum</item>
         <item name="android:shadowColor">#E6000000</item>
         <item name="android:shadowRadius">10</item>
         <item name="android:shadowDx">0</item>

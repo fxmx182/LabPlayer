@@ -82,8 +82,9 @@
             android:layout_height="wrap_content"
             android:textColor="@color/libertyx_text"
             android:textSize="15sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium" />
+            android:lineSpacingMultiplier="0.95"
+            android:fontFamily="@font/manrope_bold"
+            android:fontFeatureSettings="tnum" />
 
         <ProgressBar
             android:id="@+id/hud_bar"
@@ -178,7 +179,7 @@
             android:ellipsize="middle"
             android:textColor="@color/libertyx_text"
             android:textSize="15sp"
-            android:fontFamily="sans-serif-medium" />
+            android:fontFamily="@font/manrope_semibold" />
 
         <ImageButton
             android:id="@+id/btn_more"
@@ -237,7 +238,7 @@
             android:layout_marginBottom="2dp"
             android:textColor="@color/libertyx_accent"
             android:textSize="12sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/manrope_semibold"
             android:visibility="gone" />
 
         <LinearLayout
@@ -255,7 +256,8 @@
                 android:text="0:00"
                 android:textColor="@color/libertyx_text"
                 android:textSize="12sp"
-                android:fontFamily="monospace" />
+                android:fontFamily="@font/manrope_semibold"
+                android:fontFeatureSettings="tnum" />
 
             <com.mauricio.libertyx.player.BarraDeRolagemFina
                 android:id="@+id/seek_bar"
@@ -280,7 +282,8 @@
                 android:text="0:00"
                 android:textColor="@color/libertyx_muted"
                 android:textSize="12sp"
-                android:fontFamily="monospace" />
+                android:fontFamily="@font/manrope_semibold"
+                android:fontFeatureSettings="tnum" />
         </LinearLayout>
 
         <LinearLayout

@@ -1140,6 +1140,7 @@ class PlayerActivity : Activity() {
             TimeFormat.clock(alvo),
             TimeFormat.signed(alvo - panStartTime),
             null,
+            legendaDourada = true,
         )
         ui.tvPosition.text = TimeFormat.clock(alvo)
         if (engine.duration > 0) {
@@ -1429,16 +1430,67 @@ class PlayerActivity : Activity() {
 
     // MARK: - Balão dos gestos
 
-    private fun showHud(titulo: String, legenda: String?, barra: Int?) {
+    /**
+     * Mostra o balão.
+     *
+     * Com legenda, são duas linhas de peso diferente: o valor grande em cima
+     * (o tempo, o volume) e o que ele é embaixo, pequeno. Antes eram duas
+     * linhas iguais, e o olho não sabia qual ler primeiro. Na busca a legenda
+     * é o salto, em dourado — é ela que diz "para frente" ou "para trás".
+     */
+    private fun showHud(titulo: String, legenda: String?, barra: Int?, legendaDourada: Boolean = false) {
         main.removeCallbacks(hideHudRunnable)
         ui.hud.visibility = View.VISIBLE
-        ui.hudText.text = if (legenda == null) titulo else "$titulo\n$legenda"
+        posicionarHud()
+        ui.hudText.text = if (legenda == null) {
+            titulo
+        } else {
+            android.text.SpannableStringBuilder().apply {
+                append(titulo, android.text.style.RelativeSizeSpan(1.6f), 0)
+                append("\n")
+                val inicio = length
+                append(legenda)
+                setSpan(android.text.style.RelativeSizeSpan(0.9f), inicio, length, 0)
+                setSpan(
+                    android.text.style.ForegroundColorSpan(
+                        getColor(if (legendaDourada) R.color.libertyx_accent else R.color.libertyx_muted)
+                    ),
+                    inicio, length, 0,
+                )
+            }
+        }
         ui.hudText.textAlignment = View.TEXT_ALIGNMENT_CENTER
         if (barra == null) {
             ui.hudBar.visibility = View.GONE
         } else {
             ui.hudBar.visibility = View.VISIBLE
             ui.hudBar.progress = barra
+        }
+    }
+
+    /**
+     * O balão fica abaixo da ilha, sempre.
+     *
+     * Com recuo fixo ele caía em cima dela assim que o recorte da câmera
+     * empurrava a ilha para baixo — o tempo da busca por cima dos botões, e
+     * nenhum dos dois legível. A posição é medida a cada exibição porque a
+     * ilha muda de lugar: desce com o recorte e, deitado, vai para a fileira
+     * de baixo, quando o limite passa a ser a barra de cima.
+     */
+    private fun posicionarHud() {
+        val dp = resources.displayMetrics.density
+        var topo = (130 * dp).toInt()
+        val ilha = ui.island
+        if (ilha.visibility == View.VISIBLE && ilha.parent === ui.root && ilha.height > 0) {
+            topo = maxOf(topo, ilha.bottom + (14 * dp).toInt())
+        }
+        if (ui.topBar.visibility == View.VISIBLE && ui.topBar.height > 0) {
+            topo = maxOf(topo, ui.topBar.bottom + (14 * dp).toInt())
+        }
+        val params = ui.hud.layoutParams as? FrameLayout.LayoutParams ?: return
+        if (params.topMargin != topo) {
+            params.topMargin = topo
+            ui.hud.layoutParams = params
         }
     }
 
