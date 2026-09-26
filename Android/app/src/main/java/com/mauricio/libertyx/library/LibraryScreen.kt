@@ -106,6 +106,15 @@ import com.mauricio.libertyx.core.resumeKey
 import com.mauricio.libertyx.player.Playback
 import com.mauricio.libertyx.tv.tvFocus
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 
 /**
  * Tela inicial: todos os vídeos do aparelho, agrupados por pasta.
@@ -123,13 +132,15 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(onOpenServers: () -> Unit) {
+fun LibraryScreen(onOpenServers: () -> Unit, onGuia: () -> Unit = {}) {
     val contexto = LocalContext.current
     val escopo = rememberCoroutineScope()
     val opcoes = remember { LibraryOptions(contexto) }
 
     var grupos by remember { mutableStateOf<List<VideoGroup>>(emptyList()) }
     var varrendo by remember { mutableStateOf(true) }
+    var puxando by remember { mutableStateOf(false) }
+    val estadoDoPuxar = rememberPullToRefreshState()
     var mostrandoOpcoes by remember { mutableStateOf(false) }
     var caminhoAberto by rememberSaveable { mutableStateOf<String?>(null) }
     val volta = rememberVoltaAoApp()
@@ -159,6 +170,33 @@ fun LibraryScreen(onOpenServers: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         FundoDeCapa(if (aberta != null) capaDa(aberta) else continuar.firstOrNull() ?: grupos.firstOrNull()?.let(::capaDa))
 
+        // Puxar para baixo varre de novo, como no iPhone. O giro fica à mostra
+        // por um instante mesmo quando a varredura é imediata — sem isso ele
+        // pisca e some, e parece que o gesto não fez nada.
+        PullToRefreshBox(
+            isRefreshing = puxando,
+            onRefresh = {
+                escopo.launch {
+                    puxando = true
+                    val inicio = System.currentTimeMillis()
+                    varrer()
+                    delay((700 - (System.currentTimeMillis() - inicio)).coerceAtLeast(0))
+                    puxando = false
+                }
+            },
+            state = estadoDoPuxar,
+            modifier = Modifier.fillMaxSize(),
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = estadoDoPuxar,
+                    isRefreshing = puxando,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+                    containerColor = LabTheme.surface,
+                    color = LabTheme.accent,
+                )
+            },
+        ) {
         AnimatedContent(
             targetState = aberta,
             transitionSpec = {
@@ -197,8 +235,9 @@ fun LibraryScreen(onOpenServers: () -> Unit) {
                 )
             }
         }
+        }
 
-        if (varrendo) {
+        if (varrendo && !puxando) {
             Row(
                 Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 18.dp)
                     .clip(CircleShape).background(LabTheme.surface.copy(alpha = 0.92f))
@@ -218,7 +257,7 @@ fun LibraryScreen(onOpenServers: () -> Unit) {
             onDismissRequest = { mostrandoOpcoes = false; opcoes.save() },
             containerColor = LabTheme.surface,
         ) {
-            OpcoesDaBiblioteca(opcoes)
+            OpcoesDaBiblioteca(opcoes, onGuia = { mostrandoOpcoes = false; opcoes.save(); onGuia() })
         }
     }
 }
@@ -784,8 +823,10 @@ private fun Vazio(onOpenServers: () -> Unit) {
 
 /** Folha de opções, no espírito da do MX Player. */
 @Composable
-internal fun OpcoesDaBiblioteca(opcoes: LibraryOptions) {
-    Column(Modifier.navigationBarsPadding().padding(horizontal = 22.dp).padding(top = 4.dp, bottom = 20.dp)) {
+internal fun OpcoesDaBiblioteca(opcoes: LibraryOptions, onGuia: (() -> Unit)? = null) {
+    // Rola: com a fonte grande ou o celular deitado, o fim da folha (a ajuda
+    // e a versão) passava da tela.
+    Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 22.dp).padding(top = 4.dp, bottom = 20.dp)) {
         Text("Exibição", color = LabTheme.text, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
         Spacer(Modifier.height(18.dp))
 
@@ -818,6 +859,12 @@ internal fun OpcoesDaBiblioteca(opcoes: LibraryOptions) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Pilula("Crescente", opcoes.ascending, Modifier.weight(1f)) { opcoes.ascending = true }
             Pilula("Decrescente", !opcoes.ascending, Modifier.weight(1f)) { opcoes.ascending = false }
+        }
+
+        if (onGuia != null) {
+            Spacer(Modifier.height(20.dp))
+            Secao("Ajuda")
+            Pilula("Ver o guia dos gestos e ferramentas", false, Modifier.fillMaxWidth(), onGuia)
         }
 
         Spacer(Modifier.height(26.dp))

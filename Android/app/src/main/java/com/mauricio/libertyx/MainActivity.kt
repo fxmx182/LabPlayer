@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.mauricio.libertyx.core.Device
+import com.mauricio.libertyx.guia.Guia
+import com.mauricio.libertyx.guia.GuiaDeBoasVindas
 import com.mauricio.libertyx.core.LabTheme
 import com.mauricio.libertyx.core.LibertyXTheme
 import com.mauricio.libertyx.library.LibraryScreen
@@ -75,14 +78,24 @@ private fun App() {
     // como adivinhar sozinho.
     BackHandler(enabled = tela is Screen.Servers) { tela = Screen.Library }
 
-    val naTv = Device.isTv(LocalContext.current)
+    val contexto = LocalContext.current
+    val naTv = Device.isTv(contexto)
+
+    // O guia vem antes do pedido de permissão: quem acabou de instalar vê
+    // primeiro o que o app faz, e só depois o Android perguntando coisas. Na
+    // TV não há gesto para ensinar — o controle remoto já é o guia.
+    var mostrandoGuia by rememberSaveable { mutableStateOf(!naTv && Guia.precisaMostrar(contexto)) }
+    if (mostrandoGuia) {
+        GuiaDeBoasVindas(onFim = { Guia.marcarVisto(contexto); mostrandoGuia = false })
+        return
+    }
 
     when (val atual = tela) {
         // A mesma origem de dados nos dois casos; o que muda é a tela — grade
         // para o dedo, faixas para o controle remoto.
         is Screen.Library -> ComPermissao(bloqueia = !naTv) {
             if (naTv) TvHomeScreen(onOpenServers = { tela = Screen.Servers })
-            else LibraryScreen(onOpenServers = { tela = Screen.Servers })
+            else LibraryScreen(onOpenServers = { tela = Screen.Servers }, onGuia = { mostrandoGuia = true })
         }
         is Screen.Servers -> SmbServersScreen(
             onBack = { tela = Screen.Library },

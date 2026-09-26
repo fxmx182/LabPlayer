@@ -161,6 +161,14 @@ No celular. Os mesmos do irmão de iOS, que por sua vez são os do MX Player:
 | Pinça | Ampliar de 0,5× a 6× |
 | Dois dedos arrastando | Mover a imagem ampliada |
 
+Na primeira abertura, antes do pedido de permissão, um guia de dez páginas
+(`guia/Guia.kt`) ensina cada gesto numa tela de player de mentira onde ele
+funciona de verdade — a página só dá o "isso!" depois que o dedo fez. Nunca
+prende: "Próximo" e "Pular" andam sem gesto nenhum. Rever: Exibição › Ver o
+guia. Não aparece na TV, onde não há gesto para ensinar.
+
+Na biblioteca, puxar a lista para baixo varre de novo, como no iPhone.
+
 E no menu ⋮: velocidade, modo noturno, temporizador para dormir, aleatório,
 repetir, captura de tela, girar, bloquear a tela, e o interruptor da rolagem
 quadro a quadro.
@@ -281,6 +289,7 @@ app/src/main/java/com/mauricio/libertyx/
   smb/       SmbServerStore · SmbBrowser · SmbScreens
   player/    VlcEngine · PlayerActivity · Playback · Vlc
   tv/        TvHomeScreen · TvFocus (o realce que a TV exige)
+  guia/      o guia interativo da primeira abertura
   MainActivity.kt
 app/src/celular/    manifesto próprio + auto/LibertyXMediaService (Android Auto)
 app/src/tv/         manifesto próprio + o banner da tela inicial da TV
