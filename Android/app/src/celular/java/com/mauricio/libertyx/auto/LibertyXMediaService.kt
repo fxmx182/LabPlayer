@@ -141,14 +141,14 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
     }
 
     private fun raiz(): MutableList<BrowserItem> = mutableListOf(
-        pasta(LOCAIS, "Neste aparelho"),
-        pasta(SERVIDORES, "Servidores"),
+        pasta(LOCAIS, getString(R.string.neste_aparelho)),
+        pasta(SERVIDORES, getString(R.string.servidores)),
     )
 
     private suspend fun pastasLocais(): MutableList<BrowserItem> =
         MediaLibrary.scan(this).map { grupo ->
             grupo.items.forEach { conhecidos[idDoItem(it)] = it }
-            pasta("$PASTA/${grupo.path}", grupo.name, "${grupo.items.size} vídeos")
+            pasta("$PASTA/${grupo.path}", grupo.name, resources.getQuantityString(R.plurals.n_videos, grupo.items.size, grupo.items.size))
         }.toMutableList()
 
     private suspend fun videosDaPasta(caminho: String): MutableList<BrowserItem> {
@@ -218,7 +218,7 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
             MediaDescriptionCompat.Builder()
                 .setMediaId(idDoItem(item))
                 .setTitle(item.title)
-                .setSubtitle(retomada?.let { "parou em ${com.mauricio.libertyx.core.TimeFormat.clock(it)}" })
+                .setSubtitle(retomada?.let { getString(R.string.parou_em, com.mauricio.libertyx.core.TimeFormat.clock(it)) })
                 .build(),
             BrowserItem.FLAG_PLAYABLE,
         )
@@ -290,7 +290,7 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
         if (!pedirFoco()) return
 
         engine.load(item).onFailure {
-            publicarEstado(PlaybackState.Failed(it.message ?: "não deu para abrir"))
+            publicarEstado(PlaybackState.Failed(it.message ?: getString(R.string.erro_abrir_curto)))
             return
         }
 
@@ -395,8 +395,8 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
 
     private fun criarCanal() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val canal = NotificationChannel(CANAL, "Reprodução", NotificationManager.IMPORTANCE_LOW).apply {
-            description = "O controle do que está tocando"
+        val canal = NotificationChannel(CANAL, getString(R.string.canal_reproducao), NotificationManager.IMPORTANCE_LOW).apply {
+            description = getString(R.string.canal_reproducao_desc)
             setShowBadge(false)
         }
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)

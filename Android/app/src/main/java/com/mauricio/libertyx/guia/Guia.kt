@@ -107,6 +107,10 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import com.mauricio.libertyx.core.Textos
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 
 /**
  * O guia da primeira abertura.
@@ -155,12 +159,12 @@ fun GuiaDeBoasVindas(onFim: () -> Unit) {
                 Image(painterResource(R.drawable.ic_marca), null, Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Guia rápido", color = LabTheme.muted, fontSize = 13.sp,
+                    stringResource(R.string.g_guia_rapido), color = LabTheme.muted, fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
                 )
                 AnimatedVisibility(!ultima, enter = fadeIn(), exit = fadeOut()) {
                     Text(
-                        "Pular", color = LabTheme.muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        stringResource(R.string.g_pular), color = LabTheme.muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.clip(CircleShape).clickable(onClick = onFim)
                             .padding(horizontal = 14.dp, vertical = 8.dp),
                     )
@@ -216,7 +220,7 @@ fun GuiaDeBoasVindas(onFim: () -> Unit) {
                 ) {
                     AnimatedContent(ultima, label = "botão") { fim ->
                         Text(
-                            if (fim) "Começar" else "Próximo",
+                            stringResource(if (fim) R.string.g_comecar else R.string.g_proximo),
                             color = Color(0xFF1A1405), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold,
                         )
                     }
@@ -242,12 +246,12 @@ private fun BrilhoDeFundo() {
 // ─── A página ───────────────────────────────────────────────────────────────
 
 private class Pagina(
-    val etiqueta: String,
-    val titulo: String,
-    val texto: String,
+    @StringRes val etiqueta: Int,
+    @StringRes val titulo: Int,
+    @StringRes val texto: Int,
     /** O convite para experimentar; `null` na página que não tem gesto. */
-    val tente: String?,
-    val feito: String,
+    @StringRes val tente: Int?,
+    @StringRes val feito: Int,
     val demo: @Composable (onFeito: () -> Unit) -> Unit,
 )
 
@@ -285,16 +289,16 @@ private fun PaginaDoGuia(p: Pagina, indice: Int, total: Int, feita: Boolean, onF
 @Composable
 private fun TextoDaPagina(p: Pagina, indice: Int, total: Int, feita: Boolean) {
     Text(
-        "${p.etiqueta}  ·  ${indice + 1} de $total".uppercase(),
+        stringResource(R.string.g_etiqueta, stringResource(p.etiqueta), indice + 1, total).uppercase(),
         color = Ouro, style = LabTheme.sectionTitle, fontSize = 11.sp,
     )
     Spacer(Modifier.height(10.dp))
-    Text(p.titulo, style = LabTheme.headline, fontSize = 28.sp, lineHeight = 32.sp, color = LabTheme.text)
+    Text(stringResource(p.titulo), style = LabTheme.headline, fontSize = 28.sp, lineHeight = 32.sp, color = LabTheme.text)
     Spacer(Modifier.height(10.dp))
-    Text(p.texto, color = LabTheme.muted, fontSize = 15.sp, lineHeight = 22.sp)
+    Text(stringResource(p.texto), color = LabTheme.muted, fontSize = 15.sp, lineHeight = 22.sp)
     if (p.tente != null) {
         Spacer(Modifier.height(18.dp))
-        Convite(p.tente, p.feito, feita)
+        Convite(stringResource(p.tente), stringResource(p.feito), feita)
     }
 }
 
@@ -322,7 +326,7 @@ private fun Convite(tente: String, feito: String, feita: Boolean) {
         AnimatedContent(feita, label = "texto") { ok ->
             Text(
                 buildAnnotatedString {
-                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append(if (ok) "Isso! " else "Experimente: ") }
+                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append(stringResource(if (ok) R.string.g_isso else R.string.g_experimente) + " ") }
                     append(if (ok) feito else tente)
                 },
                 color = LabTheme.text, fontSize = 14.sp, lineHeight = 19.sp,
@@ -542,94 +546,21 @@ private fun Cena(tempo: Float, modifier: Modifier) {
 }
 
 private fun velocidadeEmTexto(v: Float): String =
-    if (v == v.roundToInt().toFloat()) "${v.roundToInt()}×" else "${v.toString().replace('.', ',')}×"
+    if (v == v.roundToInt().toFloat()) "${v.roundToInt()}×" else String.format(java.util.Locale.getDefault(), "%.1f×", v)
 
 // ─── As páginas ─────────────────────────────────────────────────────────────
 
 private fun paginasDoGuia(): List<Pagina> = listOf(
-    Pagina(
-        "Bem-vindo", "O seu cinema, sem limites",
-        "O LibertyX abre praticamente tudo — MKV, HEVC, 4K HDR, legendas ASS e PGS, várias faixas de " +
-            "áudio — do aparelho, do pendrive ou do computador de casa. Em um minuto você aprende os " +
-            "atalhos que fazem a diferença.",
-        null, "", { BoasVindas() },
-    ),
-    Pagina(
-        "No player", "Arraste para os lados",
-        "Em qualquer ponto da tela. O quadro exato acompanha o dedo, em vez de pular de cena em cena, " +
-            "e o balão mostra para onde você vai e quanto andou.",
-        "arraste o dedo para a direita ou para a esquerda no vídeo",
-        "É assim que se procura uma cena.",
-        { DemoBusca(it) },
-    ),
-    Pagina(
-        "No player", "Brilho à esquerda, volume à direita",
-        "Arraste para cima ou para baixo. O brilho vale só para o vídeo e volta ao normal quando você " +
-            "sai; o volume é o do aparelho, sem a régua do sistema tapando a imagem.",
-        "suba ou desça o dedo em cada metade",
-        "Os dois lados, sem sair do filme.",
-        { DemoBrilhoVolume(it) },
-    ),
-    Pagina(
-        "No player", "Toque duas vezes",
-        "À direita avança 10 segundos, à esquerda volta 10. No meio, pausa e continua. Perdeu uma fala? " +
-            "Dois toques à esquerda.",
-        "toque duas vezes rápido à direita, à esquerda ou no meio",
-        "Pulou sem nem olhar para os botões.",
-        { DemoToqueDuplo(it) },
-    ),
-    Pagina(
-        "No player", "Segure para acelerar",
-        "Enquanto o dedo fica na tela, o vídeo corre a 2× — solte e ele volta ao normal. Ótimo para " +
-            "atravessar uma parte parada. A velocidade do segurar se escolhe no menu de três pontos, de 1,5× a 4×.",
-        "segure o dedo no vídeo por um instante",
-        "Soltou, voltou ao normal.",
-        { DemoSegurar(it) },
-    ),
-    Pagina(
-        "No player", "Pinça para ampliar",
-        "Afaste dois dedos para chegar perto de um detalhe, de 0,5× a 6×, e arraste com os dois para " +
-            "mover a imagem ampliada. \"Ampliação normal\", no menu de três pontos, volta ao quadro inteiro.",
-        "afaste dois dedos sobre o vídeo",
-        "Detalhe de perto.",
-        { DemoPinca(it) },
-    ),
-    Pagina(
-        "No player", "Rolagem fina na barra",
-        "Arrastando a bolinha da barra de tempo, afaste o dedo para cima: a barra passa a andar mais " +
-            "devagar — metade, um quarto, um décimo. É o jeito de acertar o segundo exato num filme de " +
-            "duas horas.",
-        "arraste a bolinha e, sem soltar, suba o dedo",
-        "Precisão de relojoeiro.",
-        { DemoRolagemFina(it) },
-    ),
-    Pagina(
-        "Ferramentas", "A ilha e o menu",
-        "A ilha, logo abaixo do título, guarda o que se usa durante o filme. Os três pontos no canto de cima abrem o resto. " +
-            "Toque em cada uma para saber o que faz.",
-        "toque em três ferramentas",
-        "Agora você conhece a caixa de ferramentas.",
-        { DemoFerramentas(it) },
-    ),
-    Pagina(
-        "Biblioteca", "Tudo do aparelho, já organizado",
-        "As pastas viram capas, e \"Continuar assistindo\" guarda onde você parou em cada vídeo — ao " +
-            "abrir de novo, o app pergunta se quer continuar. Baixou algo novo? Puxe a tela para baixo " +
-            "para atualizar.",
-        "puxe a lista para baixo e solte",
-        "Biblioteca atualizada.",
-        { DemoBiblioteca(it) },
-    ),
-    Pagina(
-        "Na rede", "O computador de casa, no bolso",
-        "O ícone de servidores, no alto da biblioteca, acha sozinho os computadores e NAS da sua rede " +
-            "com pastas compartilhadas e toca direto de lá, sem baixar nada. No carro, o Android Auto " +
-            "toca o áudio dos vídeos.\n\nAo tocar em Começar, o Android vai pedir acesso aos seus vídeos. " +
-            "Nada sai do aparelho — a varredura é local. Para rever este guia: Exibição › Ver o guia.",
-        "toque no ícone de servidores",
-        "É por aqui que se chega ao computador de casa.",
-        { DemoRede(it) },
-    ),
+    Pagina(R.string.g0_et, R.string.g0_ti, R.string.g0_tx, null, 0, { BoasVindas() }),
+    Pagina(R.string.g_no_player, R.string.g1_ti, R.string.g1_tx, R.string.g1_te, R.string.g1_fe, { DemoBusca(it) }),
+    Pagina(R.string.g_no_player, R.string.g2_ti, R.string.g2_tx, R.string.g2_te, R.string.g2_fe, { DemoBrilhoVolume(it) }),
+    Pagina(R.string.g_no_player, R.string.g3_ti, R.string.g3_tx, R.string.g3_te, R.string.g3_fe, { DemoToqueDuplo(it) }),
+    Pagina(R.string.g_no_player, R.string.g4_ti, R.string.g4_tx, R.string.g4_te, R.string.g4_fe, { DemoSegurar(it) }),
+    Pagina(R.string.g_no_player, R.string.g5_ti, R.string.g5_tx, R.string.g5_te, R.string.g5_fe, { DemoPinca(it) }),
+    Pagina(R.string.g_no_player, R.string.g6_ti, R.string.g6_tx, R.string.g6_te, R.string.g6_fe, { DemoRolagemFina(it) }),
+    Pagina(R.string.g_ferramentas, R.string.g7_ti, R.string.g7_tx, R.string.g7_te, R.string.g7_fe, { DemoFerramentas(it) }),
+    Pagina(R.string.biblioteca, R.string.g8_ti, R.string.g8_tx, R.string.g8_te, R.string.g8_fe, { DemoBiblioteca(it) }),
+    Pagina(R.string.g_na_rede, R.string.g9_ti, R.string.g9_tx, R.string.g9_te, R.string.g9_fe, { DemoRede(it) }),
 )
 
 // ─── As demonstrações ───────────────────────────────────────────────────────
@@ -656,7 +587,7 @@ private fun BoasVindas() {
             },
             color = LabTheme.text, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp,
         )
-        Text("Sua mídia. Sua liberdade.", color = LabTheme.muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.g_slogan), color = LabTheme.muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -699,11 +630,11 @@ private fun DemoBrilhoVolume(onFeito: () -> Unit) {
                 ch.consume()
                 if (esquerda) {
                     d.brilho = (d.brilho - arrasto.y / altura).coerceIn(0.1f, 1f)
-                    d.mostrar(Balao("${(d.brilho * 100).roundToInt()}%", "Brilho", d.brilho))
+                    d.mostrar(Balao("${(d.brilho * 100).roundToInt()}%", Textos.get(R.string.brilho), d.brilho))
                     usouBrilho = true
                 } else {
                     d.volume = (d.volume - arrasto.y / altura).coerceIn(0f, 1f)
-                    d.mostrar(Balao("${(d.volume * 100).roundToInt()}%", "Volume", d.volume))
+                    d.mostrar(Balao("${(d.volume * 100).roundToInt()}%", Textos.get(R.string.volume), d.volume))
                     usouVolume = true
                 }
                 if (usouBrilho && usouVolume) onFeito()
@@ -714,8 +645,8 @@ private fun DemoBrilhoVolume(onFeito: () -> Unit) {
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Marcador("Brilho", usouBrilho, Modifier.weight(1f))
-            Marcador("Volume", usouVolume, Modifier.weight(1f))
+            Marcador(stringResource(R.string.brilho), usouBrilho, Modifier.weight(1f))
+            Marcador(stringResource(R.string.volume), usouVolume, Modifier.weight(1f))
         }
     }
 }
@@ -774,9 +705,9 @@ private fun DemoToqueDuplo(onFeito: () -> Unit) {
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Marcador("Voltar", -1 in feitos, Modifier.weight(1f))
-            Marcador("Pausar", 0 in feitos, Modifier.weight(1f))
-            Marcador("Avançar", 1 in feitos, Modifier.weight(1f))
+            Marcador(stringResource(R.string.voltar), -1 in feitos, Modifier.weight(1f))
+            Marcador(stringResource(R.string.cd_pausar), 0 in feitos, Modifier.weight(1f))
+            Marcador(stringResource(R.string.g_avancar), 1 in feitos, Modifier.weight(1f))
         }
     }
 }
@@ -808,14 +739,14 @@ private fun DemoPinca(onFeito: () -> Unit) {
         detectTransformGestures { _, arrasto, escala, _ ->
             d.zoom = (d.zoom * escala).coerceIn(0.5f, 6f)
             d.desloc = if (d.zoom > 1f) d.desloc + arrasto else Offset.Zero
-            d.mostrar(Balao("${(d.zoom * 100).roundToInt()}%", "Ampliação"))
+            d.mostrar(Balao("${(d.zoom * 100).roundToInt()}%", Textos.get(R.string.ampliacao)))
             if (d.zoom > 1.4f || d.zoom < 0.8f) onFeito()
         }
     }) {
         // Quem já ampliou precisa de um caminho de volta aqui também.
         if (d.zoom != 1f) {
             Text(
-                "Ampliação normal", color = LabTheme.text, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                stringResource(R.string.t_ampliacao_normal), color = LabTheme.text, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).clip(CircleShape).background(Vidro)
                     .clickable { d.zoom = 1f; d.desloc = Offset.Zero }.padding(horizontal = 12.dp, vertical = 6.dp),
             )
@@ -838,10 +769,10 @@ private fun DemoRolagemFina(onFeito: () -> Unit) {
                     Balao(
                         TimeFormat.clock(d.tempo.toDouble()),
                         when {
-                            precisao >= 1f -> "velocidade normal"
-                            precisao > 0.4f -> "precisão ½ — afaste mais para afinar"
-                            precisao > 0.2f -> "precisão ¼"
-                            else -> "precisão ⅒"
+                            precisao >= 1f -> stringResource(R.string.g_velocidade_normal)
+                            precisao > 0.4f -> stringResource(R.string.g_precisao_meio)
+                            precisao > 0.2f -> stringResource(R.string.g_precisao_x, "¼")
+                            else -> stringResource(R.string.g_precisao_x, "⅒")
                         },
                         dourada = precisao < 1f,
                     )
@@ -882,7 +813,7 @@ private fun DemoRolagemFina(onFeito: () -> Unit) {
                         .background(if (acesa) Ouro.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.07f)),
                 )
                 Text(
-                    "precisão $rotulo", fontSize = 11.sp, fontWeight = if (acesa) FontWeight.Bold else FontWeight.Normal,
+                    stringResource(R.string.g_precisao_x, rotulo), fontSize = 11.sp, fontWeight = if (acesa) FontWeight.Bold else FontWeight.Normal,
                     color = if (acesa) Ouro else LabTheme.faint.copy(alpha = 0.6f),
                     modifier = Modifier.fillMaxWidth().offset(y = 172.dp - dist.dp - 18.dp), textAlign = TextAlign.End,
                 )
@@ -907,25 +838,28 @@ private fun DemoRolagemFina(onFeito: () -> Unit) {
     }
 }
 
-private class Ferramenta(@DrawableRes val icone: Int, val nome: String, val explica: String)
+private class Ferramenta(@DrawableRes val icone: Int, @StringRes val nomeRes: Int, @StringRes val explicaRes: Int) {
+    val nome: String get() = Textos.get(nomeRes)
+    val explica: String get() = Textos.get(explicaRes)
+}
 
 private val daIlha = listOf(
-    Ferramenta(R.drawable.ic_audio_track, "Faixa de áudio", "Troca a faixa de som: dublado, original, comentário do diretor."),
-    Ferramenta(R.drawable.ic_subtitle, "Legenda", "Liga, desliga e escolhe entre as legendas do arquivo."),
-    Ferramenta(R.drawable.ic_repeat, "Repetir", "Repete o vídeo atual sem parar. Acende enquanto estiver ligado."),
-    Ferramenta(R.drawable.ic_rotate, "Girar", "Automático, deitado ou em pé — e o terceiro toque devolve ao automático."),
-    Ferramenta(R.drawable.ic_speed, "Velocidade", "De 0,5× a 2×, para quando a fala corre demais ou de menos."),
+    Ferramenta(R.drawable.ic_audio_track, R.string.t_faixa_audio, R.string.gf_audio),
+    Ferramenta(R.drawable.ic_subtitle, R.string.t_legenda, R.string.gf_legenda),
+    Ferramenta(R.drawable.ic_repeat, R.string.t_repetir, R.string.gf_repetir),
+    Ferramenta(R.drawable.ic_rotate, R.string.t_girar, R.string.gf_girar),
+    Ferramenta(R.drawable.ic_speed, R.string.t_velocidade, R.string.gf_velocidade),
 )
 
 private val doMenu = listOf(
-    Ferramenta(R.drawable.ic_timer, "Dormir", "Tempo para dormir: pausa sozinho depois dos minutos que você escolher."),
-    Ferramenta(R.drawable.ic_moon, "Noturno", "Escurece a imagem além do mínimo do sistema, para assistir no escuro."),
-    Ferramenta(R.drawable.ic_camera, "Captura", "Salva o quadro que está na tela em Imagens."),
-    Ferramenta(R.drawable.ic_pip, "Janela", "Janela flutuante: o vídeo segue num canto enquanto você usa outro app."),
-    Ferramenta(R.drawable.ic_frame, "Quadro a quadro", "A busca exata do arrasto. Desligue para arquivos pesados pela rede."),
-    Ferramenta(R.drawable.ic_lock, "Bloquear", "O cadeado da barra de baixo trava os toques — filme no bolso, criança no colo."),
-    Ferramenta(R.drawable.ic_volume_off, "Mudo", "Silencia só o vídeo; um alto-falante riscado fica no alto enquanto durar."),
-    Ferramenta(R.drawable.ic_aspect, "Proporção", "Ajustar, preencher ou esticar a imagem na tela."),
+    Ferramenta(R.drawable.ic_timer, R.string.gf_dormir_n, R.string.gf_dormir),
+    Ferramenta(R.drawable.ic_moon, R.string.gf_noturno_n, R.string.gf_noturno),
+    Ferramenta(R.drawable.ic_camera, R.string.gf_captura_n, R.string.gf_captura),
+    Ferramenta(R.drawable.ic_pip, R.string.gf_janela_n, R.string.gf_janela),
+    Ferramenta(R.drawable.ic_frame, R.string.t_quadro_a_quadro, R.string.gf_quadro),
+    Ferramenta(R.drawable.ic_lock, R.string.gf_bloquear_n, R.string.gf_bloquear),
+    Ferramenta(R.drawable.ic_volume_off, R.string.t_mudo, R.string.gf_mudo),
+    Ferramenta(R.drawable.ic_aspect, R.string.t_proporcao, R.string.gf_proporcao),
 )
 
 @Composable
@@ -946,7 +880,7 @@ private fun DemoFerramentas(onFeito: () -> Unit) {
             daIlha.forEach { f -> IconeDeFerramenta(f, f === escolhida, f.nome in vistas, 46.dp) { tocar(f) } }
         }
         Spacer(Modifier.height(14.dp))
-        Text("NOS TRÊS PONTOS", style = LabTheme.sectionTitle, fontSize = 10.sp, color = LabTheme.faint)
+        Text(stringResource(R.string.g_nos_tres_pontos), style = LabTheme.sectionTitle, fontSize = 10.sp, color = LabTheme.faint)
         Spacer(Modifier.height(8.dp))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             doMenu.chunked(4).forEach { linha ->
@@ -964,7 +898,7 @@ private fun DemoFerramentas(onFeito: () -> Unit) {
         ) {
             AnimatedContent(escolhida, label = "explicação") { f ->
                 if (f == null) {
-                    Text("Toque numa ferramenta para ver o que ela faz.", color = LabTheme.faint, fontSize = 13.sp)
+                    Text(stringResource(R.string.g_toque_ferramenta), color = LabTheme.faint, fontSize = 13.sp)
                 } else {
                     Column {
                         Text(f.nome, color = Ouro, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
@@ -1046,21 +980,27 @@ private fun DemoBiblioteca(onFeito: () -> Unit) {
         Column(
             Modifier.fillMaxSize().offset { IntOffset(0, puxao.value.roundToInt()) }.padding(16.dp),
         ) {
-            Text("Biblioteca", color = LabTheme.text, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-            Text(if (atualizada) "6 vídeos · 3 pastas · atualizada agora" else "5 vídeos · 3 pastas", color = if (atualizada) LabTheme.green else LabTheme.muted, fontSize = 11.sp)
+            Text(stringResource(R.string.biblioteca), color = LabTheme.text, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Text(
+                listOfNotNull(
+                    pluralStringResource(R.plurals.n_videos, if (atualizada) 6 else 5, if (atualizada) 6 else 5),
+                    pluralStringResource(R.plurals.n_pastas, 3, 3),
+                    if (atualizada) stringResource(R.string.g_atualizada_agora) else null,
+                ).joinToString(" · "),
+                color = if (atualizada) LabTheme.green else LabTheme.muted, fontSize = 11.sp)
             Spacer(Modifier.height(12.dp))
-            Text("CONTINUAR ASSISTINDO", style = LabTheme.sectionTitle, fontSize = 9.sp, color = LabTheme.muted)
+            Text(stringResource(R.string.continuar_assistindo).uppercase(), style = LabTheme.sectionTitle, fontSize = 9.sp, color = LabTheme.muted)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CapaDeMentira(0.3f, 0.62f, "faltam 16 min", Modifier.width(118.dp))
-                CapaDeMentira(0.7f, 0.25f, "faltam 31 min", Modifier.width(118.dp))
-                CapaDeMentira(0.5f, 0.8f, "faltam 4 min", Modifier.width(118.dp))
+                CapaDeMentira(0.3f, 0.62f, stringResource(R.string.faltam, Textos.get(R.string.tempo_min, 16)), Modifier.width(118.dp))
+                CapaDeMentira(0.7f, 0.25f, stringResource(R.string.faltam, Textos.get(R.string.tempo_min, 31)), Modifier.width(118.dp))
+                CapaDeMentira(0.5f, 0.8f, stringResource(R.string.faltam, Textos.get(R.string.tempo_min, 4)), Modifier.width(118.dp))
             }
             Spacer(Modifier.height(10.dp))
-            Text("PASTAS", style = LabTheme.sectionTitle, fontSize = 9.sp, color = LabTheme.muted)
+            Text(stringResource(R.string.pastas).uppercase(), style = LabTheme.sectionTitle, fontSize = 9.sp, color = LabTheme.muted)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Filmes", "Séries", "Download").forEach { nome ->
+                listOf(R.string.g_filmes, R.string.g_series, R.string.g_download).map { stringResource(it) }.forEach { nome ->
                     Box(
                         Modifier.weight(1f).height(34.dp).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.06f)),
                         contentAlignment = Alignment.CenterStart,
@@ -1099,7 +1039,7 @@ private fun DemoRede(onFeito: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(painterResource(R.drawable.ic_marca), null, Modifier.size(22.dp))
             Spacer(Modifier.width(8.dp))
-            Text("Biblioteca", color = LabTheme.text, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.biblioteca), color = LabTheme.text, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
             Box(contentAlignment = Alignment.Center) {
                 if (!procurando && achou == 0) {
                     Canvas(Modifier.size(52.dp)) {
@@ -1121,7 +1061,7 @@ private fun DemoRede(onFeito: () -> Unit) {
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Image(painterResource(R.drawable.ic_server), "Servidores", Modifier.size(20.dp), colorFilter = ColorFilter.tint(Color.White))
+                    Image(painterResource(R.drawable.ic_server), stringResource(R.string.servidores), Modifier.size(20.dp), colorFilter = ColorFilter.tint(Color.White))
                 }
             }
         }
@@ -1129,7 +1069,7 @@ private fun DemoRede(onFeito: () -> Unit) {
         Box(Modifier.fillMaxWidth().height(146.dp)) {
             if (!procurando && achou == 0) {
                 Text(
-                    "Servidores ficam aqui, no alto. →", color = LabTheme.faint, fontSize = 13.sp,
+                    stringResource(R.string.g_servidores_aqui), color = LabTheme.faint, fontSize = 13.sp,
                     modifier = Modifier.align(Alignment.Center),
                 )
             } else {
@@ -1138,9 +1078,12 @@ private fun DemoRede(onFeito: () -> Unit) {
                         if (procurando) CircularProgressIndicator(Modifier.size(12.dp), color = Ouro, strokeWidth = 1.5.dp)
                         else Icon(Icons.Rounded.Check, null, tint = LabTheme.green, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(if (procurando) "Procurando na rede…" else "Na sua rede", color = LabTheme.muted, fontSize = 12.sp)
+                        Text(stringResource(if (procurando) R.string.g_procurando_rede else R.string.g_na_sua_rede), color = LabTheme.muted, fontSize = 12.sp)
                     }
-                    listOf("Computador da sala" to "Filmes · Séries", "NAS" to "Mídia").take(achou).forEach { (nome, pastas) ->
+                    listOf(
+                        stringResource(R.string.g_pc_sala) to stringResource(R.string.g_filmes) + " · " + stringResource(R.string.g_series),
+                        "NAS" to stringResource(R.string.g_midia),
+                    ).take(achou).forEach { (nome, pastas) ->
                         Row(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.06f))
                                 .padding(horizontal = 12.dp, vertical = 9.dp),
@@ -1158,7 +1101,7 @@ private fun DemoRede(onFeito: () -> Unit) {
             }
         }
         Text(
-            "Exemplo ilustrativo — os nomes reais são os da sua rede.",
+            stringResource(R.string.g_exemplo),
             color = LabTheme.faint, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp),
         )
     }

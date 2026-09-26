@@ -121,7 +121,7 @@ class PlayerActivity : Activity() {
     private val sleepRunnable = Runnable {
         engine.pause()
         sleepDeadline = null
-        showHud("Pausado pelo temporizador", null, null)
+        showHud(getString(R.string.pausado_temporizador), null, null)
         hideHudAfter(2500)
     }
 
@@ -161,9 +161,9 @@ class PlayerActivity : Activity() {
     private var lastMidY = 0f
 
     private val gravityModes = listOf(
-        MediaPlayer.ScaleType.SURFACE_BEST_FIT to "Ajustar",
-        MediaPlayer.ScaleType.SURFACE_FILL to "Preencher",
-        MediaPlayer.ScaleType.SURFACE_FIT_SCREEN to "Esticar",
+        MediaPlayer.ScaleType.SURFACE_BEST_FIT to R.string.ajustar,
+        MediaPlayer.ScaleType.SURFACE_FILL to R.string.preencher,
+        MediaPlayer.ScaleType.SURFACE_FIT_SCREEN to R.string.esticar,
     )
     private var gravityIndex = 0
 
@@ -424,7 +424,7 @@ class PlayerActivity : Activity() {
         lastSavedPosition = 0.0
 
         engine.load(alvo).onFailure {
-            presentError(it.message ?: "não deu para abrir")
+            presentError(it.message ?: getString(R.string.erro_abrir_curto))
             return
         }
 
@@ -444,8 +444,8 @@ class PlayerActivity : Activity() {
         cancelControlsHide()
         dialog()
             .setTitle(item?.title)
-            .setMessage("Você parou em ${TimeFormat.clock(instante)}.")
-            .setPositiveButton("Continuar de ${TimeFormat.clock(instante)}") { _, _ ->
+            .setMessage(getString(R.string.voce_parou_em, TimeFormat.clock(instante)))
+            .setPositiveButton(getString(R.string.continuar_de, TimeFormat.clock(instante))) { _, _ ->
                 // Buscar antes de a reprodução começar é ignorado pelo VLC — ele
                 // ainda não tem o arquivo posicionado. A marca fica guardada e é
                 // aplicada assim que ele começa a tocar.
@@ -453,7 +453,7 @@ class PlayerActivity : Activity() {
                 engine.play()
                 scheduleControlsHide()
             }
-            .setNegativeButton("Começar do início") { _, _ ->
+            .setNegativeButton(getString(R.string.comecar_do_inicio)) { _, _ ->
                 item?.let { resume.clear(it.origin.resumeKey) }
                 engine.play()
                 scheduleControlsHide()
@@ -488,9 +488,9 @@ class PlayerActivity : Activity() {
         didPresentError = true
         setControlsVisible(true)
         dialog()
-            .setTitle("Não deu para tocar")
+            .setTitle(getString(R.string.nao_deu_tocar))
             .setMessage(mensagem)
-            .setPositiveButton("Voltar") { _, _ -> finish() }
+            .setPositiveButton(getString(R.string.voltar)) { _, _ -> finish() }
             .show()
     }
 
@@ -605,7 +605,7 @@ class PlayerActivity : Activity() {
         val vista = if (frente) ui.saltoDir else ui.saltoEsq
         (if (frente) ui.saltoEsq else ui.saltoDir).visibility = View.GONE
         (if (frente) ui.saltoDirTexto else ui.saltoEsqTexto).text =
-            "${if (frente) "+" else "−"}${abs(saltoSomado).toInt()} s"
+            getString(R.string.salto_s, if (frente) "+" else "−", abs(saltoSomado).toInt())
 
         vista.animate().cancel()
         if (vista.visibility != View.VISIBLE) {
@@ -753,9 +753,9 @@ class PlayerActivity : Activity() {
                 ui.tvPrecisao.visibility = View.GONE
             } else {
                 ui.tvPrecisao.text = when {
-                    precisao > 0.4f -> "precisão ½ — afaste o dedo para afinar"
-                    precisao > 0.2f -> "precisão ¼"
-                    else -> "precisão ⅒"
+                    precisao > 0.4f -> getString(R.string.precisao_meio)
+                    precisao > 0.2f -> getString(R.string.precisao_quarto)
+                    else -> getString(R.string.precisao_decimo)
                 }
                 ui.tvPrecisao.visibility = View.VISIBLE
             }
@@ -948,7 +948,7 @@ class PlayerActivity : Activity() {
         repeatMode = if (repeatMode == RepeatMode.ONE) RepeatMode.OFF else RepeatMode.ONE
         atualizarIlha()
         showHud(
-            if (repeatMode == RepeatMode.ONE) "Repetindo este vídeo" else "Repetição desligada",
+            getString(if (repeatMode == RepeatMode.ONE) R.string.repetindo else R.string.repeticao_desligada),
             null, null,
         )
         hideHudAfter(1400)
@@ -961,7 +961,7 @@ class PlayerActivity : Activity() {
         ui.btnUnlock.visibility = if (travado) View.VISIBLE else View.GONE
         if (travado) {
             cancelControlsHide()
-            showHud("Tela bloqueada", null, null)
+            showHud(getString(R.string.tela_bloqueada), null, null)
             hideHudAfter(1200)
         } else {
             scheduleControlsHide()
@@ -1207,7 +1207,7 @@ class PlayerActivity : Activity() {
         if (panIsOnLeftHalf) {
             val valor = (panStartBrightness + fracao).coerceIn(0.01f, 1f)
             window.attributes = window.attributes.apply { screenBrightness = valor }
-            showHud("${(valor * 100).toInt()}%", "Brilho", (valor * 100).toInt())
+            showHud("${(valor * 100).toInt()}%", getString(R.string.brilho), (valor * 100).toInt())
             ui.hudIcon.setImageResource(R.drawable.ic_brightness)
             ui.hudIcon.visibility = View.VISIBLE
         } else {
@@ -1222,7 +1222,7 @@ class PlayerActivity : Activity() {
             if (valor != audio.getStreamVolume(AudioManager.STREAM_MUSIC)) {
                 audio.setStreamVolume(AudioManager.STREAM_MUSIC, valor, 0)
             }
-            showHud("${valor * 100 / maximo}%", "Volume", valor * 100 / maximo)
+            showHud("${valor * 100 / maximo}%", getString(R.string.volume), valor * 100 / maximo)
             ui.hudIcon.setImageResource(R.drawable.ic_volume)
             ui.hudIcon.visibility = View.VISIBLE
         }
@@ -1258,7 +1258,7 @@ class PlayerActivity : Activity() {
         audio.setStreamVolume(AudioManager.STREAM_MUSIC, novo, 0)
         ui.hudIcon.setImageResource(R.drawable.ic_volume)
         ui.hudIcon.visibility = View.VISIBLE
-        showHud("${novo * 100 / maximo}%", "Volume", novo * 100 / maximo)
+        showHud("${novo * 100 / maximo}%", getString(R.string.volume), novo * 100 / maximo)
         hideHudAfter(1000)
         return true
     }
@@ -1329,7 +1329,7 @@ class PlayerActivity : Activity() {
         lastMidY = midY
 
         applyZoom()
-        showHud("${(videoZoom * 100).toInt()}%", "Ampliação", null)
+        showHud("${(videoZoom * 100).toInt()}%", getString(R.string.ampliacao), null)
         cancelControlsHide()
     }
 
@@ -1366,7 +1366,7 @@ class PlayerActivity : Activity() {
         videoOffsetX = 0f
         videoOffsetY = 0f
         applyZoom()
-        showHud("100%", "Ampliação", null)
+        showHud("100%", getString(R.string.ampliacao), null)
         hideHudAfter(900)
     }
 
@@ -1393,7 +1393,7 @@ class PlayerActivity : Activity() {
         val (modo, nome) = gravityModes[gravityIndex]
         engine.setScale(modo)
         if (anunciar) {
-            showHud(nome, "Enquadramento", null)
+            showHud(getString(nome), getString(R.string.enquadramento), null)
             hideHudAfter(900)
         }
     }
@@ -1481,7 +1481,7 @@ class PlayerActivity : Activity() {
         ui.btnMudo.visibility = if (mudo) View.VISIBLE else View.GONE
         ui.hudIcon.setImageResource(if (mudo) R.drawable.ic_volume_off else R.drawable.ic_volume)
         ui.hudIcon.visibility = View.VISIBLE
-        showHud(if (mudo) "Sem som" else "Som ligado", null, null)
+        showHud(getString(if (mudo) R.string.sem_som else R.string.som_ligado), null, null)
         hideHudAfter(1400)
     }
 
@@ -1513,8 +1513,7 @@ class PlayerActivity : Activity() {
         if (faixas.isEmpty()) {
             Toast.makeText(
                 this,
-                if (audio) "Este arquivo tem só uma faixa de áudio."
-                else "Este arquivo não tem legendas embutidas.",
+                getString(if (audio) R.string.so_uma_faixa else R.string.sem_legendas),
                 Toast.LENGTH_SHORT,
             ).show()
             scheduleControlsHide()
@@ -1524,7 +1523,7 @@ class PlayerActivity : Activity() {
         val rotulos = mutableListOf<String>()
         val ids = mutableListOf<Int?>()
         if (!audio) {
-            rotulos += if (atual == null) "✓ Desligada" else "Desligada"
+            rotulos += (if (atual == null) "✓ " else "") + getString(R.string.desligada)
             ids += null
         }
         for (faixa in faixas) {
@@ -1533,7 +1532,7 @@ class PlayerActivity : Activity() {
         }
 
         dialog()
-            .setTitle(if (audio) "Faixas de áudio" else "Legendas")
+            .setTitle(getString(if (audio) R.string.faixas_audio else R.string.legendas))
             .setItems(rotulos.toTypedArray()) { _, i ->
                 val id = ids[i]
                 if (audio) id?.let { engine.selectAudioTrack(it) }
@@ -1551,7 +1550,7 @@ class PlayerActivity : Activity() {
     /** "2×" em vez de "2.0×": o zero à direita não diz nada e polui a placa. */
     private fun velocidadeEmTexto(valor: Float): String =
         if (valor % 1f == 0f) "${valor.toInt()}×"
-        else String.format(java.util.Locale("pt", "BR"), "%.1f×", valor)
+        else String.format(java.util.Locale.getDefault(), "%.1f×", valor)
 
     /** Uma ferramenta do painel. */
     private data class Ferramenta(
@@ -1592,66 +1591,66 @@ class PlayerActivity : Activity() {
         // já está. Os grupos com título que houve aqui antes pediam leitura; a
         // grade corrida pede só um olhar.
         val itens = buildList {
-            add(Ferramenta("Faixa de áudio", R.drawable.ic_audio_track) { showTracks(audio = true) })
-            add(Ferramenta("Legenda", R.drawable.ic_subtitle) { showTracks(audio = false) })
-            add(Ferramenta("Proporção", R.drawable.ic_aspect) { cycleAspect() })
+            add(Ferramenta(getString(R.string.t_faixa_audio), R.drawable.ic_audio_track) { showTracks(audio = true) })
+            add(Ferramenta(getString(R.string.t_legenda), R.drawable.ic_subtitle) { showTracks(audio = false) })
+            add(Ferramenta(getString(R.string.t_proporcao), R.drawable.ic_aspect) { cycleAspect() })
             add(
                 Ferramenta(
-                    "Velocidade", R.drawable.ic_speed,
+                    getString(R.string.t_velocidade), R.drawable.ic_speed,
                     aceso = playbackSpeed != 1f, noAnel = velocidadeEmTexto(playbackSpeed),
                 ) { showSpeedSheet() }
             )
             add(
                 Ferramenta(
-                    "Acelerar ao segurar", R.drawable.ic_speed,
+                    getString(R.string.t_acelerar_segurar), R.drawable.ic_speed,
                     noAnel = velocidadeEmTexto(prefs.holdSpeed),
                 ) { showHoldSpeedSheet() }
             )
-            add(Ferramenta("Repetir", R.drawable.ic_repeat, aceso = repeatMode == RepeatMode.ONE) {
+            add(Ferramenta(getString(R.string.t_repetir), R.drawable.ic_repeat, aceso = repeatMode == RepeatMode.ONE) {
                 alternarRepeticao()
             })
             if (Playback.queue.size > 1) {
-                add(Ferramenta("Aleatório", R.drawable.ic_shuffle, aceso = isShuffling) {
+                add(Ferramenta(getString(R.string.t_aleatorio), R.drawable.ic_shuffle, aceso = isShuffling) {
                     isShuffling = !isShuffling
                 })
             }
-            add(Ferramenta("Mudo", R.drawable.ic_volume_off, aceso = engine.isMuted) {
+            add(Ferramenta(getString(R.string.t_mudo), R.drawable.ic_volume_off, aceso = engine.isMuted) {
                 alternarMudo(!engine.isMuted)
             })
-            add(Ferramenta("Modo noturno", R.drawable.ic_moon, aceso = ui.dimView.alpha > 0.01f) {
+            add(Ferramenta(getString(R.string.t_modo_noturno), R.drawable.ic_moon, aceso = ui.dimView.alpha > 0.01f) {
                 cycleNightMode()
             })
-            add(Ferramenta("Captura de tela", R.drawable.ic_camera) { takeSnapshot() })
+            add(Ferramenta(getString(R.string.t_captura), R.drawable.ic_camera) { takeSnapshot() })
             // "Bloquear tela" não entra: o cadeado é botão fixo da barra de
             // baixo, e a mesma ação em dois lugares faz parar para escolher
             // entre coisas iguais.
             if (!isTv) {
-                add(Ferramenta("Janela flutuante", R.drawable.ic_pip) { enterPip() })
+                add(Ferramenta(getString(R.string.t_janela), R.drawable.ic_pip) { enterPip() })
                 add(
                     Ferramenta(
-                        "Girar",
+                        getString(R.string.t_girar),
                         R.drawable.ic_rotate,
                         valor = when (rotacao) {
-                            Rotacao.AUTOMATICA -> "automático"
-                            Rotacao.PAISAGEM -> "deitado"
-                            Rotacao.RETRATO -> "em pé"
+                            Rotacao.AUTOMATICA -> getString(R.string.rot_auto)
+                            Rotacao.PAISAGEM -> getString(R.string.rot_deitado)
+                            Rotacao.RETRATO -> getString(R.string.rot_em_pe)
                         },
                         aceso = rotacao != Rotacao.AUTOMATICA,
                     ) { toggleOrientation() }
                 )
             }
-            add(Ferramenta("Ampliação normal", R.drawable.ic_zoom) { resetZoom() })
-            add(Ferramenta("Tempo para dormir", R.drawable.ic_timer, aceso = sleepDeadline != null) {
+            add(Ferramenta(getString(R.string.t_ampliacao_normal), R.drawable.ic_zoom) { resetZoom() })
+            add(Ferramenta(getString(R.string.t_dormir), R.drawable.ic_timer, aceso = sleepDeadline != null) {
                 showSleepSheet()
             })
-            add(Ferramenta("Ocultar barra", R.drawable.ic_timer, valor = prefs.autoHide.title) {
+            add(Ferramenta(getString(R.string.t_ocultar_barra), R.drawable.ic_timer, valor = prefs.autoHide.title) {
                 showAutoHideSheet()
             })
-            add(Ferramenta("Quadro a quadro", R.drawable.ic_frame, aceso = prefs.preciseScrub) {
+            add(Ferramenta(getString(R.string.t_quadro_a_quadro), R.drawable.ic_frame, aceso = prefs.preciseScrub) {
                 prefs.preciseScrub = !prefs.preciseScrub
                 showHud(
-                    if (prefs.preciseScrub) "Quadro a quadro" else "Por keyframe",
-                    "Rolagem", null,
+                    getString(if (prefs.preciseScrub) R.string.t_quadro_a_quadro else R.string.por_keyframe),
+                    getString(R.string.rolagem), null,
                 )
                 hideHudAfter(1400)
             })
@@ -1774,15 +1773,15 @@ class PlayerActivity : Activity() {
     private fun showSpeedSheet() {
         val valores = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
         val rotulos = valores.map {
-            (if (abs(it - playbackSpeed) < 0.01f) "✓ " else "") + "${it}×"
+            (if (abs(it - playbackSpeed) < 0.01f) "✓ " else "") + velocidadeEmTexto(it)
         }
         dialog()
-            .setTitle("Velocidade")
+            .setTitle(getString(R.string.t_velocidade))
             .setItems(rotulos.toTypedArray()) { _, i ->
                 playbackSpeed = valores[i]
                 if (engine.state == PlaybackState.Playing) engine.rate = playbackSpeed
                 atualizarIlha()
-                showHud("${playbackSpeed}×", "Velocidade", null)
+                showHud(velocidadeEmTexto(playbackSpeed), getString(R.string.t_velocidade), null)
                 hideHudAfter(900)
             }
             .setOnDismissListener { scheduleControlsHide() }
@@ -1792,10 +1791,10 @@ class PlayerActivity : Activity() {
     private fun showHoldSpeedSheet() {
         val opcoes = PlayerPreferences.holdSpeedOptions
         val rotulos = opcoes.map {
-            (if (abs(it - prefs.holdSpeed) < 0.01f) "✓ " else "") + "${it}×"
+            (if (abs(it - prefs.holdSpeed) < 0.01f) "✓ " else "") + velocidadeEmTexto(it)
         }
         dialog()
-            .setTitle("Segurar para acelerar")
+            .setTitle(getString(R.string.segurar_para_acelerar))
             .setItems(rotulos.toTypedArray()) { _, i -> prefs.holdSpeed = opcoes[i] }
             .setOnDismissListener { scheduleControlsHide() }
             .show()
@@ -1807,7 +1806,7 @@ class PlayerActivity : Activity() {
             (if (it == prefs.autoHide) "✓ " else "") + it.title
         }
         dialog()
-            .setTitle("Ocultar barra depois de")
+            .setTitle(getString(R.string.ocultar_barra_depois))
             .setItems(rotulos.toTypedArray()) { _, i ->
                 prefs.autoHide = opcoes[i]
                 // Reagenda já com o valor novo, para o efeito ser sentido nesta
@@ -1828,24 +1827,24 @@ class PlayerActivity : Activity() {
         val proximo = niveis[(atual + 1) % niveis.size]
         ui.dimView.animate().alpha(proximo).setDuration(200).start()
         showHud(
-            if (proximo == 0f) "Desligado" else "${(proximo * 100).toInt()}%",
-            "Modo noturno", null,
+            if (proximo == 0f) getString(R.string.desligado) else "${(proximo * 100).toInt()}%",
+            getString(R.string.t_modo_noturno), null,
         )
         hideHudAfter(1200)
     }
 
     private fun sleepTimerTitle(): String {
-        val prazo = sleepDeadline ?: return "Tempo para dormir"
+        val prazo = sleepDeadline ?: return getString(R.string.t_dormir)
         val restante = max(0, prazo - System.currentTimeMillis())
-        return "Dormir em ${restante / 60000 + 1} min"
+        return getString(R.string.dormir_em, (restante / 60000 + 1).toInt())
     }
 
     private fun showSleepSheet() {
         val minutos = listOf(15, 30, 45, 60)
         val rotulos = buildList {
-            add(if (sleepDeadline == null) "✓ Desligado" else "Desligado")
-            addAll(minutos.map { "$it minutos" })
-            add("No fim do vídeo")
+            add((if (sleepDeadline == null) "✓ " else "") + getString(R.string.desligado))
+            addAll(minutos.map { resources.getQuantityString(R.plurals.n_minutos, it, it) })
+            add(getString(R.string.no_fim_do_video))
         }
         dialog()
             .setTitle(sleepTimerTitle())
@@ -1854,7 +1853,7 @@ class PlayerActivity : Activity() {
                 when (i) {
                     0 -> {
                         sleepDeadline = null
-                        showHud("Desligado", "Temporizador", null)
+                        showHud(getString(R.string.desligado), getString(R.string.temporizador), null)
                     }
                     rotulos.lastIndex -> {
                         val restante = max(1.0, engine.duration - engine.currentTime)
@@ -1871,7 +1870,7 @@ class PlayerActivity : Activity() {
     private fun armarSono(millis: Long) {
         sleepDeadline = System.currentTimeMillis() + millis
         main.postDelayed(sleepRunnable, millis)
-        showHud("Dormir em ${millis / 60000} min", "Temporizador", null)
+        showHud(getString(R.string.dormir_em, (millis / 60000).toInt()), getString(R.string.temporizador), null)
     }
 
     /**
@@ -1898,9 +1897,9 @@ class PlayerActivity : Activity() {
         aplicarRotacao()
         showHud(
             when (rotacao) {
-                Rotacao.AUTOMATICA -> "Rotação automática"
-                Rotacao.PAISAGEM -> "Travado deitado"
-                Rotacao.RETRATO -> "Travado em pé"
+                Rotacao.AUTOMATICA -> getString(R.string.rotacao_automatica)
+                Rotacao.PAISAGEM -> getString(R.string.travado_deitado)
+                Rotacao.RETRATO -> getString(R.string.travado_em_pe)
             },
             null, null,
         )
@@ -1923,12 +1922,12 @@ class PlayerActivity : Activity() {
     private fun takeSnapshot() {
         val imagem = engine.snapshot()
         if (imagem == null) {
-            showHud("Nada para capturar", null, null)
+            showHud(getString(R.string.nada_capturar), null, null)
             hideHudAfter(1500)
             return
         }
         val salvo = salvarNaGaleria(imagem)
-        showHud(if (salvo) "Salvo em Imagens" else "Não deu para salvar", null, null)
+        showHud(getString(if (salvo) R.string.salvo_imagens else R.string.nao_deu_salvar), null, null)
         hideHudAfter(1800)
     }
 
@@ -1961,14 +1960,14 @@ class PlayerActivity : Activity() {
      */
     private fun enterPip() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            Toast.makeText(this, "Este Android não tem janela flutuante.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.sem_pip), Toast.LENGTH_SHORT).show()
             return
         }
         val params = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
             .build()
         runCatching { enterPictureInPictureMode(params) }
-            .onFailure { Toast.makeText(this, "A janela flutuante está desativada nos ajustes do Android.", Toast.LENGTH_LONG).show() }
+            .onFailure { Toast.makeText(this, getString(R.string.pip_desativado), Toast.LENGTH_LONG).show() }
     }
 
     private fun isInPip(): Boolean =

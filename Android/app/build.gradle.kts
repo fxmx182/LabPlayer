@@ -134,6 +134,13 @@ android {
         }
     }
 
+    // O idioma segue o do aparelho, e a partir do Android 13 dá para escolher
+    // um só para o LibertyX em Configurações › Apps › Idioma. A lista de
+    // idiomas sai das pastas values-xx; o inglês é o padrão (values/).
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     buildFeatures {
         compose = true
         viewBinding = true

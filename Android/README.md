@@ -169,6 +169,20 @@ guia. Não aparece na TV, onde não há gesto para ensinar.
 
 Na biblioteca, puxar a lista para baixo varre de novo, como no iPhone.
 
+## Idiomas
+
+O app segue o idioma do aparelho: inglês é o padrão (`values/`, vale para
+qualquer idioma sem tradução), com português (`values-pt/`) e espanhol
+(`values-es/`). Datas, decimais e tamanhos seguem o formato do país ("11 de set",
+"Sep 11"; "2,6 MB", "2.6 MB"). No Android 13+ dá para escolher um idioma só
+para o LibertyX em Configurações › Apps › Idioma — a lista sai sozinha das
+pastas `values-xx` (`generateLocaleConfig`).
+
+Regra: texto novo entra nos três arquivos ao mesmo tempo. Objetos sem tela
+(formatação, erros do motor, Android Auto) usam `core/Textos`; telas Compose
+usam `stringResource`. Espaço no começo ou no fim de um `<string>` é cortado
+pelo Android — ponha o espaço no código.
+
 E no menu ⋮: velocidade, modo noturno, temporizador para dormir, aleatório,
 repetir, captura de tela, girar, bloquear a tela, e o interruptor da rolagem
 quadro a quadro.

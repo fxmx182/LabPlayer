@@ -57,6 +57,8 @@ import com.mauricio.libertyx.library.Thumbnails
 import com.mauricio.libertyx.player.Playback
 import com.mauricio.libertyx.smb.SmbServer
 import com.mauricio.libertyx.smb.SmbServerStore
+import com.mauricio.libertyx.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * A tela inicial na televisão.
@@ -95,13 +97,13 @@ fun TvHomeScreen(onOpenServers: () -> Unit) {
         item { Cabecalho() }
 
         item {
-            Faixa("Servidores") {
+            Faixa(stringResource(R.string.servidores)) {
                 items(servidores, key = { it.id }) { servidor ->
                     CartaoServidor(servidor, Modifier) { onOpenServers() }
                 }
                 item {
                     CartaoAcao(
-                        titulo = if (servidores.isEmpty()) "Conectar ao servidor de casa" else "Gerenciar servidores",
+                        titulo = stringResource(if (servidores.isEmpty()) R.string.conectar_servidor else R.string.gerenciar_servidores),
                         modifier = if (servidores.isEmpty()) Modifier.focusRequester(primeiroFoco) else Modifier,
                         onClick = onOpenServers,
                     )
@@ -242,7 +244,7 @@ private fun CartaoVideo(item: MediaItem, modifier: Modifier = Modifier, onClick:
             ResumeStore.get(contexto).position(item.origin.resumeKey)
         }
         Text(
-            if (retomada != null) "parou em ${TimeFormat.clock(retomada)}" else " ",
+            if (retomada != null) stringResource(R.string.parou_em, TimeFormat.clock(retomada)) else " ",
             color = LabTheme.accent,
             fontSize = 12.sp,
             maxLines = 1,
@@ -292,11 +294,10 @@ private fun CartaoAcao(titulo: String, modifier: Modifier = Modifier, onClick: (
 @Composable
 private fun Vazio() {
     Column(Modifier.fillMaxWidth().padding(horizontal = OVERSCAN_H, vertical = 20.dp)) {
-        Text("Nenhum vídeo neste aparelho", color = LabTheme.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.tv_sem_videos), color = LabTheme.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
         Text(
-            "Numa caixinha de TV isso é o normal — o acervo mora no servidor. " +
-                "Conecte o servidor de casa acima e ele aparece aqui.",
+            stringResource(R.string.tv_sem_videos_explica),
             color = LabTheme.muted,
             fontSize = 14.sp,
         )

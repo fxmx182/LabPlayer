@@ -40,6 +40,7 @@ import com.mauricio.libertyx.tv.TvHomeScreen
 import com.mauricio.libertyx.smb.SmbBrowserScreen
 import com.mauricio.libertyx.smb.SmbServer
 import com.mauricio.libertyx.smb.SmbServersScreen
+import androidx.compose.ui.res.stringResource
 
 /**
  * A navegação do app, em três telas.
@@ -150,14 +151,13 @@ private fun ComPermissao(bloqueia: Boolean = true, conteudo: @Composable () -> U
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "O LibertyX precisa de acesso aos vídeos do aparelho para montar a biblioteca. " +
-                    "Nada sai daqui — a varredura é local.",
+                stringResource(R.string.permissao_explica),
                 style = MaterialTheme.typography.bodyMedium,
                 color = LabTheme.muted,
                 textAlign = TextAlign.Center,
             )
             Button(onClick = { pedido.launch(permissao) }, modifier = Modifier.padding(top = 20.dp)) {
-                Text("Permitir")
+                Text(stringResource(R.string.permitir))
             }
         }
     }

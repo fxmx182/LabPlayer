@@ -3,6 +3,8 @@ package com.mauricio.libertyx.core
 import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONObject
+import com.mauricio.libertyx.R
+import androidx.annotation.StringRes
 
 /** Um lugar só para abrir as preferências, para não espalhar o nome do arquivo. */
 object Prefs {
@@ -36,11 +38,13 @@ class PlayerPreferences(context: Context) {
      * uma coisa e quem está mexendo no vídeo quer outra. Copiamos o ajuste,
      * não o padrão dele — que é mais curto e seria um passo para trás.
      */
-    enum class AutoHide(val seconds: Double, val title: String) {
-        DOIS(2.0, "2 segundos"),
-        CINCO(5.0, "5 segundos"),
-        DEZ(10.0, "10 segundos"),
-        NUNCA(0.0, "Nunca");
+    enum class AutoHide(val seconds: Double, @StringRes val titleRes: Int) {
+        DOIS(2.0, R.string.ocultar_2s),
+        CINCO(5.0, R.string.ocultar_5s),
+        DEZ(10.0, R.string.ocultar_10s),
+        NUNCA(0.0, R.string.ocultar_nunca);
+
+        val title: String get() = Textos.get(titleRes)
 
         /** `null` quer dizer "não agende nada". */
         val delayMillis: Long? get() = if (this == NUNCA) null else (seconds * 1000).toLong()

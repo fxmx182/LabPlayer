@@ -2,6 +2,7 @@ package com.mauricio.libertyx.core
 
 import android.net.Uri
 import java.util.Locale
+import com.mauricio.libertyx.R
 
 /**
  * De onde um vídeo vem.
@@ -95,24 +96,31 @@ object TimeFormat {
             valor /= 1024
             i++
         }
-        return if (i <= 1) String.format(Locale.ROOT, "%.0f %s", valor, unidades[i])
-        else String.format(Locale.ROOT, "%.1f %s", valor, unidades[i]).replace('.', ',')
+        // A vírgula ou o ponto do idioma do aparelho: "1,5 GB" aqui, "1.5 GB" lá.
+        return if (i <= 1) String.format(Locale.getDefault(), "%.0f %s", valor, unidades[i])
+        else String.format(Locale.getDefault(), "%.1f %s", valor, unidades[i])
     }
 
     /** "12 min", "1 h 05" — duração dita como se fala, e não como relógio. */
     fun spoken(seconds: Double): String {
         val minutos = (seconds / 60).toLong().coerceAtLeast(1)
-        return if (minutos < 60) "$minutos min"
-        else String.format(Locale.ROOT, "%d h %02d", minutos / 60, minutos % 60)
+        return if (minutos < 60) Textos.get(R.string.tempo_min, minutos.toInt())
+        else Textos.get(R.string.tempo_h_min, (minutos / 60).toInt(), (minutos % 60).toInt())
     }
 
-    /** "3 set", ou "3 set 2024" quando não é deste ano. */
+    /**
+     * "3 set" aqui, "Sep 3" em inglês — e o ano só quando não é este.
+     *
+     * A ordem de dia e mês é do idioma, por isso o padrão sai do sistema
+     * (`getBestDateTimePattern`) e não de uma máscara fixa.
+     */
     fun date(millis: Long?): String? {
         if (millis == null || millis <= 0) return null
-        val brasil = Locale.forLanguageTag("pt-BR")
+        val idioma = Locale.getDefault()
         val agora = java.util.Calendar.getInstance()
         val entao = java.util.Calendar.getInstance().apply { timeInMillis = millis }
-        val padrao = if (agora.get(java.util.Calendar.YEAR) == entao.get(java.util.Calendar.YEAR)) "d MMM" else "d MMM yyyy"
-        return java.text.SimpleDateFormat(padrao, brasil).format(java.util.Date(millis)).replace(".", "")
+        val esqueleto = if (agora.get(java.util.Calendar.YEAR) == entao.get(java.util.Calendar.YEAR)) "dMMM" else "dMMMy"
+        val padrao = android.text.format.DateFormat.getBestDateTimePattern(idioma, esqueleto)
+        return java.text.SimpleDateFormat(padrao, idioma).format(java.util.Date(millis)).replace(".", "")
     }
 }

@@ -9,6 +9,8 @@ import com.mauricio.libertyx.core.MediaOrigin
 import com.mauricio.libertyx.core.VideoGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.mauricio.libertyx.core.Textos
+import com.mauricio.libertyx.R
 
 /**
  * Varre os vídeos do aparelho e agrupa por pasta.
@@ -65,7 +67,7 @@ object MediaLibrary {
                 while (c.moveToNext()) {
                     val id = c.getLong(iId)
                     val nome = c.getString(iNome) ?: continue
-                    val pasta = c.getString(iPasta) ?: "Vídeos"
+                    val pasta = c.getString(iPasta) ?: Textos.get(R.string.pasta_sem_nome)
                     val uri = ContentUris.withAppendedId(uriBase, id)
                     val duracaoMs = c.getLong(iDuracao)
 

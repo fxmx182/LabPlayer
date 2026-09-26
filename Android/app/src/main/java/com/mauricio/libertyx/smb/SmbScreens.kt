@@ -93,6 +93,9 @@ import com.mauricio.libertyx.player.Playback
 import com.mauricio.libertyx.tv.setasTrocamDeCampo
 import com.mauricio.libertyx.tv.tvFocus
 import kotlinx.coroutines.withTimeoutOrNull
+import com.mauricio.libertyx.core.Textos
+import com.mauricio.libertyx.R
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,10 +149,10 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Servidores", fontWeight = FontWeight.SemiBold) },
+                title = { Text(stringResource(R.string.servidores), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.voltar))
                     }
                 },
                 actions = {
@@ -159,7 +162,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                     // adiciona é a primeira linha da lista.
                     if (!Device.isTv(contexto)) {
                         IconButton(onClick = { criando = SmbServer(name = "", host = "") }) {
-                            Icon(Icons.Filled.Add, contentDescription = "Adicionar servidor")
+                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.adicionar_servidor))
                         }
                     }
                 },
@@ -195,15 +198,14 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                 ) {
                     Icon(Icons.Filled.Add, null, tint = LabTheme.accent, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text("Adicionar servidor", color = LabTheme.text, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.adicionar_servidor), color = LabTheme.text, fontWeight = FontWeight.Medium)
                 }
             }
 
             if (servidores.isEmpty()) {
                 item {
                     Text(
-                        "Nenhum servidor salvo ainda. Adicione o endereço do servidor de casa " +
-                            "e o LibertyX toca os vídeos direto de lá, sem baixar nada antes.",
+                        stringResource(R.string.sem_servidores),
                         color = LabTheme.muted, fontSize = 13.sp,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
                     )
@@ -226,12 +228,12 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                     Column(Modifier.weight(1f)) {
                         Text(servidor.name, color = LabTheme.text, fontWeight = FontWeight.Medium)
                         Text(
-                            servidor.displayHost + if (servidor.isGuest) " · convidado" else " · ${servidor.username}",
+                            servidor.displayHost + if (servidor.isGuest) " · " + stringResource(R.string.convidado) else " · ${servidor.username}",
                             color = LabTheme.muted, fontSize = 12.sp,
                         )
                     }
                     IconButton(onClick = { editando = servidor }, modifier = Modifier.tvFocus(24.dp)) {
-                        Icon(Icons.Filled.Edit, "Editar", tint = LabTheme.muted)
+                        Icon(Icons.Filled.Edit, stringResource(R.string.editar), tint = LabTheme.muted)
                     }
                     IconButton(
                         onClick = {
@@ -240,7 +242,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                         },
                         modifier = Modifier.tvFocus(24.dp),
                     ) {
-                        Icon(Icons.Filled.Delete, "Remover", tint = LabTheme.muted)
+                        Icon(Icons.Filled.Delete, stringResource(R.string.remover), tint = LabTheme.muted)
                     }
                 }
             }
@@ -258,7 +260,7 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                         Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp, start = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("NA REDE", style = LabTheme.sectionTitle)
+                        Text(stringResource(R.string.na_rede), style = LabTheme.sectionTitle)
                         if (procurando) {
                             Spacer(Modifier.width(10.dp))
                             CircularProgressIndicator(Modifier.size(12.dp), strokeWidth = 1.5.dp)
@@ -281,8 +283,8 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
                     Column(Modifier.weight(1f)) {
                         Text(achado.nome, color = LabTheme.text, fontWeight = FontWeight.Medium)
                         Text(
-                            if (achado.viaMdns) "${achado.host} · anunciado na rede"
-                            else "${achado.host} · responde na porta 445",
+                            if (achado.viaMdns) stringResource(R.string.anunciado_na_rede, achado.host)
+                            else stringResource(R.string.responde_445, achado.host),
                             color = LabTheme.muted, fontSize = 12.sp,
                         )
                     }
@@ -295,9 +297,8 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
             if (!procurando && novos.isEmpty()) {
                 item {
                     Text(
-                        if (encontrados.isNotEmpty()) "Na rede só apareceram servidores que já estão salvos."
-                        else "Nada encontrado na rede. Isso é comum quando o servidor não se anuncia — " +
-                            "adicione o endereço à mão acima.",
+                        if (encontrados.isNotEmpty()) stringResource(R.string.rede_so_salvos)
+                        else stringResource(R.string.rede_nada),
                         color = LabTheme.faint, fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                     )
@@ -350,7 +351,7 @@ private fun EditorDeServidor(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.widthIn(max = 560.dp).padding(horizontal = 24.dp),
         containerColor = LabTheme.surface,
-        title = { Text(if (editando) "Editar servidor" else "Novo servidor") },
+        title = { Text(stringResource(if (editando) R.string.editar_servidor else R.string.novo_servidor)) },
         text = {
             // **O conteúdo rola.** Sem isto, numa tela deitada — televisão, ou
             // celular virado — os últimos campos e os botões ficam abaixo da
@@ -359,21 +360,21 @@ private fun EditorDeServidor(
             Column(Modifier.verticalScroll(rolagem).setasTrocamDeCampo()) {
                 OutlinedTextField(
                     value = nome, onValueChange = { nome = it },
-                    label = { Text("Nome") }, singleLine = true,
+                    label = { Text(stringResource(R.string.nome)) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = host, onValueChange = { host = it },
-                    label = { Text("Endereço (IP ou nome)") }, singleLine = true,
+                    label = { Text(stringResource(R.string.endereco)) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = porta, onValueChange = { porta = it.filter(Char::isDigit) },
-                    label = { Text("Porta") }, singleLine = true,
+                    label = { Text(stringResource(R.string.porta)) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number, imeAction = ImeAction.Next,
                     ),
@@ -382,19 +383,19 @@ private fun EditorDeServidor(
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = convidado, onCheckedChange = { convidado = it })
-                    Text("Entrar como convidado", color = LabTheme.text, fontSize = 13.sp)
+                    Text(stringResource(R.string.entrar_convidado), color = LabTheme.text, fontSize = 13.sp)
                 }
                 if (!convidado) {
                     OutlinedTextField(
                         value = usuario, onValueChange = { usuario = it },
-                        label = { Text("Usuário") }, singleLine = true,
+                        label = { Text(stringResource(R.string.usuario)) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = senha, onValueChange = { senha = it },
-                        label = { Text("Senha") }, singleLine = true,
+                        label = { Text(stringResource(R.string.senha)) }, singleLine = true,
                         visualTransformation = if (mostrarSenha) VisualTransformation.None
                         else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
@@ -409,7 +410,7 @@ private fun EditorDeServidor(
                     // dá como conferir se sobrou uma letra pelo caminho.
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = mostrarSenha, onCheckedChange = { mostrarSenha = it })
-                        Text("Mostrar a senha", color = LabTheme.text, fontSize = 13.sp)
+                        Text(stringResource(R.string.mostrar_senha), color = LabTheme.text, fontSize = 13.sp)
                     }
                 }
             }
@@ -429,9 +430,9 @@ private fun EditorDeServidor(
                         if (convidado) null else senha,
                     )
                 },
-            ) { Text("Salvar") }
+            ) { Text(stringResource(R.string.salvar)) }
         },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancelar") } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.cancelar)) } },
     )
 }
 
@@ -480,10 +481,9 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
         val resultado = SmbBrowser.list(contexto, uri, credenciais)
         if (resultado == null) {
             erro = if (caminho.isEmpty()) {
-                "Este servidor não devolveu a lista de compartilhamentos."
+                Textos.get(R.string.erro_sem_compartilhamentos)
             } else {
-                "Não deu para abrir esta pasta. Confira o usuário e a senha — e se o aparelho " +
-                    "está na mesma rede que ${server.displayHost}."
+                Textos.get(R.string.erro_abrir_pasta, server.displayHost)
             }
             entradas = emptyList()
         } else {
@@ -523,7 +523,7 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
                     IconButton(onClick = {
                         if (caminho.isEmpty()) onBack() else caminho = caminho.dropLast(1)
                     }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.voltar))
                     }
                 },
                 actions = {
@@ -531,7 +531,7 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
                     // as opções são a primeira linha da pasta.
                     if (!naTv && caminho.isNotEmpty()) {
                         IconButton(onClick = { mostrandoOpcoes = true }) {
-                            Icon(Icons.Filled.Tune, contentDescription = "Visualização")
+                            Icon(Icons.Filled.Tune, contentDescription = stringResource(R.string.exibicao))
                         }
                     }
                 },
@@ -592,7 +592,7 @@ fun SmbBrowserScreen(server: SmbServer, onBack: () -> Unit) {
                 onDismissRequest = fechar,
                 containerColor = LabTheme.surface,
                 text = { OpcoesDaBiblioteca(opcoes) },
-                confirmButton = { TextButton(onClick = fechar) { Text("Fechar") } },
+                confirmButton = { TextButton(onClick = fechar) { Text(stringResource(R.string.fechar)) } },
             )
         } else {
             ModalBottomSheet(onDismissRequest = fechar, containerColor = LabTheme.surface) {
@@ -643,7 +643,7 @@ private fun PastaDoServidor(
 
     if (pastas.isEmpty() && videos.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Nenhum vídeo nesta pasta.", color = LabTheme.muted)
+            Text(stringResource(R.string.pasta_vazia), color = LabTheme.muted)
         }
         return
     }
@@ -718,10 +718,10 @@ private fun LinhaDeOpcoes(opcoes: LibraryOptions, onClick: () -> Unit, focoInici
     ) {
         Icon(Icons.Filled.Tune, null, tint = LabTheme.accent, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(12.dp))
-        val layout = if (opcoes.layout == LibraryLayout.GRID) "grade" else "lista"
-        val sentido = if (opcoes.ascending) "crescente" else "decrescente"
+        val layout = stringResource(if (opcoes.layout == LibraryLayout.GRID) R.string.grade else R.string.lista).lowercase()
+        val sentido = stringResource(if (opcoes.ascending) R.string.crescente else R.string.decrescente).lowercase()
         Text(
-            "Exibição: $layout · ${opcoes.sort.label.lowercase()}, $sentido",
+            stringResource(R.string.exibicao_resumo, layout, opcoes.sort.label.lowercase(), sentido),
             color = LabTheme.text, fontSize = 14.sp,
         )
     }
@@ -809,13 +809,12 @@ private fun RaizDoServidor(
             ) {
                 Icon(Icons.Filled.Add, null, tint = LabTheme.accent, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Abrir compartilhamento pelo nome…", color = LabTheme.text, fontSize = 14.sp)
+                Text(stringResource(R.string.abrir_por_nome), color = LabTheme.text, fontSize = 14.sp)
             }
 
             if (aviso != null) {
                 Text(
-                    aviso + " Isso é comum e não quer dizer que ele esteja fora do ar — " +
-                        "digite o nome do compartilhamento acima.",
+                    stringResource(R.string.aviso_compartilhamento, aviso),
                     color = LabTheme.faint, fontSize = 12.sp,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
                 )
@@ -827,17 +826,17 @@ private fun RaizDoServidor(
         AlertDialog(
             onDismissRequest = { perguntando = false },
             containerColor = LabTheme.surface,
-            title = { Text("Compartilhamento") },
+            title = { Text(stringResource(R.string.compartilhamento)) },
             text = {
                 Column {
                     OutlinedTextField(
                         value = nome, onValueChange = { nome = it },
-                        label = { Text("Nome") }, singleLine = true,
+                        label = { Text(stringResource(R.string.nome)) }, singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "O nome que aparece depois do endereço: em \\\\servidor\\Filmes, é “Filmes”.",
+                        stringResource(R.string.compartilhamento_explica),
                         color = LabTheme.faint, fontSize = 12.sp,
                     )
                 }
@@ -846,9 +845,9 @@ private fun RaizDoServidor(
                 TextButton(enabled = nome.isNotBlank(), onClick = {
                     perguntando = false
                     onAbrirShare(nome.trim())
-                }) { Text("Abrir") }
+                }) { Text(stringResource(R.string.abrir)) }
             },
-            dismissButton = { TextButton(onClick = { perguntando = false }) { Text("Cancelar") } },
+            dismissButton = { TextButton(onClick = { perguntando = false }) { Text(stringResource(R.string.cancelar)) } },
         )
     }
 }

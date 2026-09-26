@@ -6,11 +6,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.mauricio.libertyx.core.MediaItem
 import com.mauricio.libertyx.core.Prefs
+import com.mauricio.libertyx.core.Textos
+import com.mauricio.libertyx.R
+import androidx.annotation.StringRes
 
 enum class LibraryLayout { LIST, GRID }
 
-enum class LibrarySort(val label: String) {
-    TITLE("Título"), DATE("Data"), SIZE("Tamanho"), DURATION("Duração")
+enum class LibrarySort(@StringRes private val labelRes: Int) {
+    TITLE(R.string.ordem_titulo), DATE(R.string.ordem_data), SIZE(R.string.ordem_tamanho), DURATION(R.string.ordem_duracao);
+
+    val label: String get() = Textos.get(labelRes)
 }
 
 /**

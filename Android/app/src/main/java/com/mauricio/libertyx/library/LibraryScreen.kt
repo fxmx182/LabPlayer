@@ -115,6 +115,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import com.mauricio.libertyx.core.Textos
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 
 /**
  * Tela inicial: todos os vídeos do aparelho, agrupados por pasta.
@@ -247,7 +250,7 @@ fun LibraryScreen(onOpenServers: () -> Unit, onGuia: () -> Unit = {}) {
             ) {
                 CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp, color = LabTheme.accent)
                 Spacer(Modifier.width(10.dp))
-                Text("Procurando vídeos…", fontSize = 12.sp, color = LabTheme.muted)
+                Text(stringResource(R.string.procurando_videos), fontSize = 12.sp, color = LabTheme.muted)
             }
         }
     }
@@ -289,7 +292,7 @@ private fun capaDa(grupo: VideoGroup): MediaItem? =
 private fun resumoDa(grupo: VideoGroup): String {
     val n = grupo.items.size
     val tamanho = TimeFormat.size(grupo.items.sumOf { it.fileSize ?: 0L })
-    return listOfNotNull(if (n == 1) "1 vídeo" else "$n vídeos", tamanho).joinToString("  ·  ")
+    return listOfNotNull(Textos.plural(R.plurals.n_videos, n, n), tamanho).joinToString("  ·  ")
 }
 
 /** Margens de fora a fora: a área segura do aparelho mais o respiro da tela. */
@@ -334,13 +337,17 @@ private fun Estante(
             BarraDoTopo(onVoltar = null, onServidores = onServidores, onOpcoes = onOpcoes, onVarrer = onVarrer)
         }
         inteiro("titulo") {
-            Titulo("Biblioteca", "$total vídeos  ·  ${grupos.size} pastas")
+            Titulo(
+                stringResource(R.string.biblioteca),
+                pluralStringResource(R.plurals.n_videos, total, total) + "  ·  " +
+                    pluralStringResource(R.plurals.n_pastas, grupos.size, grupos.size),
+            )
         }
 
         if (continuar.isNotEmpty()) {
             inteiro("continuar") {
                 Column {
-                    Secao("Continuar assistindo")
+                    Secao(stringResource(R.string.continuar_assistindo))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(continuar, key = { it.id }) { item ->
                             CartaoDeContinuar(item, volta) { Playback.start(contexto, item, continuar) }
@@ -350,7 +357,7 @@ private fun Estante(
             }
         }
 
-        inteiro("pastas") { Secao("Pastas", grupos.size.toString()) }
+        inteiro("pastas") { Secao(stringResource(R.string.pastas), grupos.size.toString()) }
         items(grupos, key = { it.path }) { grupo ->
             CapaDePasta(grupo) { onAbrir(grupo) }
         }
@@ -370,7 +377,7 @@ private fun BarraDoTopo(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (onVoltar != null) {
-            BotaoRedondo(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", onVoltar)
+            BotaoRedondo(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.voltar), onVoltar)
         } else {
             Marca()
         }
@@ -378,13 +385,13 @@ private fun BarraDoTopo(
         // Dentro da pasta, só o que age sobre ela: rede e nova varredura são
         // assunto da estante, e repeti-los aqui só disputaria atenção.
         if (onVoltar == null) {
-            BotaoRedondo(Icons.Filled.Dns, "Servidores", onServidores)
+            BotaoRedondo(Icons.Filled.Dns, stringResource(R.string.servidores), onServidores)
             Spacer(Modifier.width(10.dp))
         }
-        BotaoRedondo(Icons.Filled.Tune, "Exibição", onOpcoes)
+        BotaoRedondo(Icons.Filled.Tune, stringResource(R.string.exibicao), onOpcoes)
         if (onVoltar == null) {
             Spacer(Modifier.width(10.dp))
-            BotaoRedondo(Icons.Filled.Refresh, "Procurar de novo", onVarrer)
+            BotaoRedondo(Icons.Filled.Refresh, stringResource(R.string.procurar_de_novo), onVarrer)
         }
     }
 }
@@ -499,7 +506,7 @@ private fun CapaDePasta(grupo: VideoGroup, onClick: () -> Unit) {
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        if (grupo.items.size == 1) "1 vídeo" else "${grupo.items.size} vídeos",
+                        pluralStringResource(R.plurals.n_videos, grupo.items.size, grupo.items.size),
                         color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
                     )
                 }
@@ -526,9 +533,9 @@ private fun CartaoDaRede(onClick: () -> Unit) {
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text("Servidores SMB", color = LabTheme.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.servidores_smb), color = LabTheme.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Text(
-                "Os vídeos do computador ou do NAS de casa",
+                stringResource(R.string.servidores_smb_sub),
                 color = LabTheme.muted, fontSize = 12.sp,
             )
         }
@@ -567,7 +574,7 @@ private fun CartaoDeContinuar(item: MediaItem, volta: Int, onClick: () -> Unit) 
             maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         if (falta != null) {
-            Text("faltam ${TimeFormat.spoken(falta)}", color = LabTheme.muted, fontSize = 11.sp)
+            Text(stringResource(R.string.faltam, TimeFormat.spoken(falta)), color = LabTheme.muted, fontSize = 11.sp)
         }
     }
 }
@@ -607,13 +614,13 @@ private fun Pasta(
         }
         inteiro("titulo") {
             Box(Modifier.padding(bottom = if (emGrade) 0.dp else 10.dp)) {
-                Titulo(if (raiz) "Biblioteca" else grupo.name, resumoDa(grupo))
+                Titulo(if (raiz) stringResource(R.string.biblioteca) else grupo.name, resumoDa(grupo))
             }
         }
         if (raiz && continuar.isNotEmpty()) {
             inteiro("continuar") {
                 Column {
-                    Secao("Continuar assistindo")
+                    Secao(stringResource(R.string.continuar_assistindo))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(continuar, key = { it.id }) { item ->
                             CartaoDeContinuar(item, volta) { Playback.start(contexto, item, continuar) }
@@ -714,7 +721,7 @@ private fun Detalhes(item: MediaItem, comRetomada: Boolean, volta: Int) {
             ResumeStore.get(contexto).remaining(item.origin.resumeKey)
         }
         Text(
-            if (falta != null) "faltam ${TimeFormat.spoken(falta)}" else "em andamento",
+            if (falta != null) stringResource(R.string.faltam, TimeFormat.spoken(falta)) else stringResource(R.string.em_andamento),
             color = LabTheme.accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
         )
     } else {
@@ -806,11 +813,10 @@ private fun Vazio(onOpenServers: () -> Unit) {
             letterSpacing = 6.sp,
         )
         Spacer(Modifier.height(28.dp))
-        Text("Nenhum vídeo no aparelho", color = LabTheme.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.nenhum_video), color = LabTheme.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text(
-            "O LibertyX varre tudo o que está indexado, inclusive o pendrive na USB-C. " +
-                "Se você sabe que há vídeos aqui, confira a permissão de arquivos nos ajustes do Android.",
+            stringResource(R.string.nenhum_video_explica),
             color = LabTheme.muted,
             textAlign = TextAlign.Center,
             fontSize = 13.sp,
@@ -827,21 +833,21 @@ internal fun OpcoesDaBiblioteca(opcoes: LibraryOptions, onGuia: (() -> Unit)? = 
     // Rola: com a fonte grande ou o celular deitado, o fim da folha (a ajuda
     // e a versão) passava da tela.
     Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 22.dp).padding(top = 4.dp, bottom = 20.dp)) {
-        Text("Exibição", color = LabTheme.text, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+        Text(stringResource(R.string.exibicao), color = LabTheme.text, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
         Spacer(Modifier.height(18.dp))
 
-        Secao("Layout")
+        Secao(stringResource(R.string.layout))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Pilula("Grade", opcoes.layout == LibraryLayout.GRID, Modifier.weight(1f)) {
+            Pilula(stringResource(R.string.grade), opcoes.layout == LibraryLayout.GRID, Modifier.weight(1f)) {
                 opcoes.layout = LibraryLayout.GRID
             }
-            Pilula("Lista", opcoes.layout == LibraryLayout.LIST, Modifier.weight(1f)) {
+            Pilula(stringResource(R.string.lista), opcoes.layout == LibraryLayout.LIST, Modifier.weight(1f)) {
                 opcoes.layout = LibraryLayout.LIST
             }
         }
 
         Spacer(Modifier.height(20.dp))
-        Secao("Ordenar por")
+        Secao(stringResource(R.string.ordenar_por))
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             LibrarySort.entries.chunked(2).forEach { linha ->
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -857,14 +863,14 @@ internal fun OpcoesDaBiblioteca(opcoes: LibraryOptions, onGuia: (() -> Unit)? = 
 
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Pilula("Crescente", opcoes.ascending, Modifier.weight(1f)) { opcoes.ascending = true }
-            Pilula("Decrescente", !opcoes.ascending, Modifier.weight(1f)) { opcoes.ascending = false }
+            Pilula(stringResource(R.string.crescente), opcoes.ascending, Modifier.weight(1f)) { opcoes.ascending = true }
+            Pilula(stringResource(R.string.decrescente), !opcoes.ascending, Modifier.weight(1f)) { opcoes.ascending = false }
         }
 
         if (onGuia != null) {
             Spacer(Modifier.height(20.dp))
-            Secao("Ajuda")
-            Pilula("Ver o guia dos gestos e ferramentas", false, Modifier.fillMaxWidth(), onGuia)
+            Secao(stringResource(R.string.ajuda))
+            Pilula(stringResource(R.string.ver_guia), false, Modifier.fillMaxWidth(), onGuia)
         }
 
         Spacer(Modifier.height(26.dp))

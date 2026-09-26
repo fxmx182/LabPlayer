@@ -167,7 +167,7 @@
             android:id="@+id/btn_close"
             style="@style/PlayerIcon"
             android:src="@drawable/ic_close"
-            android:contentDescription="Voltar" />
+            android:contentDescription="@string/voltar" />
 
         <TextView
             android:id="@+id/tv_title"
@@ -190,13 +190,13 @@
             android:src="@drawable/ic_volume_off"
             android:tint="@color/libertyx_accent"
             android:visibility="gone"
-            android:contentDescription="Ligar o som" />
+            android:contentDescription="@string/cd_ligar_som" />
 
         <ImageButton
             android:id="@+id/btn_more"
             style="@style/PlayerIcon"
             android:src="@drawable/ic_more"
-            android:contentDescription="Mais" />
+            android:contentDescription="@string/cd_mais" />
     </LinearLayout>
 
     <!-- ===================== Ilha de ferramentas =====================
@@ -216,15 +216,15 @@
         android:paddingVertical="4dp">
 
         <ImageButton android:id="@+id/btn_audio" style="@style/IslandIcon"
-            android:src="@drawable/ic_audio_track" android:contentDescription="Faixas de áudio" />
+            android:src="@drawable/ic_audio_track" android:contentDescription="@string/faixas_audio" />
         <ImageButton android:id="@+id/btn_subtitle" style="@style/IslandIcon"
-            android:src="@drawable/ic_subtitle" android:contentDescription="Legendas" />
+            android:src="@drawable/ic_subtitle" android:contentDescription="@string/legendas" />
         <ImageButton android:id="@+id/btn_repeat" style="@style/IslandIcon"
-            android:src="@drawable/ic_repeat" android:contentDescription="Repetir" />
+            android:src="@drawable/ic_repeat" android:contentDescription="@string/t_repetir" />
         <ImageButton android:id="@+id/btn_rotate" style="@style/IslandIcon"
-            android:src="@drawable/ic_rotate" android:contentDescription="Girar a tela" />
+            android:src="@drawable/ic_rotate" android:contentDescription="@string/cd_girar_tela" />
         <ImageButton android:id="@+id/btn_speed" style="@style/IslandIcon"
-            android:src="@drawable/ic_speed" android:contentDescription="Velocidade" />
+            android:src="@drawable/ic_speed" android:contentDescription="@string/t_velocidade" />
     </LinearLayout>
 
     <!-- ===================== Barra de baixo ===================== -->
@@ -315,27 +315,27 @@
                  acertar sem olhar: no meio da tela está sempre o play, e a
                  borda esquerda é sempre o cadeado — a posição vira memória. -->
             <ImageButton android:id="@+id/btn_lock" style="@style/PlayerIconFixed"
-                android:src="@drawable/ic_unlock" android:contentDescription="Bloquear tela" />
+                android:src="@drawable/ic_unlock" android:contentDescription="@string/cd_bloquear" />
 
             <Space android:id="@+id/space_left"
                 android:layout_width="0dp" android:layout_height="1dp"
                 android:layout_weight="1" />
 
             <ImageButton android:id="@+id/btn_prev" style="@style/PlayerIconFixed"
-                android:src="@drawable/ic_prev" android:contentDescription="Anterior" />
+                android:src="@drawable/ic_prev" android:contentDescription="@string/cd_anterior" />
             <ImageButton android:id="@+id/btn_play" style="@style/PlayerIconPrimary"
-                android:src="@drawable/ic_play" android:contentDescription="Tocar" />
+                android:src="@drawable/ic_play" android:contentDescription="@string/cd_tocar" />
             <ImageButton android:id="@+id/btn_next" style="@style/PlayerIconFixed"
-                android:src="@drawable/ic_next" android:contentDescription="Próximo" />
+                android:src="@drawable/ic_next" android:contentDescription="@string/cd_proximo" />
 
             <Space android:id="@+id/space_right"
                 android:layout_width="0dp" android:layout_height="1dp"
                 android:layout_weight="1" />
 
             <ImageButton android:id="@+id/btn_aspect" style="@style/PlayerIconFixed"
-                android:src="@drawable/ic_aspect" android:contentDescription="Enquadrar" />
+                android:src="@drawable/ic_aspect" android:contentDescription="@string/cd_enquadrar" />
             <ImageButton android:id="@+id/btn_pip" style="@style/PlayerIconFixed"
-                android:src="@drawable/ic_pip" android:contentDescription="Janela flutuante" />
+                android:src="@drawable/ic_pip" android:contentDescription="@string/t_janela" />
         </LinearLayout>
     </LinearLayout>
 
@@ -348,6 +348,6 @@
         android:layout_marginStart="12dp"
         android:src="@drawable/ic_lock"
         android:background="@drawable/bg_hud"
-        android:contentDescription="Desbloquear"
+        android:contentDescription="@string/cd_desbloquear"
         android:visibility="gone" />
 </FrameLayout>

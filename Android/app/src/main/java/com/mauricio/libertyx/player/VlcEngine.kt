@@ -18,6 +18,8 @@ import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.interfaces.IMedia
 import org.videolan.libvlc.util.VLCVideoLayout
 import kotlin.math.abs
+import com.mauricio.libertyx.core.Textos
+import com.mauricio.libertyx.R
 
 sealed interface PlaybackState {
     data object Idle : PlaybackState
@@ -233,7 +235,7 @@ class VlcEngine(private val context: Context) {
             is MediaOrigin.Remote -> Media(libVlc, origem.uri)
             is MediaOrigin.Smb -> {
                 val loja = SmbServerStore.get(context)
-                val servidor = loja.byId(origem.serverId) ?: error("servidor não encontrado")
+                val servidor = loja.byId(origem.serverId) ?: error(Textos.get(R.string.erro_servidor_sumiu))
                 Media(libVlc, SmbBrowser.uri(servidor, origem.share, origem.path)).also { m ->
                     // As credenciais vão por opção: o VLC descarta senha
                     // embutida na URL, e a leitura chegaria ao servidor como
@@ -254,7 +256,7 @@ class VlcEngine(private val context: Context) {
         media.release()
         state = PlaybackState.Ready
     }.onFailure {
-        state = PlaybackState.Failed(it.message ?: "não deu para abrir este arquivo")
+        state = PlaybackState.Failed(it.message ?: Textos.get(R.string.erro_abrir_arquivo))
     }
 
     private fun mediaForLocal(uri: Uri): Media {
@@ -262,7 +264,7 @@ class VlcEngine(private val context: Context) {
         // e só o nosso processo tem permissão de ler — daí o descritor.
         if (uri.scheme == "file") return Media(libVlc, uri)
         val pfd = context.contentResolver.openFileDescriptor(uri, "r")
-            ?: error("o Android não deixou abrir este arquivo")
+            ?: error(Textos.get(R.string.erro_android_negou))
         fileDescriptor = pfd
         return Media(libVlc, pfd.fileDescriptor)
     }
@@ -477,7 +479,7 @@ class VlcEngine(private val context: Context) {
             // O índice -1 é a entrada "Desativado" que o VLC inclui; a
             // interface já oferece essa opção por conta própria.
             .filter { it.id >= 0 }
-            .map { MediaTrack(it.id, it.name ?: "Faixa ${it.id}") }
+            .map { MediaTrack(it.id, it.name ?: Textos.get(R.string.faixa_n, it.id)) }
 
     // MARK: - Captura
 
@@ -540,7 +542,7 @@ class VlcEngine(private val context: Context) {
             MediaPlayer.Event.Stopped -> state = PlaybackState.Idle
             MediaPlayer.Event.EndReached -> state = PlaybackState.Ended
             MediaPlayer.Event.EncounteredError ->
-                state = PlaybackState.Failed("o VLC não conseguiu abrir este arquivo")
+                state = PlaybackState.Failed(Textos.get(R.string.erro_vlc_abrir))
             MediaPlayer.Event.TimeChanged -> {
                 // Tempo andando é a prova de que não está carregando — mais
                 // confiável que o estado anunciado.
