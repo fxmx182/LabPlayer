@@ -1,6 +1,6 @@
 # LibertyX Player — Android
 
-O mesmo player do iPhone, do outro lado. Mesmo nome, mesmo ícone, mesmos
+O mesmo player do iPhone, do outro lado. Mesmo nome, mesmos
 gestos, mesmo motor de vídeo — escrito de novo em Kotlin porque não há uma
 linha de Swift que rode aqui. E o mesmo APK também é o app de televisão: veja
 [Televisão](#televisão).
@@ -284,6 +284,7 @@ app/src/main/java/com/mauricio/libertyx/
   MainActivity.kt
 app/src/celular/    manifesto próprio + auto/LibertyXMediaService (Android Auto)
 app/src/tv/         manifesto próprio + o banner da tela inicial da TV
+Scripts/icone.py    gera o ícone (vetor), o monocromático, o banner da TV e o 512 da loja
 app/src/main/res/layout/activity_player.xml   a tela de reprodução
 ```
 

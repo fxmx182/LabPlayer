@@ -677,6 +677,14 @@ class PlayerActivity : Activity() {
         ui.btnAspect.setOnClickListener { cycleAspect() }
         ui.btnPip.setOnClickListener { enterPip() }
         ui.btnMore.setOnClickListener { showToolsSheet() }
+        ui.btnMudo.setOnClickListener { alternarMudo(false) }
+        // O balão acompanha a ilha e a barra de cima enquanto está na tela.
+        // No começo do filme ele é mostrado junto com os controles, antes de
+        // a ilha descer pelo recorte da câmera — medido naquela hora, ficava
+        // por baixo dela até o próximo gesto.
+        ui.root.viewTreeObserver.addOnGlobalLayoutListener {
+            if (ui.hud.visibility == View.VISIBLE) posicionarHud(soDescer = true)
+        }
         ui.btnLock.setOnClickListener { setLocked(true) }
         ui.btnUnlock.setOnClickListener { setLocked(false) }
 
@@ -1210,6 +1218,7 @@ class PlayerActivity : Activity() {
             val valor = (panStartVolume + fracao * maximo).roundToInt().coerceIn(0, maximo)
             // Volume do aparelho, o mesmo dos botões laterais — e sem a régua
             // do sistema por cima, porque o balão do gesto já diz o mesmo.
+            desfazerMudo()
             if (valor != audio.getStreamVolume(AudioManager.STREAM_MUSIC)) {
                 audio.setStreamVolume(AudioManager.STREAM_MUSIC, valor, 0)
             }
@@ -1243,6 +1252,7 @@ class PlayerActivity : Activity() {
             KeyEvent.KEYCODE_VOLUME_DOWN -> -1
             else -> return super.onKeyDown(keyCode, event)
         }
+        desfazerMudo()
         val maximo = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val novo = (audio.getStreamVolume(AudioManager.STREAM_MUSIC) + passo).coerceIn(0, maximo)
         audio.setStreamVolume(AudioManager.STREAM_MUSIC, novo, 0)
@@ -1400,8 +1410,11 @@ class PlayerActivity : Activity() {
      */
     private fun showHud(titulo: String, legenda: String?, barra: Int?, legendaDourada: Boolean = false) {
         main.removeCallbacks(hideHudRunnable)
+        // Já na tela, ele só desce: se os controles somem no meio de um
+        // arrasto, o balão subir de repente é pior do que ficar onde está.
+        val jaVisivel = ui.hud.visibility == View.VISIBLE
         ui.hud.visibility = View.VISIBLE
-        posicionarHud()
+        posicionarHud(soDescer = jaVisivel)
         ui.hudText.text = if (legenda == null) {
             titulo
         } else {
@@ -1437,9 +1450,11 @@ class PlayerActivity : Activity() {
      * ilha muda de lugar: desce com o recorte e, deitado, vai para a fileira
      * de baixo, quando o limite passa a ser a barra de cima.
      */
-    private fun posicionarHud() {
+    private fun posicionarHud(soDescer: Boolean = false) {
         val dp = resources.displayMetrics.density
         var topo = (130 * dp).toInt()
+        val params = ui.hud.layoutParams as? FrameLayout.LayoutParams ?: return
+        if (soDescer) topo = maxOf(topo, params.topMargin)
         val ilha = ui.island
         if (ilha.visibility == View.VISIBLE && ilha.parent === ui.root && ilha.height > 0) {
             topo = maxOf(topo, ilha.bottom + (14 * dp).toInt())
@@ -1447,11 +1462,34 @@ class PlayerActivity : Activity() {
         if (ui.topBar.visibility == View.VISIBLE && ui.topBar.height > 0) {
             topo = maxOf(topo, ui.topBar.bottom + (14 * dp).toInt())
         }
-        val params = ui.hud.layoutParams as? FrameLayout.LayoutParams ?: return
         if (params.topMargin != topo) {
             params.topMargin = topo
             ui.hud.layoutParams = params
         }
+    }
+
+    /**
+     * Liga ou desliga o som, e diz isso na tela.
+     *
+     * O mudo mexe só no volume do VLC, não no do aparelho: a régua do sistema
+     * não muda e nada avisava — o filme simplesmente ficava calado. Agora o
+     * balão confirma na hora e um alto-falante riscado fica na barra de cima
+     * enquanto durar, servindo também de botão para devolver o som.
+     */
+    private fun alternarMudo(mudo: Boolean) {
+        engine.isMuted = mudo
+        ui.btnMudo.visibility = if (mudo) View.VISIBLE else View.GONE
+        ui.hudIcon.setImageResource(if (mudo) R.drawable.ic_volume_off else R.drawable.ic_volume)
+        ui.hudIcon.visibility = View.VISIBLE
+        showHud(if (mudo) "Sem som" else "Som ligado", null, null)
+        hideHudAfter(1400)
+    }
+
+    /** Mexer no volume é querer ouvir: o gesto e as teclas desfazem o mudo. */
+    private fun desfazerMudo() {
+        if (!engine.isMuted) return
+        engine.isMuted = false
+        ui.btnMudo.visibility = View.GONE
     }
 
     private fun hideHudAfter(millis: Long) {
@@ -1577,8 +1615,8 @@ class PlayerActivity : Activity() {
                     isShuffling = !isShuffling
                 })
             }
-            add(Ferramenta("Mudo", R.drawable.ic_volume, aceso = engine.isMuted) {
-                engine.isMuted = !engine.isMuted
+            add(Ferramenta("Mudo", R.drawable.ic_volume_off, aceso = engine.isMuted) {
+                alternarMudo(!engine.isMuted)
             })
             add(Ferramenta("Modo noturno", R.drawable.ic_moon, aceso = ui.dimView.alpha > 0.01f) {
                 cycleNightMode()

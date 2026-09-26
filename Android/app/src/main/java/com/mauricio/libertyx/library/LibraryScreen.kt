@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -89,6 +88,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -354,24 +354,23 @@ private fun BarraDoTopo(
 @Composable
 private fun Marca() {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        // O desenho ocupa só o miolo da imagem do ícone (a borda é a área de
-        // corte do Android); ampliar e recortar deixa só o símbolo.
-        Box(Modifier.size(34.dp).clip(RoundedCornerShape(9.dp)), contentAlignment = Alignment.Center) {
-            Image(
-                painterResource(R.drawable.ic_launcher_foreground), null,
-                modifier = Modifier.requiredSize(52.dp),
-            )
-        }
+        Image(painterResource(R.drawable.ic_marca), null, Modifier.size(30.dp))
         Spacer(Modifier.width(10.dp))
-        Text(
-            buildAnnotatedString {
-                append("Liberty")
-                withStyle(SpanStyle(color = LabTheme.accent)) { append("X") }
-            },
-            color = LabTheme.text, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-0.3).sp,
-        )
+        NomeDoApp(19.sp)
     }
+}
+
+/** "LibertyX", com o X na cor da marca. */
+@Composable
+private fun NomeDoApp(tamanho: TextUnit) {
+    Text(
+        buildAnnotatedString {
+            append("Liberty")
+            withStyle(SpanStyle(color = LabTheme.accent)) { append("X") }
+        },
+        color = LabTheme.text, fontSize = tamanho, fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-0.3).sp,
+    )
 }
 
 @Composable
@@ -760,12 +759,14 @@ private fun Vazio(onOpenServers: () -> Unit) {
     ) {
         // A marca no lugar do ícone genérico: é a primeira tela de quem acabou
         // de instalar, e a única chance de o app se apresentar.
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = null,
-            modifier = Modifier.width(220.dp),
+        Image(painterResource(R.drawable.ic_marca), null, Modifier.size(96.dp))
+        Spacer(Modifier.height(14.dp))
+        NomeDoApp(30.sp)
+        Text(
+            "PLAYER", color = LabTheme.muted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+            letterSpacing = 6.sp,
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(28.dp))
         Text("Nenhum vídeo no aparelho", color = LabTheme.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text(

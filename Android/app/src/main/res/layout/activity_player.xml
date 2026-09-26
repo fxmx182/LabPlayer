@@ -181,6 +181,17 @@
             android:textSize="15sp"
             android:fontFamily="@font/manrope_semibold" />
 
+        <!-- Só aparece com o som desligado: o aviso de que o filme está mudo
+             e, no mesmo lugar, o jeito de desfazer. Sem ele, o mudo ligado na
+             folha de ferramentas parecia defeito do som. -->
+        <ImageButton
+            android:id="@+id/btn_mudo"
+            style="@style/PlayerIcon"
+            android:src="@drawable/ic_volume_off"
+            android:tint="@color/libertyx_accent"
+            android:visibility="gone"
+            android:contentDescription="Ligar o som" />
+
         <ImageButton
             android:id="@+id/btn_more"
             style="@style/PlayerIcon"
