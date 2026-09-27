@@ -30,6 +30,24 @@ O que já está pronto no código está marcado ✅. O resto é feito no navegad
   `https://github.com/fxmx182/LabPlayer/blob/main/Android/PRIVACY.md`
 - ✅ Textos da página nos três idiomas: [`FICHA.md`](FICHA.md). Imagens em `imagens/`.
 
+## Morando no Japão — o que muda
+
+- **Imposto sobre a venda**: o imposto de consumo das vendas a japoneses (e o
+  IVA dos outros países) quem cobra e recolhe é o Google. O que é seu é o
+  **imposto de renda** sobre o que você recebe: vai na declaração anual
+  (確定申告, fevereiro–março). Quem é assalariado e ganha até ¥ 200 mil por ano
+  por fora costuma estar dispensado da declaração nacional — mas a prefeitura
+  (住民税) ainda quer saber. Na dúvida, o 税務署 da sua cidade orienta de graça.
+- **Visto**: com 永住者, 定住者 ou 日本人の配偶者等 não há restrição a vender um
+  app. Com visto de trabalho (技術・人文知識・国際業務 etc.), atividade paga fora
+  do emprego pode exigir 資格外活動許可 — confirme na imigração antes de lançar.
+- **Endereço público**: app com compra dentro dele obriga a declarar se você é
+  "comerciante" (regra da União Europeia). Sendo, o endereço e o telefone
+  aparecem para quem vê a página na Europa. Para não expor a casa, dá para usar
+  um endereço de escritório virtual (バーチャルオフィス) ou tirar a União Europeia
+  dos países de distribuição.
+- **Japonês na loja e no app**: faz sentido acrescentar. Não está feito.
+
 ## A chave de envio — guarde uma cópia
 
 `/DATA/Claudinho/chaves/libertyx-envio.jks`, com a senha em
@@ -42,10 +60,17 @@ o **Play App Signing** (a Play guarda a chave final e reassina).
 
 ## Passo a passo no Play Console
 
-1. **Conta de desenvolvedor** (US$ 25, uma vez). Conta *pessoal* criada depois de
+1. **Conta de desenvolvedor** (US$ 25, uma vez). Conta **pessoal** ("Para você"):
+   o dono é pessoa física, sem empresa, residente no Japão — o D-U-N-S só é pedido
+   para conta de organização. Documento: o **在留カード** (cartão de residente), que
+   tem foto e endereço; o nome da conta igual ao do cartão, em letras romanas.
+   Conta *pessoal* criada depois de
    nov/2023 exige o **teste fechado** do passo 8 antes de liberar a produção.
 2. **Perfil de pagamentos** (Configurações › Perfil de pagamentos): sem ele não dá
-   para cadastrar produto pago. Pede CPF, endereço e conta bancária.
+   para cadastrar produto pago. País **Japão**, endereço japonês, conta em banco
+   japonês no seu nome; os repasses chegam em **ienes**, uma vez por mês.
+   Informações fiscais dos EUA: preencha o **W-8BEN** declarando o tratado
+   Japão–EUA, senão a Play retém 30% do que for vendido nos EUA.
 3. **Criar app**: nome *LibertyX Player*, idioma padrão *Português (Brasil)*,
    *App*, *Gratuito*. (Gratuito é o certo: quem cobra é a compra dentro do app.)
 4. **Primeiro envio** em *Teste › Teste interno*: suba
@@ -56,7 +81,8 @@ o **Play App Signing** (a Play guarda a chave final e reassina).
    - Nome: *LibertyX Pro* · Descrição: *Pastas da rede, segundo plano e Android
      Auto, janela flutuante, timer e captura.*
    - Preço: US$ 4,99 → "Atualizar taxas de câmbio" preenche os outros países.
-     Ajuste o Brasil à mão se quiser um número redondo (ex.: R$ 14,90).
+     Ajuste à mão os países que quiser com número redondo (ex.: ¥ 800,
+     R$ 14,90).
    - Ativar.
 6. **Testadores de licença** (Configurações › Teste de licença): coloque o seu
    Gmail. Compras dessa conta são de teste e **não cobram**. É assim que você
