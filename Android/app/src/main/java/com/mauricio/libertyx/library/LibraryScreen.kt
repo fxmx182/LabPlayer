@@ -118,6 +118,9 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.mauricio.libertyx.core.Textos
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.collectAsState
+import com.mauricio.libertyx.pro.ProActivity
+import com.mauricio.libertyx.core.Pro
 
 /**
  * Tela inicial: todos os vídeos do aparelho, agrupados por pasta.
@@ -872,6 +875,21 @@ internal fun OpcoesDaBiblioteca(opcoes: LibraryOptions, onGuia: (() -> Unit)? = 
             Secao(stringResource(R.string.ajuda))
             Pilula(stringResource(R.string.ver_guia), false, Modifier.fillMaxWidth(), onGuia)
         }
+
+        // O Pro e as licenças moram aqui, no fim das opções: à mão de quem
+        // procura, fora do caminho de quem só quer ver um filme.
+        Spacer(Modifier.height(20.dp))
+        Secao(stringResource(R.string.pro_menu))
+        val contexto = LocalContext.current
+        val estadoPro by Pro.estado.collectAsState()
+        val rotuloPro = when (val e = estadoPro) {
+            is Pro.Estado.Comprado -> stringResource(R.string.pro_ativo)
+            is Pro.Estado.Teste -> pluralStringResource(R.plurals.pro_teste_restam, e.diasRestantes, e.diasRestantes)
+            Pro.Estado.Expirado -> stringResource(R.string.pro_menu)
+        }
+        Pilula(rotuloPro, estadoPro is Pro.Estado.Comprado, Modifier.fillMaxWidth()) { ProActivity.abrir(contexto) }
+        Spacer(Modifier.height(10.dp))
+        Pilula(stringResource(R.string.licencas), false, Modifier.fillMaxWidth()) { ProActivity.abrir(contexto, licencas = true) }
 
         Spacer(Modifier.height(26.dp))
         // Qual build está instalado, à mão.

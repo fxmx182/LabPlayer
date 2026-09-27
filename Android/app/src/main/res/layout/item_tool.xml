@@ -58,6 +58,23 @@
             android:layout_marginEnd="1dp"
             android:background="@drawable/bg_ponto"
             android:visibility="gone" />
+
+        <!-- O selo das ferramentas do Pro, só depois do teste. -->
+        <TextView
+            android:id="@+id/tool_pro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="0dp"
+            android:background="@drawable/bg_selo_pro"
+            android:paddingHorizontal="5dp"
+            android:paddingVertical="1dp"
+            android:text="PRO"
+            android:textColor="#FF000000"
+            android:textSize="9sp"
+            android:letterSpacing="0.08"
+            android:fontFamily="@font/manrope_extrabold"
+            android:visibility="gone" />
     </FrameLayout>
 
     <TextView

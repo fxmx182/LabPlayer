@@ -41,6 +41,9 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import com.mauricio.libertyx.R
 import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.MediaOrigin
+import com.mauricio.libertyx.core.Pro
+import com.mauricio.libertyx.pro.ProActivity
 import com.mauricio.libertyx.core.Device
 import com.mauricio.libertyx.core.PlayerPreferences
 import com.mauricio.libertyx.core.ResumeStore
@@ -193,6 +196,15 @@ class PlayerActivity : Activity() {
 
         val atual = Playback.current
         if (atual == null) {
+            finish()
+            return
+        }
+        // Arquivo do servidor é Pro — e chega aqui por mais de um caminho: a
+        // pasta de rede, os recentes da biblioteca e o "abrir com" de outro
+        // app. A porta fica no player para valer para todos.
+        val daRede = atual.origin is MediaOrigin.Smb ||
+            (atual.origin as? MediaOrigin.Remote)?.uri?.scheme.equals("smb", ignoreCase = true)
+        if (daRede && !ProActivity.exigir(this, Pro.Recurso.REDE)) {
             finish()
             return
         }
@@ -675,7 +687,7 @@ class PlayerActivity : Activity() {
         ui.btnPrev.setOnClickListener { goToPrevious() }
         ui.btnNext.setOnClickListener { goToNext() }
         ui.btnAspect.setOnClickListener { cycleAspect() }
-        ui.btnPip.setOnClickListener { enterPip() }
+        ui.btnPip.setOnClickListener { if (ProActivity.exigir(this, Pro.Recurso.JANELA)) enterPip() }
         ui.btnMore.setOnClickListener { showToolsSheet() }
         ui.btnMudo.setOnClickListener { alternarMudo(false) }
         // O balão acompanha a ilha e a barra de cima enquanto está na tela.
@@ -1571,6 +1583,8 @@ class PlayerActivity : Activity() {
          * "1,5×" diz mais que qualquer desenho de velocímetro.
          */
         val noAnel: String? = null,
+        /** Do Pro: depois do teste, leva à tela de compra e ganha o selo. */
+        val pro: Boolean = false,
         val acao: () -> Unit,
     )
 
@@ -1620,12 +1634,16 @@ class PlayerActivity : Activity() {
             add(Ferramenta(getString(R.string.t_modo_noturno), R.drawable.ic_moon, aceso = ui.dimView.alpha > 0.01f) {
                 cycleNightMode()
             })
-            add(Ferramenta(getString(R.string.t_captura), R.drawable.ic_camera) { takeSnapshot() })
+            add(Ferramenta(getString(R.string.t_captura), R.drawable.ic_camera, pro = true) {
+                if (ProActivity.exigir(this@PlayerActivity, Pro.Recurso.CAPTURA)) takeSnapshot()
+            })
             // "Bloquear tela" não entra: o cadeado é botão fixo da barra de
             // baixo, e a mesma ação em dois lugares faz parar para escolher
             // entre coisas iguais.
             if (!isTv) {
-                add(Ferramenta(getString(R.string.t_janela), R.drawable.ic_pip) { enterPip() })
+                add(Ferramenta(getString(R.string.t_janela), R.drawable.ic_pip, pro = true) {
+                    if (ProActivity.exigir(this@PlayerActivity, Pro.Recurso.JANELA)) enterPip()
+                })
                 add(
                     Ferramenta(
                         getString(R.string.t_girar),
@@ -1640,8 +1658,8 @@ class PlayerActivity : Activity() {
                 )
             }
             add(Ferramenta(getString(R.string.t_ampliacao_normal), R.drawable.ic_zoom) { resetZoom() })
-            add(Ferramenta(getString(R.string.t_dormir), R.drawable.ic_timer, aceso = sleepDeadline != null) {
-                showSleepSheet()
+            add(Ferramenta(getString(R.string.t_dormir), R.drawable.ic_timer, aceso = sleepDeadline != null, pro = true) {
+                if (ProActivity.exigir(this@PlayerActivity, Pro.Recurso.DORMIR)) showSleepSheet()
             })
             add(Ferramenta(getString(R.string.t_ocultar_barra), R.drawable.ic_timer, valor = prefs.autoHide.title) {
                 showAutoHideSheet()
@@ -1680,6 +1698,11 @@ class PlayerActivity : Activity() {
             // O ponto no canto do anel: o estado ligado se vê de longe, sem
             // depender só da cor.
             ponto.visibility = if (ferramenta.aceso) View.VISIBLE else View.GONE
+            // O selo só depois do teste: durante ele tudo funciona, e marcar o
+            // que um dia vai trancar seria cobrar antes da hora.
+            val bloqueada = ferramenta.pro && !Pro.ativo
+            item.findViewById<View>(R.id.tool_pro).visibility = if (bloqueada) View.VISIBLE else View.GONE
+            if (bloqueada) icone.alpha = 0.55f
             item.isSelected = ferramenta.aceso
 
             // O valor, quando existe, é a segunda linha do nome — em dourado e
@@ -1986,7 +2009,9 @@ class PlayerActivity : Activity() {
         // vez de parar — é o que todo player de vídeo do Android faz.
         // Em televisão não há janelinha para onde ir, e tentar entrar nela
         // deixaria o vídeo tocando sem tela ao sair do app.
-        if (!isTv && engine.state == PlaybackState.Playing &&
+        // Sem o Pro, sair pausa em vez de abrir a janela — e sem tela de
+        // compra no caminho de quem só quis ir à tela inicial.
+        if (!isTv && Pro.ativo && engine.state == PlaybackState.Playing &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
         ) {
             enterPip()

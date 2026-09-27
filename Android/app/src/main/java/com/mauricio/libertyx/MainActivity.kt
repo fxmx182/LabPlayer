@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.mauricio.libertyx.core.Device
+import com.mauricio.libertyx.core.Pro
+import com.mauricio.libertyx.pro.ProActivity
 import com.mauricio.libertyx.guia.Guia
 import com.mauricio.libertyx.guia.GuiaDeBoasVindas
 import com.mauricio.libertyx.core.LabTheme
@@ -56,6 +58,12 @@ private sealed interface Screen {
 }
 
 class MainActivity : ComponentActivity() {
+
+    override fun onResume() {
+        super.onResume()
+        // O dia do teste pode ter virado desde a última vez.
+        Pro.recalcular()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,8 +103,12 @@ private fun App() {
         // A mesma origem de dados nos dois casos; o que muda é a tela — grade
         // para o dedo, faixas para o controle remoto.
         is Screen.Library -> ComPermissao(bloqueia = !naTv) {
-            if (naTv) TvHomeScreen(onOpenServers = { tela = Screen.Servers })
-            else LibraryScreen(onOpenServers = { tela = Screen.Servers }, onGuia = { mostrandoGuia = true })
+            // A rede é Pro: depois do teste, a porta leva à tela de compra.
+            val abrirRede = {
+                if (ProActivity.exigir(contexto, Pro.Recurso.REDE)) tela = Screen.Servers
+            }
+            if (naTv) TvHomeScreen(onOpenServers = abrirRede)
+            else LibraryScreen(onOpenServers = abrirRede, onGuia = { mostrandoGuia = true })
         }
         is Screen.Servers -> SmbServersScreen(
             onBack = { tela = Screen.Library },

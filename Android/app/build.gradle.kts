@@ -1,3 +1,12 @@
+/**
+ * O relógio de onde sai o número da versão (ver `versionCode`).
+ *
+ * Em minutos, e não em segundos, para caber folgado num Int mesmo multiplicado
+ * por dez para o final de cada variante: dá ~400 anos de margem.
+ */
+val minutosDesde2026: Int =
+    ((System.currentTimeMillis() - 1_767_225_600_000L) / 60_000L).coerceAtLeast(1L).toInt()
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -24,10 +33,9 @@ android {
         // relógio, o build mais recente é sempre o maior, seja lá onde tenha
         // nascido.
         //
-        // Em minutos, e não em segundos, para caber folgado num Int: dá ~4 mil
-        // anos de margem.
-        versionCode = (((System.currentTimeMillis() - 1_767_225_600_000L) / 60_000L)
-            .coerceAtLeast(1L)).toInt()
+        // Vezes dez: o último algarismo diz a variante (ver `productFlavors`).
+        // O salto de escala uma vez só não é problema — o número só cresceu.
+        versionCode = minutosDesde2026 * 10
         versionName = "0.1.0"
         vectorDrawables { useSupportLibrary = true }
 
@@ -42,6 +50,23 @@ android {
             "String",
             "COMMIT",
             "\"" + (project.findProperty("libertyxCommit")?.toString() ?: "local") + "\"",
+        )
+
+        // O Pro já liberado, sem teste nem compra: é o APK do dono.
+        //
+        // Liberado por padrão no que se compila NESTA máquina — a pasta
+        // `dist/` —, e travado no que o CI publica e no que vai para a loja.
+        // Pelo padrão, e não por uma opção a lembrar: esquecer a opção num
+        // build para a pasta faria o dono do app cair no próprio paywall
+        // depois de sete dias. `-PlibertyxLoja` força o travado aqui também,
+        // para testar a tela de compra.
+        val liberado = System.getenv("CI") == null && !project.hasProperty("libertyxLoja")
+        buildConfigField("boolean", "LIBERADO", liberado.toString())
+        // Só para testar o fim do teste sem esperar uma semana (o emulador
+        // não deixa adiantar o relógio): `-PlibertyxDiasDeTeste=0`.
+        buildConfigField(
+            "int", "DIAS_DE_TESTE",
+            project.findProperty("libertyxDiasDeTeste")?.toString() ?: "7",
         )
     }
 
@@ -61,6 +86,11 @@ android {
     productFlavors {
         create("celular") {
             dimension = "aparelho"
+            // Final 1 no celular e 2 na TV. As duas variantes têm o mesmo
+            // pacote e vão para a mesma página da Play Store (a TV pela faixa
+            // própria de Android TV), e lá dois envios nunca podem repetir o
+            // número. Compiladas juntas, no mesmo minuto, repetiriam.
+            versionCode = minutosDesde2026 * 10 + 1
             ndk {
                 abiFilters.clear()
                 // O x86_64 entra no release, e não só nos testes: é o que roda
@@ -76,6 +106,7 @@ android {
         }
         create("tv") {
             dimension = "aparelho"
+            versionCode = minutosDesde2026 * 10 + 2
             ndk {
                 abiFilters.clear()
                 abiFilters += listOf("arm64-v8a", "armeabi-v7a")
@@ -99,6 +130,20 @@ android {
             keyAlias = "viper"
             keyPassword = "viperplayer"
         }
+        // A chave de ENVIO da Play Store — esta, sim, secreta.
+        //
+        // Não assina o app que chega ao usuário: a Play reassina com a chave
+        // dela (Play App Signing). Esta só prova ao Google que o envio veio do
+        // dono da conta. Mora fora do repositório, que é público, e a senha
+        // vem de ~/.gradle/gradle.properties. Sem ela, o `bundleLoja` falha e
+        // todo o resto compila normalmente.
+        val envio = project.findProperty("libertyxEnvioArquivo")?.toString()
+        if (envio != null) create("envio") {
+            storeFile = file(envio)
+            storePassword = project.property("libertyxEnvioSenha").toString()
+            keyAlias = project.property("libertyxEnvioApelido").toString()
+            keyPassword = project.property("libertyxEnvioSenha").toString()
+        }
     }
 
     buildTypes {
@@ -110,6 +155,18 @@ android {
             // silenciosamente e só em tempo de execução.
             isMinifyEnabled = false
             isShrinkResources = false
+        }
+        // O que vai para a Play Store: `./gradlew bundleLoja`.
+        //
+        // Igual ao release, com duas diferenças que não podem ser esquecidas
+        // na hora do envio — por isso são um tipo de build e não opções: a
+        // assinatura é a de envio, e o Pro nunca vem liberado.
+        create("loja") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.findByName("envio")
+            buildConfigField("boolean", "LIBERADO", "false")
+            buildConfigField("int", "DIAS_DE_TESTE", "7")
+            matchingFallbacks += "release"
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -139,6 +196,16 @@ android {
     // idiomas sai das pastas values-xx; o inglês é o padrão (values/).
     androidResources {
         generateLocaleConfig = true
+    }
+
+    // Na loja, todos os idiomas vão juntos.
+    //
+    // O pacote da Play entrega por padrão só o idioma do aparelho. Mas o app
+    // deixa escolher outro em Configurações › Apps › Idioma, e aí o idioma
+    // escolhido não estaria instalado — o app cairia no inglês sem avisar.
+    // Os textos dos três idiomas somam poucos KB.
+    bundle {
+        language { enableSplit = false }
     }
 
     buildFeatures {
@@ -222,8 +289,28 @@ val publicarApks = tasks.register<Copy>("publicarApks") {
     }
 }
 
+/**
+ * Os pacotes da Play Store, em `Android/dist/play/`: um para celular e um para
+ * a faixa de Android TV. Mesmo pacote, números de versão diferentes.
+ */
+val publicarPacotes = tasks.register<Copy>("publicarPacotes") {
+    description = "Copia os .aab da loja para Android/dist/play/."
+    val saida = layout.buildDirectory.dir("outputs/bundle")
+    from(saida.map { it.dir("celularLoja") }) {
+        include("*.aab")
+        rename { "LibertyXPlayer-Celular.aab" }
+    }
+    from(saida.map { it.dir("tvLoja") }) {
+        include("*.aab")
+        rename { "LibertyXPlayer-TV.aab" }
+    }
+    into(rootProject.layout.projectDirectory.dir("dist/play"))
+    outputs.upToDateWhen { false }
+}
+
 tasks.whenTaskAdded {
     if (name == "assembleRelease") finalizedBy(publicarApks)
+    if (name == "bundleLoja") finalizedBy(publicarPacotes)
 }
 
 dependencies {
@@ -256,4 +343,8 @@ dependencies {
     // como a biblioteca local. Se este cliente falhar, a pasta abre igual, só
     // sem esses dois campos.
     implementation("com.hierynomus:smbj:0.14.0")
+
+    // A compra única do Pro. Sem servidor: a Play guarda a compra na conta
+    // Google, e o app só pergunta a ela.
+    implementation(libs.billing)
 }

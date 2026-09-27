@@ -142,6 +142,8 @@ jobs:
             echo "| \`LibertyXPlayer-Celular-Antigo.apk\` | celular anterior a isso |"
             echo "| \`LibertyXPlayer-PC-x86_64.apk\` | PC e Chromebook — emulador, Waydroid, BlueStacks |"
             echo
+            echo "Traz o **LibertyX Pro com 7 dias grátis**; depois disso, a compra é feita pela Google Play."
+            echo
             echo "São variantes **exclusivas**: a de TV exige \`leanback\` e não instala em celular;"
             echo "a de celular não aparece na tela inicial da TV. A de celular fala com o Android Auto."
             echo

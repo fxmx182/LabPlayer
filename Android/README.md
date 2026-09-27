@@ -187,6 +187,34 @@ E no menu ⋮: velocidade, modo noturno, temporizador para dormir, aleatório,
 repetir, captura de tela, girar, bloquear a tela, e o interruptor da rolagem
 quadro a quadro.
 
+## LibertyX Pro
+
+App grátis com uma compra única dentro dele (produto `libertyx_pro`, Google Play
+Billing). O grátis é o player completo; o Pro libera **pastas da rede,
+segundo plano + Android Auto, janela flutuante, timer para dormir e captura de
+quadro**. Os sete primeiros dias vêm com tudo liberado — a Play não tem período
+grátis para compra única, então o app conta sozinho (`core/Pro.kt`).
+
+- `core/Pro.kt`: o estado (comprado, teste com N dias, expirado).
+- `core/Loja.kt`: a conversa com a Play — compra, reconhecimento (sem ele a
+  Play estorna em 3 dias), pagamento pendente de boleto/Pix, restaurar.
+- `pro/ProActivity.kt`: a tela do Pro e a de licenças.
+- A porta de cada recurso é `ProActivity.exigir(contexto, Recurso)`.
+
+Quem vê o paywall depende de onde o APK nasceu:
+
+| Build | Pro |
+|---|---|
+| `assembleRelease` nesta máquina (`dist/`) | **liberado** — é o do dono |
+| o mesmo com `-PlibertyxLoja` | travado, para testar a tela de compra |
+| o do CI (release do GitHub) | travado, igual à loja |
+| `bundleLoja` (a Play Store) | travado, sempre |
+
+`-PlibertyxDiasDeTeste=0` encurta o teste para ver o fim dele no emulador (o
+`bundleLoja` ignora e usa 7). O passo a passo da publicação, a ficha da loja nos
+três idiomas e as imagens estão em [`loja/`](loja/PASSO-A-PASSO.md); a
+política de privacidade em [`PRIVACY.md`](PRIVACY.md).
+
 ## Compilar
 
 Precisa de JDK 17 e do SDK do Android. Nada mais — nem Android Studio.
@@ -263,6 +291,15 @@ num PC comum, e ela não vai no release porque não existe aparelho assim:
 adb install -r dist/LibertyXPlayer-Celular.apk
 ```
 
+Para a Play Store, os pacotes `.aab` (assinados com a chave de envio, que mora
+fora do repositório):
+
+```bash
+./gradlew bundleLoja -PlibertyxCommit=$(git rev-parse --short HEAD)
+```
+
+Saem em `dist/play/`: `LibertyXPlayer-Celular.aab` e `LibertyXPlayer-TV.aab`.
+
 Um push na `main` faz o mesmo no GitHub Actions e publica um **release novo a
 cada build**, etiquetado com a data e o commit. O mais recente é marcado como
 "latest", o que dá uma URL que nunca muda:
@@ -277,7 +314,9 @@ podados, porque cada build são 300 MB e ninguém volta trinta versões.
 
 ### O número da versão é o relógio
 
-`versionCode` é o tempo em minutos desde o começo de 2026. Precisa ser
+`versionCode` é o tempo em minutos desde o começo de 2026, vezes dez, mais 1 no
+celular e 2 na TV — as duas variantes vão para a mesma página da Play, que não
+aceita dois envios com o mesmo número. Precisa ser
 monotônico e não pode depender de quem compilou: o Android recusa instalar por
 cima um APK com número menor, e o app vem de dois lugares — o release do CI e a
 pasta `dist/` desta máquina. Com o relógio, o build mais recente é sempre o
@@ -291,8 +330,11 @@ mudou, então uma chave gerada a cada build obrigaria a desinstalar a versão
 anterior — e perder histórico e retomadas — a cada atualização. O que a chave
 protege é a continuidade da instalação, não um segredo.
 
-Se um dia isto virar app de loja, a chave sai daqui e vai para os *secrets* do
-repositório.
+Na Play é outra chave: a de **envio**, fora do repositório
+(`/DATA/Claudinho/chaves/`, senha em `~/.gradle/gradle.properties`), usada só
+pelo `bundleLoja`. A Play reassina com a chave dela (Play App Signing). Por
+isso o app da loja não instala por cima de um APK daqui: assinaturas
+diferentes.
 
 ## Estrutura
 
@@ -304,10 +346,12 @@ app/src/main/java/com/mauricio/libertyx/
   player/    VlcEngine · PlayerActivity · Playback · Vlc
   tv/        TvHomeScreen · TvFocus (o realce que a TV exige)
   guia/      o guia interativo da primeira abertura
+  pro/       a tela do LibertyX Pro e a de licenças (core/Pro + core/Loja)
   MainActivity.kt
 app/src/celular/    manifesto próprio + auto/LibertyXMediaService (Android Auto)
 app/src/tv/         manifesto próprio + o banner da tela inicial da TV
-Scripts/icone.py    gera o ícone (vetor), o monocromático, o banner da TV e o 512 da loja
+Scripts/icone.py    gera o ícone (vetor), o monocromático, o banner da TV, o 512 e as imagens da loja
+loja/               passo a passo da Play, ficha nos três idiomas e as imagens
 app/src/main/res/layout/activity_player.xml   a tela de reprodução
 ```
 

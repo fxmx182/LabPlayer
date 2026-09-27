@@ -95,6 +95,7 @@ object QuadroDoVlc {
         // começo do arquivo, quase sempre tela preta ou logotipo.
         val armadoEm = AtomicLong(0L)
         val tempoMinimo = AtomicLong(0L)
+        val escurosRecusados = AtomicInteger(0)
 
         leitor.setOnImageAvailableListener({ r ->
             try {
@@ -103,7 +104,15 @@ object QuadroDoVlc {
                     val desde = armadoEm.get()
                     if (desde == 0L || SystemClock.uptimeMillis() - desde < 300) return@setOnImageAvailableListener
                     if (tocador.time < tempoMinimo.get()) return@setOnImageAvailableListener
-                    quadro.complete(recortar(paraBitmap(imagem), tocador))
+                    val bitmap = paraBitmap(imagem)
+                    // Logo depois da busca, o decodificador às vezes entrega
+                    // um quadro preto de transição — e a capa saía preta.
+                    // Espera alguns quadros por um com imagem; se o filme
+                    // estiver mesmo escuro ali, aceita o que vier.
+                    if (quaseTodoPreto(bitmap) && escurosRecusados.incrementAndGet() <= 24) {
+                        return@setOnImageAvailableListener
+                    }
+                    quadro.complete(recortar(bitmap, tocador))
                 } finally {
                     imagem.close()
                 }
@@ -196,6 +205,17 @@ object QuadroDoVlc {
             runCatching { tocador.release() }
             runCatching { leitor.close() }
         }
+    }
+
+    /** Amostra uma grade de pontos: se quase nenhum passa de um cinza bem escuro, é preto. */
+    private fun quaseTodoPreto(imagem: Bitmap): Boolean {
+        var claros = 0
+        for (i in 1..9) for (j in 1..9) {
+            val p = imagem.getPixel(imagem.width * i / 10, imagem.height * j / 10)
+            val luz = ((p shr 16 and 0xFF) + (p shr 8 and 0xFF) + (p and 0xFF)) / 3
+            if (luz > 24) claros++
+        }
+        return claros < 4
     }
 
     /** O buffer tem passo de linha próprio, maior que a largura em alguns aparelhos. */

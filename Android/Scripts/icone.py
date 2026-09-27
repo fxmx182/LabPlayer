@@ -13,7 +13,8 @@ Escreve em app/src/main/res e app/src/tv/res:
   drawable/ic_launcher_{foreground,background,monochrome}.xml, drawable/ic_marca.xml
   mipmap-*/ic_launcher{,_round}.png (Android 7, que não tem ícone adaptativo)
   tv/drawable-{mdpi,xhdpi}/tv_banner.png
-e Scripts/play-512.png, o ícone da Play Store.
+e Scripts/play-512.png, o ícone da Play Store, e em loja/imagens a imagem de
+destaque (1024×500, por idioma) e o banner de TV (1280×720) da loja.
 
 Dependências: pip install shapely resvg-py pillow
 """
@@ -165,12 +166,17 @@ g.crop((c, c, g.size[0]-c, g.size[0]-c)).resize((512, 512), Image.LANCZOS).conve
 def render(svg, w, h):
     return Image.open(io.BytesIO(bytes(resvg_py.svg_to_bytes(svg_string=svg, width=w, height=h)))).convert("RGBA")
 
-def banner(W, H):
-    """A faixa da TV: o símbolo e o nome, o conjunto centrado na faixa."""
+def banner(W, H, slogan=None):
+    """A faixa da TV: o símbolo e o nome, o conjunto centrado na faixa.
+
+    Com `slogan`, é a imagem de destaque da Play Store: a frase entra embaixo
+    e o conjunto sobe um pouco para abrir espaço."""
     S = 2; w, h = W*S, H*S
-    fundo = render(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="{w}" height="{h}"><defs>'
+    vh = 320 * H / W
+    fundo = render(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 {vh:.2f}" width="{w}" height="{h}"><defs>'
                    f'<radialGradient id="f" cx="110" cy="40" r="260" gradientUnits="userSpaceOnUse">{stops(FUNDO)}</radialGradient></defs>'
-                   f'<rect width="320" height="180" fill="url(#f)"/></svg>', w, h)
+                   f'<rect width="320" height="{vh:.2f}" fill="url(#f)"/></svg>', w, h)
+    sobe = int(h*0.07) if slogan else 0
     m = render(svg(108, fundo=False), h*2, h*2)
     m = m.crop(m.getbbox())
     alto = int(h*0.56); m = m.resize((int(m.width*alto/m.height), alto), Image.LANCZOS)
@@ -180,8 +186,8 @@ def banner(W, H):
     larg_nome = d.textlength("LibertyX", font=f1)
     vao = int(h*0.09)
     x = int((w - (m.width + vao + larg_nome)) // 2)
-    fundo.alpha_composite(m, (x, (h - alto)//2))
-    x += m.width + vao; base = int(h*0.54)
+    fundo.alpha_composite(m, (x, (h - alto)//2 - sobe))
+    x += m.width + vao; base = int(h*0.54) - sobe
     d.text((x, base), "Liberty", font=f1, fill=(240, 240, 240), anchor="ls")
     x2 = x + d.textlength("Liberty", font=f1)
     d.text((x2, base), "X", font=f1, fill=(0xFB, 0xC5, 0x01), anchor="ls")
@@ -191,8 +197,18 @@ def banner(W, H):
     for c in letras:
         d.text((cx, base + int(h*0.13)), c, font=f2, fill=(235, 235, 245, 150), anchor="ls")
         cx += d.textlength(c, font=f2) + esp
+    if slogan:
+        f3 = ImageFont.truetype(os.path.join(FONT, "manrope_semibold.ttf"), int(h*0.07))
+        d.text((w//2, int(h*0.9)), slogan, font=f3, fill=(0xFB, 0xC5, 0x01, 230), anchor="ms")
     return fundo.resize((W, H), Image.LANCZOS).convert("RGB")
 
 for pasta, (W, H) in {"drawable-mdpi": (320, 180), "drawable-xhdpi": (640, 360)}.items():
     banner(W, H).save(os.path.join(TV, pasta, "tv_banner.png"), optimize=True)
+# Play Store: a imagem de destaque (uma por idioma) e o banner da faixa de TV.
+LOJA = os.path.join(AQUI, "../loja/imagens")
+os.makedirs(LOJA, exist_ok=True)
+for lingua, frase in {"pt": "Sua mídia. Sua liberdade.", "en": "Your media. Your freedom.",
+                      "es": "Tus vídeos. Tu libertad."}.items():
+    banner(1024, 500, frase).save(os.path.join(LOJA, f"destaque-1024x500-{lingua}.png"), optimize=True)
+banner(1280, 720).save(os.path.join(LOJA, "tv-banner-1280x720.png"), optimize=True)
 print("ok")

@@ -14,6 +14,7 @@ documentfile = "1.0.1"
 # libvlc-all traz TODOS os módulos: MKV, HEVC, AC-3/DTS, legenda ASS/PGS e o
 # acesso SMB nativo. É o mesmo motor do iOS, e é dele que vem o "abre tudo".
 libvlc = "3.7.5"
+billing = "8.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,6 +31,7 @@ androidx-media = { group = "androidx.media", name = "media", version.ref = "medi
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
 libvlc = { group = "org.videolan.android", name = "libvlc-all", version.ref = "libvlc" }
+billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

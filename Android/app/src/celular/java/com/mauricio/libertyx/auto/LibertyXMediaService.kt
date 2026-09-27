@@ -22,6 +22,7 @@ import androidx.media.app.NotificationCompat.MediaStyle
 import com.mauricio.libertyx.MainActivity
 import com.mauricio.libertyx.R
 import com.mauricio.libertyx.core.MediaItem
+import com.mauricio.libertyx.core.Pro
 import com.mauricio.libertyx.core.ResumeStore
 import com.mauricio.libertyx.core.resumeKey
 import com.mauricio.libertyx.library.MediaLibrary
@@ -126,6 +127,16 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
      */
     override fun onLoadChildren(pai: String, resultado: Result<MutableList<BrowserItem>>) {
         resultado.detach()
+
+        // Carro e segundo plano são Pro. Sem ele, a raiz vem vazia e o carro
+        // mostra o aviso no lugar da lista — o motorista entende de relance,
+        // sem um item falso para tocar.
+        Pro.recalcular()
+        if (!Pro.ativo) {
+            avisarQueEPro()
+            resultado.sendResult(mutableListOf())
+            return
+        }
 
         escopo.launch {
             val filhos: MutableList<BrowserItem> = when {
@@ -233,6 +244,7 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
     private inner class Comandos : MediaSessionCompat.Callback() {
 
         override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+            if (!Pro.ativo) return avisarQueEPro()
             val item = conhecidos[mediaId] ?: return
             // A fila é o que estava na mesma pasta: é o que faz "próxima"
             // significar alguma coisa no volante.
@@ -315,6 +327,18 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
     // ------------------------------------------------------------------
     // Estado, notificação e foco de áudio
     // ------------------------------------------------------------------
+
+    private fun avisarQueEPro() {
+        sessao.setPlaybackState(
+            PlaybackStateCompat.Builder()
+                .setState(PlaybackStateCompat.STATE_ERROR, 0, 0f)
+                .setErrorMessage(
+                    PlaybackStateCompat.ERROR_CODE_PREMIUM_ACCOUNT_REQUIRED,
+                    getString(R.string.pro_auto_bloqueado),
+                )
+                .build()
+        )
+    }
 
     private fun publicarEstado(estado: PlaybackState) {
         val (codigo, emPrimeiroPlano) = when (estado) {

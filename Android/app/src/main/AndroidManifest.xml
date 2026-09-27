@@ -63,6 +63,13 @@
             android:theme="@style/Theme.LibertyX">
         </activity>
 
+        <!-- O LibertyX Pro e as licenças. Aberta da biblioteca e do player. -->
+        <activity
+            android:name=".pro.ProActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:theme="@style/Theme.LibertyX" />
+
         <activity
             android:name=".player.PlayerActivity"
             android:exported="true"

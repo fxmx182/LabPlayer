@@ -247,4 +247,33 @@
     <string name="gf_mudo">Silencia só o vídeo; um alto-falante riscado fica no alto enquanto durar.</string>
     <string name="gf_proporcao">Ajustar, preencher ou esticar a imagem na tela.</string>
     <string name="convidado">convidado</string>
+    <string name="pro_rede">Pastas da rede</string>
+    <string name="pro_rede_texto">Assista direto do PC, do NAS ou do HD na rede, sem copiar nada.</string>
+    <string name="pro_segundo_plano">Segundo plano e Android Auto</string>
+    <string name="pro_segundo_plano_texto">Continue ouvindo com a tela apagada e no carro.</string>
+    <string name="pro_janela">Janela flutuante</string>
+    <string name="pro_janela_texto">O vídeo numa janelinha enquanto você usa outros apps.</string>
+    <string name="pro_dormir">Timer para dormir</string>
+    <string name="pro_dormir_texto">Pausa sozinho na hora que você escolher.</string>
+    <string name="pro_captura">Captura de quadro</string>
+    <string name="pro_captura_texto">Salva a cena na galeria em resolução máxima.</string>
+    <string name="pro_gratis_para_sempre">Todo o resto é grátis para sempre: biblioteca, player, gestos, busca quadro a quadro, legendas e faixas de áudio.</string>
+    <string name="pro_uma_vez">Pagamento único, sem assinatura. Vale em todos os seus aparelhos com a mesma conta Google: celular, tablet e TV.</string>
+    <string name="pro_comprar_por">Comprar o Pro por %1$s</string>
+    <string name="pro_carregando">Carregando o preço…</string>
+    <string name="pro_na_play">Comprar na Google Play</string>
+    <string name="pro_sem_play">A Google Play não está disponível neste aparelho.</string>
+    <string name="pro_restaurar">Restaurar compra</string>
+    <string name="pro_restaurando">Procurando compras nesta conta…</string>
+    <string name="pro_ativo">Pro ativo — obrigado!</string>
+    <string name="pro_pendente">Pagamento pendente — o Pro libera quando compensar</string>
+    <string name="pro_teste_acabou">Seu teste grátis terminou</string>
+    <plurals name="pro_teste_restam">
+        <item quantity="one">Teste grátis · falta %d dia</item>
+        <item quantity="other">Teste grátis · faltam %d dias</item>
+    </plurals>
+    <string name="licencas">Licenças de código aberto</string>
+    <string name="licencas_intro">O LibertyX é feito sobre estes projetos de código aberto. Toque num deles para ler a licença.</string>
+    <string name="pro_menu">LibertyX Pro</string>
+    <string name="pro_auto_bloqueado">Desbloqueie o LibertyX Pro no celular para usar no carro</string>
 </resources>

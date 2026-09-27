@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
 import android.util.LruCache
 import android.util.Size
@@ -86,12 +87,37 @@ object Thumbnails {
             is MediaOrigin.Local -> limite.withPermit {
                 withContext(Dispatchers.IO) {
                     val imagem = doSistema(context, origem) ?: doArquivo(context, origem)
+                        ?: doVlcLocal(context, item, origem)
                     imagem?.also { cache.put(item.id, it) }
                 }
             }
             is MediaOrigin.Smb -> doServidor(context, item, origem)
             is MediaOrigin.Remote -> null
         }
+    }
+
+    /**
+     * A última tentativa no aparelho: o próprio VLC tira o quadro.
+     *
+     * O sistema e o `MediaMetadataRetriever` usam os decodificadores do
+     * Android, e há arquivo que o VLC toca e eles não abrem — codec que o
+     * aparelho não tem, perfil incomum, contêiner esquisito. Sem isto, o
+     * cartão ficava sem capa justamente no vídeo que só este app toca.
+     */
+    private suspend fun doVlcLocal(context: Context, item: MediaItem, origem: MediaOrigin.Local): Bitmap? {
+        if (item.id in falharam) return null
+        emReproducao.first { !it }
+        // O item do MediaStore é um `content://`, que o VLC não abre por
+        // endereço: ele recebe o descritor já aberto, como no player.
+        val resultado = if (origem.uri.scheme == "file") {
+            QuadroDoVlc.extrair(context, origem.uri, emptyList())
+        } else {
+            val descritor = runCatching { context.contentResolver.openFileDescriptor(origem.uri, "r") }.getOrNull()
+                ?: return null
+            descritor.use { QuadroDoVlc.extrair(context, Uri.parse("fd://${it.fd}"), emptyList()) }
+        }
+        if (resultado == null) falharam += item.id
+        return resultado?.imagem
     }
 
     private suspend fun doServidor(context: Context, item: MediaItem, origem: MediaOrigin.Smb): Bitmap? {

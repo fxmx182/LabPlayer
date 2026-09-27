@@ -59,6 +59,12 @@ import com.mauricio.libertyx.smb.SmbServer
 import com.mauricio.libertyx.smb.SmbServerStore
 import com.mauricio.libertyx.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.runtime.collectAsState
+import com.mauricio.libertyx.pro.ProActivity
+import com.mauricio.libertyx.core.Pro
 
 /**
  * A tela inicial na televisão.
@@ -127,6 +133,30 @@ fun TvHomeScreen(onOpenServers: () -> Unit) {
             }
             if (locais.isEmpty()) {
                 item { Vazio() }
+            }
+        }
+
+        // No fim, onde o controle chega por último: na TV não há folha de
+        // opções, e sem esta fileira quem comprou não teria como ver o Pro
+        // nem as licenças.
+        item {
+            val estadoPro by Pro.estado.collectAsState()
+            Faixa(stringResource(R.string.pro_menu)) {
+                item {
+                    CartaoAcao(
+                        titulo = when (val e = estadoPro) {
+                            is Pro.Estado.Comprado -> stringResource(R.string.pro_ativo)
+                            is Pro.Estado.Teste -> pluralStringResource(R.plurals.pro_teste_restam, e.diasRestantes, e.diasRestantes)
+                            Pro.Estado.Expirado -> stringResource(R.string.pro_menu)
+                        },
+                        icone = Icons.Filled.WorkspacePremium,
+                    ) { ProActivity.abrir(contexto) }
+                }
+                item {
+                    CartaoAcao(stringResource(R.string.licencas), icone = Icons.Filled.Info) {
+                        ProActivity.abrir(contexto, licencas = true)
+                    }
+                }
             }
         }
     }
@@ -273,7 +303,12 @@ private fun CartaoServidor(servidor: SmbServer, modifier: Modifier = Modifier, o
 }
 
 @Composable
-private fun CartaoAcao(titulo: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun CartaoAcao(
+    titulo: String,
+    modifier: Modifier = Modifier,
+    icone: androidx.compose.ui.graphics.vector.ImageVector = Icons.Filled.Add,
+    onClick: () -> Unit,
+) {
     Column(modifier.width(CARD_W)) {
         Box(
             Modifier
@@ -284,7 +319,7 @@ private fun CartaoAcao(titulo: String, modifier: Modifier = Modifier, onClick: (
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Add, null, tint = LabTheme.accent, modifier = Modifier.size(34.dp))
+            Icon(icone, null, tint = LabTheme.accent, modifier = Modifier.size(34.dp))
         }
         Spacer(Modifier.height(9.dp))
         Text(titulo, color = LabTheme.text, fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
