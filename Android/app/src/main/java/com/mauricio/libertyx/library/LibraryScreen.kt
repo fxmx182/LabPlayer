@@ -97,6 +97,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mauricio.libertyx.BuildConfig
 import com.mauricio.libertyx.R
 import com.mauricio.libertyx.core.LabTheme
+import com.mauricio.libertyx.core.Escala
 import com.mauricio.libertyx.core.MediaItem
 import com.mauricio.libertyx.core.ResumeStore
 import com.mauricio.libertyx.core.TimeFormat
@@ -330,7 +331,7 @@ private fun Estante(
     val total = grupos.sumOf { it.items.size }
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 150.dp),
+        columns = GridCells.Adaptive(minSize = Escala.capa()),
         modifier = Modifier.fillMaxSize(),
         contentPadding = margens(),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -554,7 +555,7 @@ private fun CartaoDeContinuar(item: MediaItem, volta: Int, onClick: () -> Unit) 
     val progresso = remember(item.id, volta) { loja.progress(item.origin.resumeKey) }
     val falta = remember(item.id, volta) { loja.remaining(item.origin.resumeKey) }
 
-    Column(Modifier.width(236.dp).tvFocus(14.dp).clickable(onClick = onClick)) {
+    Column(Modifier.width(236.dp * Escala.fator()).tvFocus(14.dp).clickable(onClick = onClick)) {
         Box(
             Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(14.dp))
                 .border(0.5.dp, LabTheme.glassBorder, RoundedCornerShape(14.dp)),
@@ -603,7 +604,7 @@ private fun Pasta(
     val emGrade = opcoes.layout == LibraryLayout.GRID
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 150.dp),
+        columns = GridCells.Adaptive(minSize = Escala.capa()),
         modifier = Modifier.fillMaxSize(),
         contentPadding = margens(),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -693,7 +694,7 @@ internal fun LinhaDeVideo(item: MediaItem, volta: Int = 0, onClick: () -> Unit) 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.width(124.dp).aspectRatio(16f / 9f).clip(RoundedCornerShape(10.dp))
+            Modifier.width(124.dp * Escala.fator()).aspectRatio(16f / 9f).clip(RoundedCornerShape(10.dp))
                 .border(0.5.dp, LabTheme.glassBorder, RoundedCornerShape(10.dp)),
         ) {
             ImagemDe(item, Modifier.fillMaxSize())

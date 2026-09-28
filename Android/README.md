@@ -106,6 +106,15 @@ que o carro procura) e responde aos comandos de transporte sem quebrar. O
 percurso completo — o carro listando as pastas — precisa do Desktop Head Unit
 ou de um carro de verdade.
 
+## Tablet
+
+Não há variante própria: o APK de celular é o mesmo, e o que muda é a medida.
+Com o lado menor da tela a partir de 600 dp (`core/Theme.kt`, `Escala`), as
+capas da grade crescem (200 dp em pé, 240 dp deitado), as miniaturas da lista
+e do "continuar" ficam 35% maiores, a lista de servidores e o painel de
+ferramentas do player ganham largura máxima e ficam centrados. O celular
+deitado continua sendo celular: a régua é o lado menor, não a largura.
+
 ## Televisão
 
 O mesmo APK roda na TV. Não há versão separada, nem outro download: o app

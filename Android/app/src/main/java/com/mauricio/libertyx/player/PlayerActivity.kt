@@ -1756,11 +1756,15 @@ class PlayerActivity : Activity() {
 
         painel.setContentView(vista)
         painel.window?.apply {
+            // Largura com teto: numa tela de tablet (ou celular deitado) os
+            // quatro anéis por fileira ficavam a um palmo um do outro, e o
+            // olho tinha de varrer a tela inteira para achar uma ferramenta.
+            val teto = (760 * resources.displayMetrics.density).toInt()
             setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
+                if (resources.displayMetrics.widthPixels > teto) teto else WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
             )
-            setGravity(Gravity.BOTTOM)
+            setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
             // O véu da janela é o que separa os anéis do filme agora que a folha
             // é transparente: escurece a cena por igual sem escondê-la. O tema
             // translúcido não liga o véu sozinho — sem a flag, a quantidade

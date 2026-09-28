@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -87,6 +88,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.mauricio.libertyx.core.Device
 import com.mauricio.libertyx.core.LabTheme
+import com.mauricio.libertyx.core.Escala
 import com.mauricio.libertyx.core.MediaItem
 import com.mauricio.libertyx.core.labCard
 import com.mauricio.libertyx.player.Playback
@@ -182,8 +184,11 @@ fun SmbServersScreen(onBack: () -> Unit, onOpen: (SmbServer) -> Unit) {
         // preso na seta de voltar sem nenhum jeito de cadastrar um servidor.
         // Numa tela vista a três metros, a ação tem que ser uma linha da lista,
         // do tamanho das outras.
+        // Largura com teto e centrada: num tablet deitado, linhas de ponta a
+        // ponta deixavam o nome do servidor a um lado da tela e o "+" do outro.
         LazyColumn(
-            Modifier.padding(padding).fillMaxSize(),
+            Modifier.padding(padding).fillMaxSize()
+                .wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = 760.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         ) {
             item {
@@ -650,7 +655,7 @@ private fun PastaDoServidor(
 
     if (opcoes.layout == LibraryLayout.GRID) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 158.dp),
+            columns = GridCells.Adaptive(minSize = if (naTv) 158.dp else Escala.capa()),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

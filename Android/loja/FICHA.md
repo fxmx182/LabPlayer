@@ -9,6 +9,9 @@ Imagens em `imagens/`:
 - `celular-<idioma>-1..6-*.jpg`: capturas de celular, na ordem: biblioteca,
   pasta, player, ferramentas, Pro, guia. Já cortadas para a proporção máxima
   de 2:1 que a Play aceita.
+- `tablet-<idioma>-1..6-*.jpg`: capturas de tablet (16:9, 2560×1440), as
+  mesmas seis telas. Servem para os dois campos da loja, "tablet de 7
+  polegadas" e "tablet de 10 polegadas".
 - `tv-1..3-*.jpg` e `tv-banner-1280x720.png`: capturas e banner da faixa de
   Android TV.
 - O ícone é `../Scripts/play-512.png`.

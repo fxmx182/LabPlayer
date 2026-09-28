@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -136,4 +138,36 @@ private fun tipografia(): Typography {
         labelMedium = base.labelMedium.nossa(),
         labelSmall = base.labelSmall.nossa(),
     )
+}
+
+/**
+ * O tamanho das coisas em tela grande.
+ *
+ * Tablet é quem tem o lado menor com 600 dp ou mais — a mesma régua do
+ * Android (`sw600dp`). Pela menor dimensão, e não pela largura, para o celular
+ * deitado continuar sendo celular: ele fica largo, mas baixo, e capas grandes
+ * lá caberiam uma fileira por tela. A TV também fica de fora (540 dp de altura)
+ * e segue com a própria tela.
+ *
+ * No tablet, a grade e as miniaturas crescem: com o tamanho do celular, uma
+ * tela de 11 polegadas virava sete colunas de selo, com metade vazia.
+ */
+object Escala {
+    @Composable
+    fun tablet(): Boolean = LocalConfiguration.current.smallestScreenWidthDp >= 600
+
+    /** A largura mínima de cada capa na grade. */
+    @Composable
+    fun capa(): Dp {
+        val config = LocalConfiguration.current
+        return when {
+            config.smallestScreenWidthDp < 600 -> 150.dp
+            config.screenWidthDp < 1000 -> 200.dp
+            else -> 240.dp
+        }
+    }
+
+    /** Multiplica o que foi medido para o celular. */
+    @Composable
+    fun fator(): Float = if (tablet()) 1.35f else 1f
 }
