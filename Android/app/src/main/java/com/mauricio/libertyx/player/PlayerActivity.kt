@@ -223,6 +223,79 @@ class PlayerActivity : Activity() {
         loadAndPlay()
     }
 
+    override fun onPause() {
+        super.onPause()
+        passarParaSegundoPlano()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        voltarDoSegundoPlano()
+    }
+
+    /** O filme passou para o serviço de áudio, e o player espera a volta. */
+    private var emSegundoPlano = false
+
+    /**
+     * Apagou a tela com o filme tocando: o som continua.
+     *
+     * Só com a tela apagada, e não ao sair para a tela inicial — lá quem
+     * assume é a janela flutuante, que continua mostrando a imagem. É no
+     * `onPause`, e não no `onStop`, porque aqui o app ainda conta como em
+     * primeiro plano: depois, o Android 12+ recusa começar o serviço.
+     *
+     * O serviço é o do Android Auto, que toca só a faixa de áudio: decodificar
+     * imagem para uma tela apagada só gastaria bateria.
+     */
+    private fun passarParaSegundoPlano() {
+        if (isTv || isFinishing || isInPip() || !::engine.isInitialized) return
+        if (!SegundoPlano.disponivel || !Pro.ativo) return
+        if (engine.state != PlaybackState.Playing) return
+        val energia = getSystemService(POWER_SERVICE) as android.os.PowerManager
+        if (energia.isInteractive) return
+
+        val posicao = engine.currentTime
+        engine.pause()
+        saveResumeNow()
+        val pedido = Intent(SegundoPlano.ACAO)
+            .setClassName(packageName, SegundoPlano.SERVICO)
+            .putExtra(SegundoPlano.EXTRA_POSICAO, posicao)
+            .putExtra(SegundoPlano.EXTRA_VELOCIDADE, playbackSpeed)
+        SegundoPlano.ultimaPosicao = null
+        runCatching { androidx.core.content.ContextCompat.startForegroundService(this, pedido) }
+            .onSuccess { emSegundoPlano = true }
+            .onFailure { engine.play() }
+    }
+
+    /** De volta à tela: o player retoma de onde o áudio chegou. */
+    private fun voltarDoSegundoPlano() {
+        if (!emSegundoPlano) return
+        emSegundoPlano = false
+
+        val continuava = SegundoPlano.ativo
+        val posicao = if (continuava) SegundoPlano.posicao() else SegundoPlano.ultimaPosicao
+        val tocava = continuava && SegundoPlano.tocando()
+        if (continuava) SegundoPlano.parar()
+
+        // Na notificação dá para pular de vídeo; aí o player abre o novo.
+        if (Playback.current?.id != item?.id) {
+            switchTo(Playback.index)
+            return
+        }
+        // Reabre em vez de só buscar: com a tela apagada a superfície do vídeo
+        // foi destruída, e o VLC seguia tocando sem voltar a desenhar — o som
+        // andava e a imagem ficava congelada no último quadro.
+        val alvo = item ?: return
+        engine.load(alvo, posicao).onFailure {
+            presentError(it.message ?: getString(R.string.erro_abrir_curto))
+            return
+        }
+        engine.play()
+        // Pausado na tela de bloqueio continua pausado — mas só depois do
+        // primeiro quadro, senão a tela ficaria preta.
+        if (!tocava) main.postDelayed({ engine.pause() }, 600)
+    }
+
     override fun onStop() {
         super.onStop()
         // Sair com a janela flutuante aberta é legítimo: o vídeo continua nela.

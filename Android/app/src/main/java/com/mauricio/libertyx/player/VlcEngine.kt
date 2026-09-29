@@ -222,7 +222,12 @@ class VlcEngine(private val context: Context) {
 
     // MARK: - Carga
 
-    fun load(item: MediaItem): Result<Unit> = runCatching {
+    /**
+     * @param inicio onde começar, em segundos. Vai como opção da mídia, e não
+     *   como busca depois de tocar: logo no começo o VLC ignora a busca, e só
+     *   a opção garante o ponto — é o que a passagem para o áudio precisa.
+     */
+    fun load(item: MediaItem, inicio: Double? = null): Result<Unit> = runCatching {
         state = PlaybackState.Loading
         // Trocar de vídeo com o anterior tocando: sem parar antes, o VLC troca
         // a mídia por baixo do laço de leitura e a imagem do arquivo velho
@@ -249,6 +254,9 @@ class VlcEngine(private val context: Context) {
         origemAtual = item.origin
         media.setHWDecoderEnabled(true, false)
         if (audioOnly) media.addOption(":no-video")
+        if (inicio != null && inicio > 0) {
+            media.addOption(":start-time=" + String.format(java.util.Locale.ROOT, "%.3f", inicio))
+        }
         configureBuffer(media, item.origin)
         tamanhoDoArquivo = item.fileSize
         bytesNaBusca = null
@@ -509,6 +517,11 @@ class VlcEngine(private val context: Context) {
     // MARK: - Fim
 
     fun teardown() {
+        // Quem ouvia não ouve mais: o último aviso ("parado") sairia com o
+        // VLC já liberado, e quem perguntasse o tempo nessa hora derrubaria o
+        // app — era o que acontecia ao fechar o serviço de áudio.
+        onStateChange = null
+        onTimeUpdate = null
         runCatching { player.setEventListener(null) }
         runCatching { player.stop() }
         runCatching { player.detachViews() }

@@ -115,6 +115,20 @@ e do "continuar" ficam 35% maiores, a lista de servidores e o painel de
 ferramentas do player ganham largura máxima e ficam centrados. O celular
 deitado continua sendo celular: a régua é o lado menor, não a largura.
 
+## Tela apagada (Pro)
+
+Apagar a tela com o filme tocando passa o filme para o serviço de áudio
+(`auto/LibertyXMediaService`, o mesmo do Android Auto): ele reabre o arquivo só
+com o som, no ponto exato (`:start-time`), com controles na tela de bloqueio e
+na notificação. Ao acender a tela, o player pega a posição de volta, reabre o
+vídeo nesse ponto e o serviço para. A ponte entre os dois é
+`player/SegundoPlano.kt`; a TV não tem o serviço e não faz a passagem. Sair
+para a tela inicial continua indo para a janela flutuante.
+
+Por que reabrir e não só buscar: com a tela apagada a superfície do vídeo é
+destruída, e o VLC seguia tocando sem voltar a desenhar (som andando, imagem
+congelada). E por que `:start-time`: logo no começo o VLC ignora a busca.
+
 ## Televisão
 
 O mesmo APK roda na TV. Não há versão separada, nem outro download: o app

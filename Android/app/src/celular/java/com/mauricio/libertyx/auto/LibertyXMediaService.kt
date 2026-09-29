@@ -26,7 +26,10 @@ import com.mauricio.libertyx.core.Pro
 import com.mauricio.libertyx.core.ResumeStore
 import com.mauricio.libertyx.core.resumeKey
 import com.mauricio.libertyx.library.MediaLibrary
+import com.mauricio.libertyx.player.Playback
 import com.mauricio.libertyx.player.PlaybackState
+import com.mauricio.libertyx.player.PlayerActivity
+import com.mauricio.libertyx.player.SegundoPlano
 import com.mauricio.libertyx.player.VlcEngine
 import com.mauricio.libertyx.smb.SmbBrowser
 import com.mauricio.libertyx.smb.SmbServerStore
@@ -75,6 +78,23 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
     private var indice = 0
 
     private var focoPedido: AudioFocusRequest? = null
+    private var temFoco = false
+
+    /** O que a notificação mostra agora, para só republicar quando mudar. */
+    private var notificacaoAtual: Pair<Boolean, String>? = null
+
+    /**
+     * Um número de notificação por vida do serviço.
+     *
+     * Com número fixo, o aviso atrasado de "sessão encerrada" da vez anterior
+     * — apagar a tela logo depois de voltar ao player — chegava à interface
+     * do sistema depois da notificação nova, com a mesma chave, e o controle
+     * de mídia sumia da tela de bloqueio com o áudio ainda tocando.
+     */
+    private val idNotificacao = ID_NOTIFICACAO + (proximaVida++ % 1000)
+
+    /** Onde começar assim que o VLC estiver tocando (ver `onTimeUpdate`). */
+    private var inicioPendente: Double? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -85,7 +105,18 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
             // decodificar 1080p para descartar cada quadro só gasta bateria.
             audioOnly = true
             onStateChange = { estado -> publicarEstado(estado) }
-            onTimeUpdate = { publicarPosicao() }
+            onTimeUpdate = {
+                // A posição de partida só vale com o VLC já rodando: antes
+                // disso ele ignora a busca e o áudio começaria do zero.
+                val alvo = inicioPendente
+                // O primeiro aviso chega com o tempo ainda em zero, antes de o
+                // arquivo andar — buscar ali também é ignorado.
+                if (alvo != null && duration > 0 && currentTime > 0.0) {
+                    inicioPendente = null
+                    seek(alvo, precise = false)
+                }
+                publicarPosicao()
+            }
         }
 
         sessao = MediaSessionCompat(this, "LibertyX").apply {
@@ -103,7 +134,61 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
         criarCanal()
     }
 
+    /**
+     * O player apagou a tela e passou o filme para cá.
+     *
+     * A fila é a do player ([Playback]), e o ponto é exatamente onde ele
+     * estava — não o da retomada gravada, que pode ter até alguns segundos de
+     * atraso.
+     */
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action != SegundoPlano.ACAO) return super.onStartCommand(intent, flags, startId)
+        val item = Playback.current
+        if (item == null) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        fila = Playback.queue
+        indice = Playback.index
+        // Tocar na notificação volta ao player, e não à biblioteca.
+        sessao.setSessionActivity(
+            PendingIntent.getActivity(
+                this, 1,
+                Intent(this, PlayerActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+        )
+        // O Android exige a notificação em segundos depois de pedir o serviço
+        // em primeiro plano — antes de abrir o arquivo, que pela rede demora.
+        sessao.setMetadata(metadados(item))
+        atualizarNotificacao(emPrimeiroPlano = true)
+
+        SegundoPlano.ativo = true
+        SegundoPlano.posicao = { engine.currentTime }
+        SegundoPlano.tocando = { engine.state == PlaybackState.Playing }
+        SegundoPlano.parar = { encerrar(guardarPosicao = false) }
+
+        tocar(item, inicio = intent.getDoubleExtra(SegundoPlano.EXTRA_POSICAO, 0.0))
+        engine.rate = intent.getFloatExtra(SegundoPlano.EXTRA_VELOCIDADE, 1f)
+        return START_NOT_STICKY
+    }
+
+    /** Fecha o serviço, guardando onde parou para o player e para a retomada. */
+    private fun encerrar(guardarPosicao: Boolean) {
+        val atual = fila.getOrNull(indice)
+        if (atual != null && engine.duration > 0) {
+            ResumeStore.get(this).save(engine.currentTime, engine.duration, atual.origin.resumeKey)
+        }
+        if (guardarPosicao && SegundoPlano.ativo) SegundoPlano.ultimaPosicao = engine.currentTime
+        SegundoPlano.ativo = false
+        engine.pause()
+        largarFoco()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
     override fun onDestroy() {
+        SegundoPlano.ativo = false
         super.onDestroy()
         escopo.cancel()
         largarFoco()
@@ -265,12 +350,7 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
             publicarEstado(PlaybackState.Paused)
         }
 
-        override fun onStop() {
-            engine.pause()
-            largarFoco()
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-        }
+        override fun onStop() = encerrar(guardarPosicao = true)
 
         override fun onSeekTo(pos: Long) {
             engine.seek(pos / 1000.0, precise = false)
@@ -298,31 +378,35 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
         a.origin::class == b.origin::class &&
             a.id.substringBeforeLast(':') == b.id.substringBeforeLast(':')
 
-    private fun tocar(item: MediaItem) {
+    /** @param inicio o ponto de partida; sem ele, a retomada gravada. */
+    private fun tocar(item: MediaItem, inicio: Double? = null) {
         if (!pedirFoco()) return
+        // Pulou de vídeo na notificação: o player, ao voltar, abre o mesmo.
+        if (SegundoPlano.ativo && fila === Playback.queue) Playback.index = indice
 
-        engine.load(item).onFailure {
+        // O ponto que veio do player entra na abertura do arquivo (exato); a
+        // retomada gravada, como antes, por busca quando o tempo começa a andar.
+        engine.load(item, inicio).onFailure {
             publicarEstado(PlaybackState.Failed(it.message ?: getString(R.string.erro_abrir_curto)))
             return
         }
 
-        ResumeStore.get(this).position(item.origin.resumeKey)?.let { retomada ->
-            // No carro não há como perguntar. Retomar é o que quase sempre se
-            // quer, e a barra de progresso deixa voltar ao início num toque.
-            engine.seek(retomada, precise = false)
-        }
+        // No carro não há como perguntar. Retomar é o que quase sempre se
+        // quer, e a barra de progresso deixa voltar ao início num toque.
+        inicioPendente = if (inicio != null) null else ResumeStore.get(this).position(item.origin.resumeKey)
         engine.play()
 
-        sessao.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, idDoItem(item))
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.title)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "LibertyX Player")
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, ((item.duration ?: 0.0) * 1000).toLong())
-                .build()
-        )
+        sessao.setMetadata(metadados(item))
         publicarEstado(PlaybackState.Playing)
     }
+
+    private fun metadados(item: MediaItem): MediaMetadataCompat =
+        MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, idDoItem(item))
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "LibertyX Player")
+            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, ((item.duration ?: 0.0) * 1000).toLong())
+            .build()
 
     // ------------------------------------------------------------------
     // Estado, notificação e foco de áudio
@@ -396,6 +480,11 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
     private fun atualizarNotificacao(emPrimeiroPlano: Boolean) {
         val titulo = sessao.controller?.metadata
             ?.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: "LibertyX Player"
+        // O estado do motor muda várias vezes por segundo ao abrir e ao
+        // buscar; republicar a notificação a cada vez fazia o sistema
+        // descartá-las por excesso. A posição vai pela sessão, não por aqui.
+        if (notificacaoAtual == (emPrimeiroPlano to titulo)) return
+        notificacaoAtual = emPrimeiroPlano to titulo
 
         val aviso: Notification = NotificationCompat.Builder(this, CANAL)
             .setContentTitle(titulo)
@@ -407,13 +496,13 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
             .build()
 
         if (emPrimeiroPlano) {
-            startForeground(ID_NOTIFICACAO, aviso)
+            startForeground(idNotificacao, aviso)
         } else {
             // Sai do primeiro plano mas mantém o aviso: pausado ainda se quer
             // o controle na cortina, e o sistema pode matar o serviço.
             stopForeground(STOP_FOREGROUND_DETACH)
             (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-                .notify(ID_NOTIFICACAO, aviso)
+                .notify(idNotificacao, aviso)
         }
     }
 
@@ -434,6 +523,11 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
      * ou parar — que é o tipo de coisa que faz desinstalar um app no carro.
      */
     private fun pedirFoco(): Boolean {
+        // Quem já tem o foco não pede de novo. Um pedido novo faz o sistema
+        // avisar o pedido anterior — do próprio app — que ele perdeu o foco,
+        // e o áudio pausava logo depois de o "tocar" da tela de bloqueio
+        // mandar continuar.
+        if (temFoco) return true
         val atributos = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
@@ -450,12 +544,14 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
             @Suppress("DEPRECATION")
             audio.requestAudioFocus(::mudouFoco, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
         }
-        return resultado == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        temFoco = resultado == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        return temFoco
     }
 
     private fun mudouFoco(mudanca: Int) {
         when (mudanca) {
             AudioManager.AUDIOFOCUS_LOSS -> {
+                temFoco = false
                 engine.pause()
                 publicarEstado(PlaybackState.Paused)
                 largarFoco()
@@ -476,6 +572,7 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
     }
 
     private fun largarFoco() {
+        temFoco = false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             focoPedido?.let { audio.abandonAudioFocusRequest(it) }
             focoPedido = null
@@ -494,5 +591,6 @@ class LibertyXMediaService : MediaBrowserServiceCompat() {
         const val TOCAR = "tocar"
         const val CANAL = "libertyx.playback"
         const val ID_NOTIFICACAO = 41
+        private var proximaVida = 0
     }
 }
