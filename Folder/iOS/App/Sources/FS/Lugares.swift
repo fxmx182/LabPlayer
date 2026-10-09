@@ -171,6 +171,26 @@ final class Lugares: ObservableObject {
     /// Uma pasta escolhida no seletor. Escolher de novo uma que já está na
     /// lista (o mesmo caminho) só renova o acesso dela.
     @discardableResult
+    /// Várias pastas marcadas de uma vez no seletor. É o mais perto que o iOS
+    /// deixa chegar de "todas as pastas dos apps": cada pasta de app tem a
+    /// própria permissão — no Arquivos elas aparecem dentro de "No iPhone",
+    /// mas moram cada uma na caixa do seu app, e escolher "No iPhone" não
+    /// libera nenhuma delas. Devolve as que entraram agora (não as que só
+    /// renovaram o acesso) e as mensagens de erro.
+    func adicionarVarias(_ urls: [URL]) -> (novas: [Lugar], erros: [String]) {
+        var novas: [Lugar] = [], erros: [String] = []
+        for u in urls {
+            let antes = Set(autorizados.map(\.id))
+            do {
+                let l = try adicionar(u)
+                if !antes.contains(l.id) { novas.append(l) }
+            } catch {
+                erros.append("\(u.lastPathComponent): \(error.localizedDescription)")
+            }
+        }
+        return (novas, erros)
+    }
+
     /// `substituindo`: a pasta indisponível que a pessoa tocou para autorizar
     /// de novo — ela mantém o nome que tinha (renomeado ou não).
     func adicionar(_ url: URL, substituindo: Lugar? = nil) throws -> Lugar {

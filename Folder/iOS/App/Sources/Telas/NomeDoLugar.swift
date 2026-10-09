@@ -33,3 +33,48 @@ extension View {
         modifier(PedirNomeDoLugar(lugar: lugar))
     }
 }
+
+/// Os nomes de várias pastas recém-adicionadas, numa tela só: marcadas de uma
+/// vez no seletor, as pastas dos apps chegam quase todas como "Documents",
+/// e um alerta por pasta seria uma fila de pop-ups.
+struct NomesDasPastas: View {
+    let pastas: [Lugar]
+    @EnvironmentObject private var lugares: Lugares
+    @Environment(\.dismiss) private var fechar
+    @State private var nomes: [String: String] = [:]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    ForEach(pastas) { l in
+                        HStack(spacing: 12) {
+                            Image(systemName: lugares.tipo(raiz: l.id).simbolo).foregroundStyle(Lx.ouro).frame(width: 24)
+                            TextField("Nome", text: Binding(get: { nomes[l.id] ?? l.nome }, set: { nomes[l.id] = $0 }))
+                                .autocorrectionDisabled()
+                        }
+                    }
+                } footer: {
+                    Text("Um nome para reconhecer de onde é cada pasta. Ele só muda aqui no app; a pasta continua com o nome dela.")
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Lx.superficie)
+            .navigationTitle(Plural.pastas(pastas.count))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Salvar") {
+                        for l in pastas { if let n = nomes[l.id] { lugares.renomear(l, n) } }
+                        fechar()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct GrupoDePastas: Identifiable {
+    let id = UUID()
+    let pastas: [Lugar]
+}

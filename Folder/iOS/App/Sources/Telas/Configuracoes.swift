@@ -9,6 +9,7 @@ struct Configuracoes: View {
     @EnvironmentObject private var nav: Navegacao
     @State private var remover: Lugar?
     @State private var nomeando: Lugar?
+    @State private var nomeandoVarias: GrupoDePastas?
     @State private var reautorizar: Lugar?
     @State private var licenca: Licenca?
     @State private var escolhendo = false
@@ -67,7 +68,7 @@ struct Configuracoes: View {
                         }
                     }
                     LinhaDeCartao(simbolo: "plus", titulo: String(localized: "Adicionar pasta"),
-                                  sub: String(localized: "iCloud Drive, No iPhone, pendrive ou outro app"), cor: Lx.verde) {
+                                  sub: String(localized: "Toque em Selecionar no seletor para marcar várias de uma vez, como as pastas de cada app"), cor: Lx.verde) {
                         escolhendo = true
                     }
                 }
@@ -76,6 +77,10 @@ struct Configuracoes: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 26).padding(.top, 10)
 
+                Text("As pastas dos outros apps aparecem dentro de No iPhone no app Arquivos, mas para o iOS cada uma é separada: escolher No iPhone não libera nenhuma delas. No seletor, toque em Selecionar e marque todas de uma vez.")
+                    .font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 26).padding(.top, 8)
                 Text("A estrela marca a pasta padrão: ela vem primeiro no início e recebe o que chega de outros apps. Todas as pastas autorizadas são varridas por inteiro, com todas as subpastas, para as categorias e a pesquisa.")
                     .font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
                     .fixedSize(horizontal: false, vertical: true)
@@ -116,19 +121,24 @@ struct Configuracoes: View {
         .background(BrilhoDeFundo())
         .navigationTitle("Configurações")
         .navigationBarTitleDisplayMode(.inline)
-        .fileImporter(isPresented: $escolhendo, allowedContentTypes: [.folder]) { r in
+        .fileImporter(isPresented: $escolhendo, allowedContentTypes: [.folder],
+                      allowsMultipleSelection: reautorizar == nil) { r in
             switch r {
-            case .success(let u):
-                do {
-                    let antes = lugares.autorizados.count
-                    let l = try lugares.adicionar(u, substituindo: reautorizar)
-                    if lugares.autorizados.count > antes { nomeando = l }
-                } catch { erro = error.localizedDescription }
+            case .success(let urls):
+                if let r = reautorizar, let u = urls.first {
+                    do { _ = try lugares.adicionar(u, substituindo: r) } catch { erro = error.localizedDescription }
+                } else {
+                    let (novas, erros) = lugares.adicionarVarias(urls)
+                    if novas.count == 1 { nomeando = novas[0] }
+                    else if novas.count > 1 { nomeandoVarias = GrupoDePastas(pastas: novas) }
+                    if !erros.isEmpty { erro = erros.joined(separator: "\n") }
+                }
             case .failure(let e): erro = e.localizedDescription
             }
             reautorizar = nil
         }
         .pedirNomeDoLugar($nomeando)
+        .sheet(item: $nomeandoVarias) { g in NomesDasPastas(pastas: g.pastas) }
         .confirmationDialog(remover.map { String(localized: "Remover o acesso a \($0.nome)?") } ?? "",
                             isPresented: Binding(get: { remover != nil }, set: { if !$0 { remover = nil } }),
                             titleVisibility: .visible) {

@@ -19,6 +19,7 @@ struct Inicio: View {
     @State private var explicarDownloads = false
     @State private var remover: Lugar?
     @State private var nomeando: Lugar?
+    @State private var nomeandoVarias: GrupoDePastas?
     /// A pasta indisponível tocada: o que for escolhido no seletor entra no
     /// lugar dela, com o mesmo nome.
     @State private var reautorizar: Lugar?
@@ -53,16 +54,27 @@ struct Inicio: View {
         }
         .task(id: "\(ops.versao)-\(lugares.versao)-\(lugares.padrao ?? "")") { await carregar() }
         .task { if descobertas.achados.isEmpty { descobertas.buscar() } }
-        .fileImporter(isPresented: $escolhendoPasta, allowedContentTypes: [.folder]) { r in
+        // Várias de uma vez ao adicionar ("Selecionar" no seletor); uma só
+        // quando é para ser a padrão, a Downloads ou autorizar de novo.
+        .fileImporter(isPresented: $escolhendoPasta, allowedContentTypes: [.folder],
+                      allowsMultipleSelection: !(paraPadrao || paraDownloads || reautorizar != nil)) { r in
             switch r {
-            case .success(let url):
-                do {
-                    let antes = lugares.autorizados.count
-                    let l = try lugares.adicionar(url, substituindo: reautorizar)
-                    if paraPadrao { lugares.definirPadrao(l) }
-                    if paraDownloads { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
-                    else if lugares.autorizados.count > antes { nomeando = l }
-                } catch { erro = error.localizedDescription }
+            case .success(let urls):
+                if paraPadrao || paraDownloads || reautorizar != nil {
+                    guard let url = urls.first else { break }
+                    do {
+                        let antes = lugares.autorizados.count
+                        let l = try lugares.adicionar(url, substituindo: reautorizar)
+                        if paraPadrao { lugares.definirPadrao(l) }
+                        if paraDownloads { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
+                        else if lugares.autorizados.count > antes { nomeando = l }
+                    } catch { erro = error.localizedDescription }
+                } else {
+                    let (novas, erros) = lugares.adicionarVarias(urls)
+                    if novas.count == 1 { nomeando = novas[0] }
+                    else if novas.count > 1 { nomeandoVarias = GrupoDePastas(pastas: novas) }
+                    if !erros.isEmpty { erro = erros.joined(separator: "\n") }
+                }
             case .failure(let e):
                 erro = e.localizedDescription
             }
@@ -71,6 +83,7 @@ struct Inicio: View {
             reautorizar = nil
         }
         .pedirNomeDoLugar($nomeando)
+        .sheet(item: $nomeandoVarias) { g in NomesDasPastas(pastas: g.pastas) }
         .sheet(item: $rascunho) { r in
             FormularioDeServidor(inicial: r) { s in
                 rascunho = nil
@@ -217,7 +230,7 @@ struct Inicio: View {
                 .contextMenu { menuDoLugar(l) }
             }
             LinhaDeCartao(simbolo: "plus", titulo: String(localized: "Adicionar pasta"),
-                          sub: String(localized: "iCloud Drive, No iPhone, pendrive ou outro app"),
+                          sub: String(localized: "Toque em Selecionar no seletor para marcar várias de uma vez, como as pastas de cada app"),
                           cor: Lx.verde) { escolhendoPasta = true }
             AvisoDeVarredura()
         }
