@@ -79,21 +79,44 @@ actor Indice {
         varrendo = nil
     }
 
-    private func garantir() async {
-        if pronto { return }
-        if let varrendo { await varrendo.value; if pronto { return } }
-        let g = geracao
-        let t = Task { await self.varrer(g) }
-        varrendo = t
-        await t.value
+    /// As raízes da última varredura. O índice confere sozinho se a lista de
+    /// pastas autorizadas mudou, em vez de depender de alguém avisar: na
+    /// versão anterior, uma pasta autorizada depois da primeira varredura
+    /// nunca entrava nas categorias (só a primeira pasta aparecia).
+    private var raizesVarridas: [String] = []
+
+    private static func raizesAtuais() async -> [String] {
+        await MainActor.run {
+            [Lugares.docs] + Lugares.shared.autorizados
+                .filter { !Lugares.shared.indisponiveis.contains($0.id) }
+                .map(\.id)
+        }
     }
 
-    private func varrer(_ g: Int) async {
-        let raizes = [Lugares.docs] + (await MainActor.run { Lugares.shared.autorizados.map(\.id) })
+    private func garantir() async {
+        // Em laço: se o índice for invalidado no meio da varredura (uma cópia
+        // acabou, uma pasta entrou), quem esperava recebe a varredura nova, e
+        // não a pela metade.
+        for _ in 0..<3 {
+            let atuais = await Self.raizesAtuais()
+            if pronto && atuais == raizesVarridas { return }
+            if let varrendo {
+                await varrendo.value
+                continue
+            }
+            if pronto { pronto = false }
+            let g = geracao
+            let t = Task { await self.varrer(g, atuais) }
+            varrendo = t
+            await t.value
+        }
+    }
+
+    private func varrer(_ g: Int, _ raizes: [String]) async {
         var achados: [FileEntry] = [], dirs: [FileEntry] = []
         var fila: [(Loc, Int)] = raizes.map { (.local(raiz: $0, caminho: ""), 0) }
         while !fila.isEmpty, achados.count + dirs.count < maxItens {
-            if Task.isCancelled { return }
+            if Task.isCancelled { if g == geracao { varrendo = nil }; return }
             let (dir, nivel) = fila.removeFirst()
             guard let filhos = try? await LocalFs.listar(dir) else { continue }
             for f in filhos where !f.oculto {
@@ -108,6 +131,7 @@ actor Indice {
         guard g == geracao else { return }
         arquivos = achados
         pastas = dirs
+        raizesVarridas = raizes
         pronto = true
         varrendo = nil
     }

@@ -87,7 +87,10 @@ struct Raiz: View {
         .onChange(of: fase) { _, nova in
             // Um pendrive ligado com o app em segundo plano: ao voltar, os
             // lugares que estavam fora tentam abrir de novo.
-            if nova == .active { lugares.resolverTodos() }
+            if nova == .active {
+                lugares.resolverTodos()
+                Task { await Indice.shared.invalidar() }
+            }
         }
         .onOpenURL { url in Recebidos.receber(url) }
     }

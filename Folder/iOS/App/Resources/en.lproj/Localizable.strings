@@ -155,3 +155,6 @@
 "iCloud Drive, No iPhone, pendrive ou outro app" = "iCloud Drive, On My iPhone, USB drive or another app";
 "Áudio" = "Audio";
 "A conexão com o servidor caiu. Confira o Wi-Fi e tente de novo." = "The connection to the server dropped. Check the Wi-Fi and try again.";
+"Nome da pasta" = "Folder name";
+"Salvar" = "Save";
+"Um nome para reconhecer de onde é esta pasta. Ele só muda aqui no app; a pasta continua com o nome dela." = "A name to recognize where this folder is from. It only changes here in the app; the folder keeps its own name.";

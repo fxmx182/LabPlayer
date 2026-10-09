@@ -162,20 +162,24 @@ final class Lugares: ObservableObject {
     /// Uma pasta escolhida no seletor. Escolher de novo uma que já está na
     /// lista (o mesmo caminho) só renova o acesso dela.
     @discardableResult
-    func adicionar(_ url: URL) throws -> Lugar {
+    /// `substituindo`: a pasta indisponível que a pessoa tocou para autorizar
+    /// de novo — ela mantém o nome que tinha (renomeado ou não).
+    func adicionar(_ url: URL, substituindo: Lugar? = nil) throws -> Lugar {
         guard url.startAccessingSecurityScopedResource() else {
             throw ErroDeArquivo.semAcesso(url.lastPathComponent)
         }
         let b = try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
-        let nome = Self.nomeDe(url)
-        if let i = autorizados.firstIndex(where: { Raizes.url($0.id)?.standardizedFileURL == url.standardizedFileURL || ($0.nome == nome && indisponiveis.contains($0.id)) }) {
+        if let i = autorizados.firstIndex(where: { $0.id == substituindo?.id || Raizes.url($0.id)?.standardizedFileURL == url.standardizedFileURL }) {
             autorizados[i].bookmark = b
+            if let velha = Raizes.url(autorizados[i].id), velha.standardizedFileURL != url.standardizedFileURL {
+                velha.stopAccessingSecurityScopedResource()
+            }
             Raizes.definir(autorizados[i].id, url)
             indisponiveis.remove(autorizados[i].id)
             salvar()
             return autorizados[i]
         }
-        let novo = Lugar(id: UUID().uuidString, nome: nome, bookmark: b)
+        let novo = Lugar(id: UUID().uuidString, nome: nomeDe(url), bookmark: b)
         autorizados.append(novo)
         Raizes.definir(novo.id, url)
         salvar()
@@ -190,9 +194,11 @@ final class Lugares: ObservableObject {
         salvar()
     }
 
+    /// O nome é só do app: a pasta no disco continua com o nome dela.
     func renomear(_ l: Lugar, _ nome: String) {
-        guard let i = autorizados.firstIndex(where: { $0.id == l.id }) else { return }
-        autorizados[i].nome = nome
+        let n = nome.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !n.isEmpty, let i = autorizados.firstIndex(where: { $0.id == l.id }) else { return }
+        autorizados[i].nome = n
         salvar()
     }
 
@@ -215,11 +221,32 @@ final class Lugares: ObservableObject {
 
     /// Volume de um pendrive tem nome próprio ("KINGSTON"); a pasta raiz dele
     /// chega com o nome do volume. Para o resto, o nome da pasta.
-    private static func nomeDe(_ url: URL) -> String {
-        if let v = try? url.resourceValues(forKeys: [.volumeLocalizedNameKey, .isVolumeKey]),
-           v.isVolume == true, let n = v.volumeLocalizedName { return n }
-        let n = url.lastPathComponent
-        return n.isEmpty ? String(localized: "Pasta") : n
+    ///
+    /// Pasta de outro app (e a de "No iPhone") chega chamada "Documents" ou
+    /// "File Provider Storage": é o nome no disco, não o que o Arquivos mostra.
+    /// O nome de exibição do sistema costuma ser o certo (o nome do app); se
+    /// ele também for genérico, sai o tipo do lugar. Mesmo assim pode cair
+    /// num nome repetido — por isso o app pede um nome ao adicionar, e dá
+    /// para renomear depois.
+    private func nomeDe(_ url: URL) -> String {
+        let v = try? url.resourceValues(forKeys: [.volumeLocalizedNameKey, .isVolumeKey, .localizedNameKey])
+        if v?.isVolume == true, let n = v?.volumeLocalizedName, !n.isEmpty { return semRepetir(n) }
+        let genericos: Set<String> = ["documents", "file provider storage", "com~apple~clouddocs", "mobile documents", ""]
+        let candidatos = [v?.localizedName, url.lastPathComponent]
+        if let n = candidatos.compactMap({ $0 }).first(where: { !genericos.contains($0.lowercased()) }) {
+            return semRepetir(n)
+        }
+        let tipo = TipoDeLugar.de(url)
+        return semRepetir(tipo == .pasta ? String(localized: "Pasta") : tipo.descricao)
+    }
+
+    /// "Documents", "Documents 2", "Documents 3"…
+    private func semRepetir(_ n: String) -> String {
+        let usados = Set(autorizados.map { $0.nome.lowercased() })
+        guard usados.contains(n.lowercased()) else { return n }
+        var i = 2
+        while usados.contains("\(n) \(i)".lowercased()) { i += 1 }
+        return "\(n) \(i)"
     }
 
     /// Usado e total do volume de uma raiz — o do iPhone para a pasta do app,

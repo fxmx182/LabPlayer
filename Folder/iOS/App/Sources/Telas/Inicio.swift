@@ -16,6 +16,10 @@ struct Inicio: View {
     @State private var paraDownloads = false
     @State private var explicarDownloads = false
     @State private var remover: Lugar?
+    @State private var nomeando: Lugar?
+    /// A pasta indisponível tocada: o que for escolhido no seletor entra no
+    /// lugar dela, com o mesmo nome.
+    @State private var reautorizar: Lugar?
     @State private var erro: String?
     @AppStorage("dica.pastas.fechada") private var dicaFechada = false
 
@@ -51,14 +55,18 @@ struct Inicio: View {
             switch r {
             case .success(let url):
                 do {
-                    let l = try lugares.adicionar(url)
+                    let antes = lugares.autorizados.count
+                    let l = try lugares.adicionar(url, substituindo: reautorizar)
                     if paraDownloads { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
+                    else if lugares.autorizados.count > antes { nomeando = l }
                 } catch { erro = error.localizedDescription }
             case .failure(let e):
                 erro = e.localizedDescription
             }
             paraDownloads = false
+            reautorizar = nil
         }
+        .pedirNomeDoLugar($nomeando)
         .sheet(item: $rascunho) { r in
             FormularioDeServidor(inicial: r) { s in
                 rascunho = nil
@@ -192,9 +200,10 @@ struct Inicio: View {
                               titulo: l.nome,
                               sub: fora ? String(localized: "Indisponível — toque para autorizar de novo") : subtitulo(l, tipo),
                               cor: fora ? Lx.vermelho : Lx.ouro) {
-                    if fora { escolhendoPasta = true } else { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
+                    if fora { reautorizar = l; escolhendoPasta = true } else { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
                 }
                 .contextMenu {
+                    Button { nomeando = l } label: { Label("Renomear", systemImage: "pencil") }
                     Button(role: .destructive) { remover = l } label: { Label("Remover acesso", systemImage: "minus.circle") }
                 }
             }

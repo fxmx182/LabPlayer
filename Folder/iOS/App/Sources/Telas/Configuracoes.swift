@@ -7,6 +7,8 @@ import SwiftUI
 struct Configuracoes: View {
     @EnvironmentObject private var lugares: Lugares
     @State private var remover: Lugar?
+    @State private var nomeando: Lugar?
+    @State private var reautorizar: Lugar?
     @State private var licenca: Licenca?
     @State private var escolhendo = false
     @State private var erro: String?
@@ -39,8 +41,13 @@ struct Configuracoes: View {
                                           sub: lugares.indisponiveis.contains(l.id)
                                             ? String(localized: "Indisponível — toque para autorizar de novo")
                                             : lugares.tipo(raiz: l.id).descricao) {
-                                if lugares.indisponiveis.contains(l.id) { escolhendo = true }
+                                if lugares.indisponiveis.contains(l.id) { reautorizar = l; escolhendo = true } else { nomeando = l }
                             }
+                            Button { nomeando = l } label: {
+                                Image(systemName: "pencil.circle.fill").font(.system(size: 20)).foregroundStyle(Lx.apagado)
+                            }
+                            .padding(.trailing, 12)
+                            .accessibilityLabel(Text("Renomear"))
                             Button { remover = l } label: {
                                 Image(systemName: "minus.circle.fill").font(.system(size: 20)).foregroundStyle(Lx.vermelho)
                             }
@@ -85,10 +92,17 @@ struct Configuracoes: View {
         .navigationBarTitleDisplayMode(.inline)
         .fileImporter(isPresented: $escolhendo, allowedContentTypes: [.folder]) { r in
             switch r {
-            case .success(let u): do { try lugares.adicionar(u) } catch { erro = error.localizedDescription }
+            case .success(let u):
+                do {
+                    let antes = lugares.autorizados.count
+                    let l = try lugares.adicionar(u, substituindo: reautorizar)
+                    if lugares.autorizados.count > antes { nomeando = l }
+                } catch { erro = error.localizedDescription }
             case .failure(let e): erro = e.localizedDescription
             }
+            reautorizar = nil
         }
+        .pedirNomeDoLugar($nomeando)
         .confirmationDialog(remover.map { String(localized: "Remover o acesso a \($0.nome)?") } ?? "",
                             isPresented: Binding(get: { remover != nil }, set: { if !$0 { remover = nil } }),
                             titleVisibility: .visible) {

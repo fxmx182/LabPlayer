@@ -322,6 +322,10 @@ struct Listagem: View {
     /// tela trocar de lugar enquanto o indicador recolhe.
     private func atualizar() async {
         let inicio = Date()
+        switch modo {
+        case .categoria, .busca(_, .none): await Indice.shared.invalidar()
+        default: break
+        }
         await carregar(silencioso: true)
         let resto = 0.5 - Date().timeIntervalSince(inicio)
         if resto > 0 { try? await Task.sleep(nanoseconds: UInt64(resto * 1_000_000_000)) }
