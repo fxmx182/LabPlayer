@@ -111,10 +111,16 @@ final class Lugares: ObservableObject {
     @Published private(set) var indisponiveis: Set<String> = []
     /// Muda quando qualquer lugar entra ou sai — o índice das categorias recomeça.
     @Published private(set) var versao = 0
+    /// A pasta padrão, escolhida na configuração inicial: vem primeiro no
+    /// início e recebe o que chega de outros apps. Substitui a pasta interna
+    /// do app ("No iPhone"), que o dono pediu para tirar.
+    @Published private(set) var padrao: String?
+    private let chavePadrao = "folder.padrao"
 
     private let chave = "folder.lugares"
 
     private init() {
+        padrao = UserDefaults.standard.string(forKey: chavePadrao)
         if let d = UserDefaults.standard.data(forKey: chave),
            let l = try? JSONDecoder().decode([Lugar].self, from: d) {
             autorizados = l
@@ -155,7 +161,10 @@ final class Lugares: ObservableObject {
         }
         // Publicar só o que mudou: cada publicação redesenha o início, e isto
         // roda a cada "puxar para atualizar" e a cada volta ao app.
-        if fora != indisponiveis { indisponiveis = fora }
+        if fora != indisponiveis {
+            indisponiveis = fora
+            Task { await Indice.shared.aquecer() }
+        }
         if let d = try? JSONEncoder().encode(autorizados) { UserDefaults.standard.set(d, forKey: chave) }
     }
 
@@ -177,11 +186,15 @@ final class Lugares: ObservableObject {
             Raizes.definir(autorizados[i].id, url)
             indisponiveis.remove(autorizados[i].id)
             salvar()
+            Task { await Indice.shared.aquecer() }
             return autorizados[i]
         }
         let novo = Lugar(id: UUID().uuidString, nome: nomeDe(url), bookmark: b)
         autorizados.append(novo)
         Raizes.definir(novo.id, url)
+        // Varre todas as subpastas já, em segundo plano: quando a pessoa abrir
+        // uma categoria, os arquivos dela já estão lá.
+        Task { await Indice.shared.aquecer() }
         salvar()
         return novo
     }
@@ -191,7 +204,29 @@ final class Lugares: ObservableObject {
         Raizes.definir(l.id, nil)
         autorizados.removeAll { $0.id == l.id }
         indisponiveis.remove(l.id)
+        if padrao == l.id { definirPadrao(nil) }
         salvar()
+        Task { await Indice.shared.aquecer() }
+    }
+
+    func definirPadrao(_ l: Lugar?) {
+        padrao = l?.id
+        UserDefaults.standard.set(l?.id, forKey: chavePadrao)
+        // A padrão vai para o topo da lista.
+        if let l, let i = autorizados.firstIndex(where: { $0.id == l.id }), i != 0 {
+            autorizados.insert(autorizados.remove(at: i), at: 0)
+        }
+        salvar()
+        Task { await Indice.shared.aquecer() }
+    }
+
+    var lugarPadrao: Lugar? { padrao.flatMap { lugar($0) } }
+
+    /// Onde guardar o que chega de outros apps: a pasta padrão, se abrir;
+    /// senão, a pasta interna do app.
+    var raizDeEntrada: String {
+        if let p = padrao, Raizes.url(p) != nil, !indisponiveis.contains(p) { return p }
+        return Self.docs
     }
 
     /// O nome é só do app: a pasta no disco continua com o nome dela.
@@ -207,7 +242,7 @@ final class Lugares: ObservableObject {
     /// O nome de uma raiz na trilha e no título da tela.
     func nome(raiz: String) -> String {
         switch raiz {
-        case Self.docs: return String(localized: "No iPhone")
+        case Self.docs: return String(localized: "Pasta interna do app")
         case Self.tmp: return String(localized: "Importar")
         default: return lugar(raiz)?.nome ?? "?"
         }

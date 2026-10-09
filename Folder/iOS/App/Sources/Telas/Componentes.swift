@@ -351,3 +351,22 @@ struct AvisoCurto: View {
         }
     }
 }
+
+/// "Varrendo subpastas… 12.345 itens" no cartão do armazenamento, enquanto o
+/// índice das categorias é montado. Observa o progresso sozinho: o início não
+/// redesenha a cada 500 itens.
+struct AvisoDeVarredura: View {
+    @ObservedObject private var p = ProgressoDoIndice.shared
+    var body: some View {
+        if p.varrendo {
+            HStack(spacing: 10) {
+                ProgressView().tint(Lx.ouro).scaleEffect(0.8)
+                Text(String(localized: "Varrendo subpastas…  \(p.itens.formatted()) itens"))
+                    .font(LxFonte.f(12)).foregroundStyle(Lx.apagado)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 20).padding(.vertical, 10)
+            .transition(.opacity)
+        }
+    }
+}

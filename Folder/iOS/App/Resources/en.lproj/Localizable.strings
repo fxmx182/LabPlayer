@@ -158,3 +158,17 @@
 "Nome da pasta" = "Folder name";
 "Salvar" = "Save";
 "Um nome para reconhecer de onde é esta pasta. Ele só muda aqui no app; a pasta continua com o nome dela." = "A name to recognize where this folder is from. It only changes here in the app; the folder keeps its own name.";
+"Escolher pasta padrão" = "Choose default folder";
+"Ela vem primeiro aqui, e o app varre todas as subpastas dela" = "It comes first here, and the app scans all its subfolders";
+"Tornar pasta padrão" = "Make default folder";
+"Pasta padrão  ·  %@ de %@" = "Default folder  ·  %@ of %@";
+"Pasta padrão  ·  %@" = "Default folder  ·  %@";
+"Varrendo subpastas…  %@ itens" = "Scanning subfolders…  %@ items";
+"Escolha a pasta padrão" = "Choose your default folder";
+"Ela vem primeiro na tela inicial, recebe o que você mandar de outros apps, e o LibertyX Folder varre todas as subpastas dela para montar as categorias e a pesquisa. Pode ser uma pasta do iCloud Drive, de No iPhone ou de um pendrive. Dá para trocar depois em Configurações." = "It comes first on the home screen, receives what you send from other apps, and LibertyX Folder scans all its subfolders to build the categories and search. It can be a folder in iCloud Drive, On My iPhone or a USB drive. You can change it later in Settings.";
+"Agora não" = "Not now";
+"Começar" = "Start";
+"Escolher outra" = "Choose another";
+"A estrela marca a pasta padrão: ela vem primeiro no início e recebe o que chega de outros apps. Todas as pastas autorizadas são varridas por inteiro, com todas as subpastas, para as categorias e a pesquisa." = "The star marks the default folder: it comes first on the home screen and receives what arrives from other apps. Every authorized folder is scanned in full, with all its subfolders, for the categories and search.";
+"Pasta interna do app" = "App's internal folder";
+"A pasta que o iOS cria para o app; não aparece mais no início" = "The folder iOS creates for the app; no longer shown on the home screen";

@@ -50,6 +50,8 @@ struct Raiz: View {
     private let descobertas = Descobertas.shared
     private let prefs = Prefs.shared
     @Environment(\.scenePhase) private var fase
+    /// A configuração inicial (escolher a pasta padrão) já foi feita ou pulada.
+    @AppStorage("folder.inicio.feito") private var inicioFeito = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -89,22 +91,31 @@ struct Raiz: View {
             // lugares que estavam fora tentam abrir de novo.
             if nova == .active {
                 lugares.resolverTodos()
-                Task { await Indice.shared.invalidar() }
+                Task { await Indice.shared.renovarSeVelho() }
             }
         }
         .onOpenURL { url in Recebidos.receber(url) }
+        .fullScreenCover(isPresented: Binding(get: { !inicioFeito }, set: { if !$0 { inicioFeito = true } })) {
+            ConfiguracaoInicial { inicioFeito = true }
+                .environmentObject(lugares)
+                .preferredColorScheme(.dark)
+                .tint(Lx.ouro)
+                .font(LxFonte.f(16, .medium))
+        }
     }
 }
 
 /// O que chega de outro app ("Abrir com LibertyX Folder", "Compartilhar")
-/// vai para a pasta Recebidos, e o app abre nela.
+/// vai para a pasta Recebidos dentro da pasta padrão, e o app abre nela.
 enum Recebidos {
     static let nome = "Recebidos"
 
     @MainActor
     static func receber(_ url: URL) {
         guard url.isFileURL else { return }
-        let pasta = Lugares.urlDocs.appendingPathComponent(nome, isDirectory: true)
+        let raiz = Lugares.shared.raizDeEntrada
+        guard let base = Raizes.url(raiz) else { return }
+        let pasta = base.appendingPathComponent(nome, isDirectory: true)
         try? FileManager.default.createDirectory(at: pasta, withIntermediateDirectories: true)
         let escopo = url.startAccessingSecurityScopedResource()
         defer { if escopo { url.stopAccessingSecurityScopedResource() } }
@@ -122,7 +133,7 @@ enum Recebidos {
         }
         Task { await Indice.shared.invalidar() }
         Navegacao.shared.inicio()
-        Navegacao.shared.abrir(.pasta(.local(raiz: Lugares.docs, caminho: nome)))
+        Navegacao.shared.abrir(.pasta(.local(raiz: raiz, caminho: nome)))
         Avisos.shared.mostrar(String(localized: "Recebido: \(destino.lastPathComponent)"))
     }
 }

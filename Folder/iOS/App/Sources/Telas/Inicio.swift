@@ -10,7 +10,9 @@ struct Inicio: View {
     @EnvironmentObject private var abridor: Abridor
 
     @State private var termo = ""
-    @State private var espacoDoApp: (usado: Int64, total: Int64)?
+    @State private var espacoDoPadrao: (usado: Int64, total: Int64)?
+    /// O seletor aberto para escolher a pasta padrão.
+    @State private var paraPadrao = false
     @State private var rascunho: RascunhoDeServidor?
     @State private var escolhendoPasta = false
     @State private var paraDownloads = false
@@ -49,7 +51,7 @@ struct Inicio: View {
                 BarraDeColar(clip: c, habilitado: false, cancelar: { nav.clip = nil }, colar: nil)
             }
         }
-        .task(id: "\(ops.versao)-\(lugares.versao)") { await carregar() }
+        .task(id: "\(ops.versao)-\(lugares.versao)-\(lugares.padrao ?? "")") { await carregar() }
         .task { if descobertas.achados.isEmpty { descobertas.buscar() } }
         .fileImporter(isPresented: $escolhendoPasta, allowedContentTypes: [.folder]) { r in
             switch r {
@@ -57,6 +59,7 @@ struct Inicio: View {
                 do {
                     let antes = lugares.autorizados.count
                     let l = try lugares.adicionar(url, substituindo: reautorizar)
+                    if paraPadrao { lugares.definirPadrao(l) }
                     if paraDownloads { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
                     else if lugares.autorizados.count > antes { nomeando = l }
                 } catch { erro = error.localizedDescription }
@@ -64,6 +67,7 @@ struct Inicio: View {
                 erro = e.localizedDescription
             }
             paraDownloads = false
+            paraPadrao = false
             reautorizar = nil
         }
         .pedirNomeDoLugar($nomeando)
@@ -91,12 +95,13 @@ struct Inicio: View {
         } message: { Text(erro ?? "") }
     }
 
-    /// Só o espaço do iPhone, e fora da principal: perguntar a capacidade do
-    /// volume pode levar dezenas de milissegundos, e na principal isso é um
-    /// solavanco no meio da rolagem.
+    /// O espaço do disco da pasta padrão, fora da principal: perguntar a
+    /// capacidade do volume pode levar dezenas de milissegundos, e na
+    /// principal isso é um solavanco no meio da rolagem.
     private func carregar() async {
-        let e = await Task.detached(priority: .userInitiated) { Lugares.espaco(Lugares.urlDocs) }.value
-        if e?.usado != espacoDoApp?.usado || e?.total != espacoDoApp?.total { espacoDoApp = e }
+        guard let u = lugares.padrao.flatMap({ Raizes.url($0) }) else { espacoDoPadrao = nil; return }
+        let e = await Task.detached(priority: .userInitiated) { Lugares.espaco(u) }.value
+        if e?.usado != espacoDoPadrao?.usado || e?.total != espacoDoPadrao?.total { espacoDoPadrao = e }
     }
 
     /// Puxar para atualizar: reabre as pastas autorizadas (o pendrive que
@@ -192,8 +197,15 @@ struct Inicio: View {
 
     private var armazenamento: some View {
         Cartao {
-            linhaDoApp
-            ForEach(lugares.autorizados) { l in
+            if let p = lugares.lugarPadrao {
+                linhaDaPadrao(p)
+            } else {
+                LinhaDeCartao(simbolo: "star.fill", titulo: String(localized: "Escolher pasta padrão"),
+                              sub: String(localized: "Ela vem primeiro aqui, e o app varre todas as subpastas dela")) {
+                    paraPadrao = true; escolhendoPasta = true
+                }
+            }
+            ForEach(lugares.autorizados.filter { $0.id != lugares.padrao }) { l in
                 let fora = lugares.indisponiveis.contains(l.id)
                 let tipo = lugares.tipo(raiz: l.id)
                 LinhaDeCartao(simbolo: fora ? "exclamationmark.triangle.fill" : tipo.simbolo,
@@ -202,29 +214,50 @@ struct Inicio: View {
                               cor: fora ? Lx.vermelho : Lx.ouro) {
                     if fora { reautorizar = l; escolhendoPasta = true } else { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
                 }
-                .contextMenu {
-                    Button { nomeando = l } label: { Label("Renomear", systemImage: "pencil") }
-                    Button(role: .destructive) { remover = l } label: { Label("Remover acesso", systemImage: "minus.circle") }
-                }
+                .contextMenu { menuDoLugar(l) }
             }
             LinhaDeCartao(simbolo: "plus", titulo: String(localized: "Adicionar pasta"),
                           sub: String(localized: "iCloud Drive, No iPhone, pendrive ou outro app"),
                           cor: Lx.verde) { escolhendoPasta = true }
+            AvisoDeVarredura()
         }
     }
 
-    private var linhaDoApp: some View {
-        Button { nav.abrir(.pasta(.local(raiz: Lugares.docs, caminho: ""))) } label: {
+    @ViewBuilder private func menuDoLugar(_ l: Lugar) -> some View {
+        Button { nomeando = l } label: { Label("Renomear", systemImage: "pencil") }
+        if l.id != lugares.padrao {
+            Button { lugares.definirPadrao(l) } label: { Label("Tornar pasta padrão", systemImage: "star") }
+        }
+        Button(role: .destructive) { remover = l } label: { Label("Remover acesso", systemImage: "minus.circle") }
+    }
+
+    /// A pasta padrão: primeiro da lista, com a estrela e o espaço do disco.
+    private func linhaDaPadrao(_ l: Lugar) -> some View {
+        let fora = lugares.indisponiveis.contains(l.id)
+        let tipo = lugares.tipo(raiz: l.id)
+        return Button {
+            if fora { reautorizar = l; escolhendoPasta = true } else { nav.abrir(.pasta(.local(raiz: l.id, caminho: ""))) }
+        } label: {
             HStack(spacing: 16) {
-                Selo(cor: Lx.ouro, simbolo: "iphone")
+                Selo(cor: fora ? Lx.vermelho : Lx.ouro, simbolo: fora ? "exclamationmark.triangle.fill" : tipo.simbolo)
+                    .overlay(alignment: .topTrailing) {
+                        if !fora {
+                            Image(systemName: "star.fill").font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color(hex: 0x1A1200))
+                                .padding(3).background(Circle().fill(Lx.ouro))
+                                .offset(x: 5, y: -5)
+                        }
+                    }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("No iPhone").font(LxFonte.f(16, .medium)).foregroundStyle(Lx.texto)
-                    if let e = espacoDoApp {
-                        Text(String(localized: "\(Fmt.tamanho(e.usado)) de \(Fmt.tamanho(e.total))"))
+                    Text(l.nome).font(LxFonte.f(16, .medium)).foregroundStyle(Lx.texto).lineLimit(1)
+                    if fora {
+                        Text("Indisponível — toque para autorizar de novo").font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
+                    } else if let e = espacoDoPadrao {
+                        Text(String(localized: "Pasta padrão  ·  \(Fmt.tamanho(e.usado)) de \(Fmt.tamanho(e.total))"))
                             .font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
                         BarraDeUso(usado: e.usado, total: e.total).padding(.top, 3)
                     } else {
-                        Text("Pasta do app no iPhone").font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
+                        Text(String(localized: "Pasta padrão  ·  \(tipo.descricao)")).font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
                     }
                 }
                 Spacer(minLength: 0)
@@ -233,6 +266,7 @@ struct Inicio: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .contextMenu { menuDoLugar(l) }
     }
 
     private func subtitulo(_ l: Lugar, _ tipo: TipoDeLugar) -> String {

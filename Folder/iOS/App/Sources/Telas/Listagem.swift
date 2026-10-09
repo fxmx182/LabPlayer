@@ -19,6 +19,8 @@ struct Listagem: View {
     @EnvironmentObject private var lugares: Lugares
     @EnvironmentObject private var servidores: Servidores
     @EnvironmentObject private var abridor: Abridor
+    /// Só a versão (muda ao fim de uma varredura), e não o progresso dela.
+    @ObservedObject private var indice = VersaoDoIndice.shared
 
     @State private var itens: [FileEntry]?
     @State private var erro: String?
@@ -73,7 +75,7 @@ struct Listagem: View {
             .onChange(of: prefs.ordem) { _, _ in recalcular() }
             .onChange(of: prefs.crescente) { _, _ in recalcular() }
             .onChange(of: prefs.ocultos) { _, _ in recalcular() }
-            .task(id: "\(modo)-\(ops.versao)-\(recarga)-\(lugares.versao)") { await carregar() }
+            .task(id: "\(modo)-\(ops.versao)-\(recarga)-\(lugares.versao)-\(usaIndice ? indice.versao : 0)") { await carregar() }
             .alert(tituloDoPedido, isPresented: Binding(get: { pedindoNome != nil }, set: { if !$0 { pedindoNome = nil } })) {
                 TextField("Nome", text: $nomeDigitado)
                     .autocorrectionDisabled()
@@ -270,6 +272,15 @@ struct Listagem: View {
         }
     }
 
+    /// Categoria e pesquisa no aparelho saem do índice: recarregam quando
+    /// uma varredura termina. Pasta não — a do servidor iria à rede à toa.
+    private var usaIndice: Bool {
+        switch modo {
+        case .categoria, .busca(_, .none): return true
+        default: return false
+        }
+    }
+
     private var isBusca: Bool { if case .busca = modo { return true } else { return false } }
 
     private func botaoSubpastas(_ pasta: Loc) -> some View {
@@ -323,7 +334,7 @@ struct Listagem: View {
     private func atualizar() async {
         let inicio = Date()
         switch modo {
-        case .categoria, .busca(_, .none): await Indice.shared.invalidar()
+        case .categoria, .busca(_, .none): await Indice.shared.varrerAgora()
         default: break
         }
         await carregar(silencioso: true)

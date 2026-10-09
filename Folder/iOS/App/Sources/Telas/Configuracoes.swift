@@ -6,6 +6,7 @@ import SwiftUI
 /// licenças.
 struct Configuracoes: View {
     @EnvironmentObject private var lugares: Lugares
+    @EnvironmentObject private var nav: Navegacao
     @State private var remover: Lugar?
     @State private var nomeando: Lugar?
     @State private var reautorizar: Lugar?
@@ -40,9 +41,19 @@ struct Configuracoes: View {
                             LinhaDeCartao(simbolo: lugares.tipo(raiz: l.id).simbolo, titulo: l.nome,
                                           sub: lugares.indisponiveis.contains(l.id)
                                             ? String(localized: "Indisponível — toque para autorizar de novo")
-                                            : lugares.tipo(raiz: l.id).descricao) {
+                                            : (l.id == lugares.padrao
+                                               ? String(localized: "Pasta padrão  ·  \(lugares.tipo(raiz: l.id).descricao)")
+                                               : lugares.tipo(raiz: l.id).descricao)) {
                                 if lugares.indisponiveis.contains(l.id) { reautorizar = l; escolhendo = true } else { nomeando = l }
                             }
+                            // A estrela marca a pasta padrão; tocar numa apagada a escolhe.
+                            Button { lugares.definirPadrao(l) } label: {
+                                Image(systemName: l.id == lugares.padrao ? "star.fill" : "star")
+                                    .font(.system(size: 19))
+                                    .foregroundStyle(l.id == lugares.padrao ? Lx.ouro : Lx.apagado)
+                            }
+                            .padding(.trailing, 12)
+                            .accessibilityLabel(Text("Tornar pasta padrão"))
                             Button { nomeando = l } label: {
                                 Image(systemName: "pencil.circle.fill").font(.system(size: 20)).foregroundStyle(Lx.apagado)
                             }
@@ -64,6 +75,21 @@ struct Configuracoes: View {
                     .font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 26).padding(.top, 10)
+
+                Text("A estrela marca a pasta padrão: ela vem primeiro no início e recebe o que chega de outros apps. Todas as pastas autorizadas são varridas por inteiro, com todas as subpastas, para as categorias e a pesquisa.")
+                    .font(LxFonte.f(12)).foregroundStyle(Lx.tenue)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 26).padding(.top, 8)
+
+                // A pasta que o iOS dá ao app saiu do início (pedido do dono),
+                // mas o que já estava nela não pode ficar sem caminho.
+                TituloDeSecao(texto: "Pasta interna do app")
+                Cartao {
+                    LinhaDeCartao(simbolo: "iphone", titulo: String(localized: "Pasta interna do app"),
+                                  sub: String(localized: "A pasta que o iOS cria para o app; não aparece mais no início")) {
+                        nav.abrir(.pasta(.local(raiz: Lugares.docs, caminho: "")))
+                    }
+                }
 
                 TituloDeSecao(texto: "Sobre")
                 Cartao {

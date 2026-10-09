@@ -161,3 +161,17 @@
 "Nome da pasta" = "Nome da pasta";
 "Salvar" = "Salvar";
 "Um nome para reconhecer de onde é esta pasta. Ele só muda aqui no app; a pasta continua com o nome dela." = "Um nome para reconhecer de onde é esta pasta. Ele só muda aqui no app; a pasta continua com o nome dela.";
+"Escolher pasta padrão" = "Escolher pasta padrão";
+"Ela vem primeiro aqui, e o app varre todas as subpastas dela" = "Ela vem primeiro aqui, e o app varre todas as subpastas dela";
+"Tornar pasta padrão" = "Tornar pasta padrão";
+"Pasta padrão  ·  %@ de %@" = "Pasta padrão  ·  %@ de %@";
+"Pasta padrão  ·  %@" = "Pasta padrão  ·  %@";
+"Varrendo subpastas…  %@ itens" = "Varrendo subpastas…  %@ itens";
+"Escolha a pasta padrão" = "Escolha a pasta padrão";
+"Ela vem primeiro na tela inicial, recebe o que você mandar de outros apps, e o LibertyX Folder varre todas as subpastas dela para montar as categorias e a pesquisa. Pode ser uma pasta do iCloud Drive, de No iPhone ou de um pendrive. Dá para trocar depois em Configurações." = "Ela vem primeiro na tela inicial, recebe o que você mandar de outros apps, e o LibertyX Folder varre todas as subpastas dela para montar as categorias e a pesquisa. Pode ser uma pasta do iCloud Drive, de No iPhone ou de um pendrive. Dá para trocar depois em Configurações.";
+"Agora não" = "Agora não";
+"Começar" = "Começar";
+"Escolher outra" = "Escolher outra";
+"A estrela marca a pasta padrão: ela vem primeiro no início e recebe o que chega de outros apps. Todas as pastas autorizadas são varridas por inteiro, com todas as subpastas, para as categorias e a pesquisa." = "A estrela marca a pasta padrão: ela vem primeiro no início e recebe o que chega de outros apps. Todas as pastas autorizadas são varridas por inteiro, com todas as subpastas, para as categorias e a pesquisa.";
+"Pasta interna do app" = "Pasta interna do app";
+"A pasta que o iOS cria para o app; não aparece mais no início" = "A pasta que o iOS cria para o app; não aparece mais no início";

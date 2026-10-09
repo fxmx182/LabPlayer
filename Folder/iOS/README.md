@@ -14,7 +14,7 @@ O Android pede "acesso a todos os arquivos" e enxerga o armazenamento inteiro. *
 
 | Lugar | O que é |
 |---|---|
-| **No iPhone** | a pasta do próprio app (`Documents`). No app Arquivos: *No iPhone › LibertyX Folder*. Sempre disponível. |
+| **Pasta padrão** | escolhida na primeira abertura (`ConfiguracaoInicial`), entre as autorizadas; vem primeiro no início (estrela) e recebe o que chega de outros apps. Troca em Configurações. A pasta interna do app (`Documents`) saiu do início a pedido do dono — só se abre por Configurações. |
 | **Pastas autorizadas** | qualquer pasta escolhida em *Adicionar pasta*: iCloud Drive, *No iPhone*, pendrive/HD na USB-C, a pasta de outro app. O acesso vale para a árvore inteira e é guardado como **bookmark com escopo de segurança** — não pergunta de novo. |
 | `tmp` (escondido) | onde chega o que vem da galeria ou do seletor de arquivos antes de ir ao destino, para importar usar a mesma operação de copiar com progresso — e servir também para pasta de servidor. |
 
