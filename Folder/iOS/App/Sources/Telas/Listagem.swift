@@ -26,6 +26,9 @@ struct Listagem: View {
     @State private var recarga = 0
     @State private var sel: [Loc: FileEntry] = [:]
     @State private var filtro = ""
+    /// A lista como aparece (filtrada, ordenada). Guardada, e não calculada no
+    /// `body`: ordenar milhares de nomes a cada redesenho dava os soquinhos.
+    @State private var mostrados: [FileEntry] = []
 
     @State private var pedindoNome: PedidoDeNome?
     @State private var nomeDigitado = ""
@@ -64,7 +67,12 @@ struct Listagem: View {
                 if let pasta, !selecionando { Trilha(loc: pasta) }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) { barraDeBaixo }
-            .refreshable { await carregar() }
+            .refreshable { await atualizar() }
+            .onChange(of: itens) { _, _ in recalcular() }
+            .onChange(of: filtro) { _, _ in recalcular() }
+            .onChange(of: prefs.ordem) { _, _ in recalcular() }
+            .onChange(of: prefs.crescente) { _, _ in recalcular() }
+            .onChange(of: prefs.ocultos) { _, _ in recalcular() }
             .task(id: "\(modo)-\(ops.versao)-\(recarga)-\(lugares.versao)") { await carregar() }
             .alert(tituloDoPedido, isPresented: Binding(get: { pedindoNome != nil }, set: { if !$0 { pedindoNome = nil } })) {
                 TextField("Nome", text: $nomeDigitado)
@@ -194,7 +202,12 @@ struct Listagem: View {
 
     // MARK: - Conteúdo
 
-    private var mostrados: [FileEntry] {
+    private func recalcular() {
+        let novos = filtrar()
+        if novos != mostrados { mostrados = novos }
+    }
+
+    private func filtrar() -> [FileEntry] {
         let base = itens ?? []
         let f = filtro.trimmingCharacters(in: .whitespaces)
         let filtrados = f.isEmpty ? base : base.filter { $0.nome.localizedCaseInsensitiveContains(f) }
@@ -203,7 +216,7 @@ struct Listagem: View {
     }
 
     @ViewBuilder private var conteudo: some View {
-        if itens == nil && carregando {
+        if itens == nil && erro == nil {
             VStack(spacing: 16) {
                 ProgressView().tint(Lx.ouro)
                 if case .smb(let id, _, _)? = pasta {
@@ -297,18 +310,35 @@ struct Listagem: View {
         if sel[e.loc] != nil { sel[e.loc] = nil } else { sel[e.loc] = e }
     }
 
-    private func carregar() async {
-        carregando = true
-        erro = nil
-        defer { carregando = false }
+    /// Só troca a lista se ela mudou: atualizar uma pasta igual não pode
+    /// redesenhar (e piscar) linha nenhuma.
+    private func trocar(_ novos: [FileEntry]) {
+        if novos != itens { itens = novos }
+    }
+
+    /// Puxar para atualizar. O indicador some aos trancos quando a ação volta
+    /// na hora (pasta do iPhone lista em milissegundos), então ela dura pelo
+    /// menos meio segundo — e o `carregando` não muda no meio, para nada na
+    /// tela trocar de lugar enquanto o indicador recolhe.
+    private func atualizar() async {
+        let inicio = Date()
+        await carregar(silencioso: true)
+        let resto = 0.5 - Date().timeIntervalSince(inicio)
+        if resto > 0 { try? await Task.sleep(nanoseconds: UInt64(resto * 1_000_000_000)) }
+    }
+
+    private func carregar(silencioso: Bool = false) async {
+        if !silencioso { carregando = true }
+        if erro != nil { erro = nil }
+        defer { if carregando { carregando = false } }
         do {
             switch modo {
             case .pasta(let l):
-                itens = try await Arquivos.listar(l)
+                trocar(try await Arquivos.listar(l))
             case .categoria(let c):
-                itens = await Indice.shared.categoria(c)
+                trocar(await Indice.shared.categoria(c))
             case .busca(let t, .none):
-                itens = await Indice.shared.pesquisar(t)
+                trocar(await Indice.shared.pesquisar(t))
             case .busca(let t, let dentro?):
                 // Varre as subpastas e mostra o que acha enquanto acha.
                 var achados: [FileEntry] = []
@@ -329,8 +359,11 @@ struct Listagem: View {
         }
         // O que foi apagado ou movido por outra tela não fica marcado.
         if let itens {
-            let existentes = Set(itens.map(\.loc))
-            sel = sel.filter { existentes.contains($0.key) }
+            if !sel.isEmpty {
+                let existentes = Set(itens.map(\.loc))
+                let ficam = sel.filter { existentes.contains($0.key) }
+                if ficam.count != sel.count { sel = ficam }
+            }
         }
     }
 

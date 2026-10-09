@@ -2,7 +2,7 @@
 
 O gerenciador de arquivos do Android ([/DATA/Claudinho/Arquivos](../../../Arquivos), pacote `com.mauricio.libertyx.files`) refeito em SwiftUI, com os mesmos parâmetros da versão de celular da Play: **tudo grátis, sem Pro, sem pasta segura, sem guia** (`PRO`, `PASTA_SEGURA` e `GUIA` desligados, como no flavor `celular`). Bundle `com.mauricio.libertyx.files`, iOS 17+.
 
-- **Início:** marca, pesquisa no aparelho, arquivos recentes, categorias (Imagens, Vídeos, Áudio, Documentos, Downloads, Compactados), armazenamento e rede.
+- **Início:** marca, pesquisa no aparelho, categorias (Imagens, Vídeos, Áudio, Documentos, Downloads, Compactados), armazenamento e rede.
 - **Pastas:** lista/grade, ordem natural, ocultos, trilha de navegação, puxar para atualizar, pesquisa na pasta e nas subpastas.
 - **Seleção** (toque longo, como no Android): mover, copiar (colar na pasta de destino), compartilhar, excluir, renomear, abrir com, salvar na galeria, detalhes.
 - **SMB:** busca automática (Bonjour + varredura da porta 445 + nome NetBIOS), compartilhamentos, usuário/senha ou convidado, ler/gravar/renomear/mover/excluir, miniaturas de foto, vídeo e áudio **tocando sem baixar**.
@@ -22,7 +22,7 @@ O Android pede "acesso a todos os arquivos" e enxerga o armazenamento inteiro. *
 - O escopo de cada pasta é aberto uma vez e **segurado enquanto o app vive**: soltar e pegar a cada leitura custaria uma chamada por arquivo, e uma cópia longa perderia o acesso no meio.
 - Bookmark vencido é renovado na hora. Pasta que não abre (pendrive desligado, pasta apagada) fica na lista como **Indisponível — toque para autorizar de novo**; ao voltar ao app, tenta abrir de novo.
 - **Downloads** não é categoria: o iOS não deixa o app achar a pasta sozinho. O atalho explica e pede para escolhê-la uma vez; daí em diante abre direto.
-- **Categorias, recentes e pesquisa no aparelho** saem de um índice nosso (`FS/Indice.swift`), varrendo os lugares (até 30 mil itens, 12 níveis) — o iOS não tem um MediaStore que um app possa consultar.
+- **Categorias e pesquisa no aparelho** saem de um índice nosso (`FS/Indice.swift`), varrendo os lugares (até 30 mil itens, 12 níveis) — o iOS não tem um MediaStore que um app possa consultar.
 - **iCloud:** arquivo que ainda não desceu aparece com uma nuvem na miniatura e é baixado ao abrir, copiar ou compartilhar (`LocalFs.garantirBaixado`).
 - **Galeria:** fotos e vídeos vivem no app Fotos, não em pastas. *Importar da galeria* usa o seletor do sistema (não pede permissão); *Salvar na galeria* pede só a permissão de adicionar.
 - **De outros apps:** o Folder aparece em *Compartilhar*/*Abrir com*; o que chega vai para *No iPhone › Recebidos*.
@@ -56,3 +56,10 @@ curl -L -o LibertyXFolder.ipa https://github.com/fxmx182/LabPlayer/releases/down
 ```
 
 Instalar pelo Sideloadly (Windows), como o Player. Nenhum entitlement de propósito: continua assinável por Apple ID gratuito. Erro de compilação aparece como **anotação** do job (legível sem token: `GET /repos/fxmx182/LabPlayer/commits/{sha}/check-runs` → `.../annotations`). O commit sai carimbado em Configurações › Sobre.
+
+## Armadilhas já pagas
+
+- **Sem `pt.lproj/Localizable.strings` o app sai em inglês** num iPhone em português. A chave já é o texto em português, então parecia dispensável — mas quando a tabela do idioma não existe o iOS cai na do idioma padrão (inglês). A tabela pt traduz cada chave para ela mesma; texto novo entra nas três.
+- **Progresso publicado onde todas as telas olham** redesenha tudo a cada atualização. O progresso das operações e do "Baixando…" mora em objetos à parte (`PainelDaOperacao`, `PainelDePreparo`), observados só pelos painéis; a raiz não observa quem publica muito.
+- **"Puxar para atualizar" que volta na hora** faz o indicador recolher aos trancos: a ação dura pelo menos meio segundo, e só troca a lista se ela mudou.
+- **SMBClient 0.3.1** trava em arquivo grande e erra no `STATUS_PENDING`: fixado numa revisão do main. "ConnectionError erro 2" é o `.cancelled` — a conexão foi fechada por nós; transferência tem conexão própria, prazo por bloco e retomada do mesmo byte.

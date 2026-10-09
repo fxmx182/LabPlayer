@@ -231,9 +231,17 @@ struct BarraDeColar: View {
 /// "Concluído" não tem nada a decidir. Erro ou cancelamento ficam até o OK.
 struct PainelDeOperacao: View {
     @EnvironmentObject private var ops: Ops
+    @ObservedObject private var painel = PainelDaOperacao.shared
 
     var body: some View {
-        if let op = ops.estado {
+        ZStack {
+            conteudo
+        }
+        .animation(.easeOut(duration: 0.2), value: painel.estado == nil)
+    }
+
+    @ViewBuilder private var conteudo: some View {
+        if let op = painel.estado {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 3) {
@@ -289,9 +297,10 @@ struct PainelDeOperacao: View {
 /// "Baixando…" do servidor ou do iCloud antes de abrir, com Cancelar.
 struct AvisoDePreparo: View {
     @EnvironmentObject private var abridor: Abridor
+    @ObservedObject private var painel = PainelDePreparo.shared
 
     var body: some View {
-        if let p = abridor.preparo {
+        if let p = painel.preparo {
             ZStack {
                 Color.black.opacity(0.45).ignoresSafeArea()
                 VStack(spacing: 14) {

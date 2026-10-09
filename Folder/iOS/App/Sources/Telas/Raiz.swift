@@ -38,14 +38,17 @@ final class Navegacao: ObservableObject {
 }
 
 struct Raiz: View {
-    @StateObject private var nav = Navegacao.shared
-    @StateObject private var ops = Ops.shared
-    @StateObject private var abridor = Abridor.shared
-    @StateObject private var avisos = Avisos.shared
-    @StateObject private var lugares = Lugares.shared
-    @StateObject private var servidores = Servidores.shared
-    @StateObject private var descobertas = Descobertas.shared
-    @StateObject private var prefs = Prefs.shared
+    // A raiz observa só o que ela mesma desenha: o caminho da pilha (nav) e o
+    // erro de abrir (abridor). Os outros ela apenas entrega às telas — se os
+    // observasse, cada achado da busca na rede redesenharia a pilha inteira.
+    @ObservedObject private var nav = Navegacao.shared
+    @ObservedObject private var abridor = Abridor.shared
+    private let ops = Ops.shared
+    private let avisos = Avisos.shared
+    private let lugares = Lugares.shared
+    private let servidores = Servidores.shared
+    private let descobertas = Descobertas.shared
+    private let prefs = Prefs.shared
     @Environment(\.scenePhase) private var fase
 
     var body: some View {
@@ -64,7 +67,6 @@ struct Raiz: View {
             }
             PainelDeOperacao()
                 .padding(.bottom, nav.clip != nil ? 96 : 60)
-                .animation(.easeOut(duration: 0.2), value: ops.estado == nil)
             AvisoCurto()
             AvisoDePreparo()
         }

@@ -153,7 +153,9 @@ final class Lugares: ObservableObject {
             }
             Raizes.definir(l.id, url)
         }
-        indisponiveis = fora
+        // Publicar só o que mudou: cada publicação redesenha o início, e isto
+        // roda a cada "puxar para atualizar" e a cada volta ao app.
+        if fora != indisponiveis { indisponiveis = fora }
         if let d = try? JSONEncoder().encode(autorizados) { UserDefaults.standard.set(d, forKey: chave) }
     }
 

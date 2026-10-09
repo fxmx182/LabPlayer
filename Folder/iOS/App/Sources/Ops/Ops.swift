@@ -26,13 +26,20 @@ struct OpEstado: Equatable {
 final class Ops: ObservableObject {
     static let shared = Ops()
 
-    @Published private(set) var estado: OpEstado?
+    /// O progresso mora num objeto à parte, que só o painel observa: aqui ele
+    /// mudava a cada 0,15 s e redesenhava toda tela que observa as operações
+    /// (a lista inteira reordenada junto) — eram os soquinhos ao rolar
+    /// durante uma cópia.
+    var estado: OpEstado? {
+        get { PainelDaOperacao.shared.estado }
+        set { PainelDaOperacao.shared.estado = newValue }
+    }
+    @Published private(set) var ocupado = false
     /// Incrementa a cada operação concluída: as telas recarregam quando muda.
     @Published private(set) var versao = 0
 
     private var tarefa: Task<Void, Never>?
     private var segundoPlano: UIBackgroundTaskIdentifier = .invalid
-    var ocupado: Bool { tarefa != nil }
 
     private init() {}
 
@@ -42,6 +49,7 @@ final class Ops: ObservableObject {
     private func iniciar(_ titulo: String, _ bloco: @escaping @MainActor (Ops) async throws -> Void) {
         guard !ocupado else { return }
         estado = OpEstado(titulo: titulo)
+        ocupado = true
         segundoPlano = UIApplication.shared.beginBackgroundTask(withName: "folder.ops") { [weak self] in
             // O iOS avisa que o tempo extra acabou: melhor parar com um aviso
             // do que ser morto no meio de um arquivo.
@@ -66,6 +74,7 @@ final class Ops: ObservableObject {
                 self.estado?.erro = error.localizedDescription
             }
             self.tarefa = nil
+            self.ocupado = false
             // O índice das categorias primeiro: as telas recarregam quando a
             // versão muda, e não podem pegar o índice de antes da operação.
             await Indice.shared.invalidar()
@@ -113,8 +122,8 @@ final class Ops: ObservableObject {
             let espelho = Task { @MainActor [weak op] in
                 while !Task.isCancelled {
                     let (feitos, atual) = prog.ler()
-                    op?.estado?.feitos = feitos
-                    if !atual.isEmpty { op?.estado?.atual = atual }
+                    if op?.estado?.feitos != feitos { op?.estado?.feitos = feitos }
+                    if !atual.isEmpty, op?.estado?.atual != atual { op?.estado?.atual = atual }
                     try? await Task.sleep(nanoseconds: 150_000_000)
                 }
             }
@@ -205,4 +214,12 @@ final class Progresso: @unchecked Sendable {
     func somar(_ n: Int64) { trava.lock(); feitos += n; trava.unlock() }
     func mudar(_ nome: String) { trava.lock(); atual = nome; trava.unlock() }
     func ler() -> (Int64, String) { trava.lock(); defer { trava.unlock() }; return (feitos, atual) }
+}
+
+/// O progresso da operação em andamento — observado só pelo painel.
+@MainActor
+final class PainelDaOperacao: ObservableObject {
+    static let shared = PainelDaOperacao()
+    @Published var estado: OpEstado?
+    private init() {}
 }

@@ -10,7 +10,6 @@ struct Inicio: View {
     @EnvironmentObject private var abridor: Abridor
 
     @State private var termo = ""
-    @State private var recentes: [FileEntry] = []
     @State private var espacoDoApp: (usado: Int64, total: Int64)?
     @State private var rascunho: RascunhoDeServidor?
     @State private var escolhendoPasta = false
@@ -25,7 +24,6 @@ struct Inicio: View {
             VStack(spacing: 0) {
                 cabecalho
                 busca
-                if !recentes.isEmpty { secaoRecentes }
                 TituloDeSecao(texto: "Categorias")
                 categorias
                 TituloDeSecao(texto: "Armazenamento")
@@ -40,21 +38,14 @@ struct Inicio: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(BrilhoDeFundo())
-        .refreshable {
-            lugares.resolverTodos()
-            await Indice.shared.invalidar()
-            await carregar()
-        }
+        .refreshable { await atualizar() }
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom) {
             if let c = nav.clip {
                 BarraDeColar(clip: c, habilitado: false, cancelar: { nav.clip = nil }, colar: nil)
             }
         }
-        .task(id: "\(ops.versao)-\(lugares.versao)") {
-            await Indice.shared.invalidar()
-            await carregar()
-        }
+        .task(id: "\(ops.versao)-\(lugares.versao)") { await carregar() }
         .task { if descobertas.achados.isEmpty { descobertas.buscar() } }
         .fileImporter(isPresented: $escolhendoPasta, allowedContentTypes: [.folder]) { r in
             switch r {
@@ -92,9 +83,25 @@ struct Inicio: View {
         } message: { Text(erro ?? "") }
     }
 
+    /// Só o espaço do iPhone, e fora da principal: perguntar a capacidade do
+    /// volume pode levar dezenas de milissegundos, e na principal isso é um
+    /// solavanco no meio da rolagem.
     private func carregar() async {
-        recentes = await Indice.shared.recentes()
-        espacoDoApp = Lugares.espaco(Lugares.urlDocs)
+        let e = await Task.detached(priority: .userInitiated) { Lugares.espaco(Lugares.urlDocs) }.value
+        if e?.usado != espacoDoApp?.usado || e?.total != espacoDoApp?.total { espacoDoApp = e }
+    }
+
+    /// Puxar para atualizar: reabre as pastas autorizadas (o pendrive que
+    /// acabou de ser ligado), recalcula o espaço e procura servidores de novo.
+    /// Fica pelo menos meio segundo: se a ação volta na hora, o indicador do
+    /// sistema recolhe aos trancos em vez de deslizar.
+    private func atualizar() async {
+        let inicio = Date()
+        lugares.resolverTodos()
+        await carregar()
+        descobertas.buscar()
+        let resto = 0.5 - Date().timeIntervalSince(inicio)
+        if resto > 0 { try? await Task.sleep(nanoseconds: UInt64(resto * 1_000_000_000)) }
     }
 
     // MARK: - Partes
@@ -137,27 +144,6 @@ struct Inicio: View {
         .padding(.horizontal, 16).padding(.vertical, 15)
         .vidro(28)
         .padding(.horizontal, 16)
-    }
-
-    private var secaoRecentes: some View {
-        VStack(spacing: 0) {
-            TituloDeSecao(texto: "Arquivos recentes")
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 10) {
-                    ForEach(recentes) { e in
-                        Button { abridor.abrir(e, irmaos: recentes) } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Miniatura(e: e, lado: 104, raio: 16)
-                                Text(e.nome).font(LxFonte.f(12)).foregroundStyle(Lx.apagado)
-                                    .lineLimit(1).frame(width: 104, alignment: .leading)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 16)
-            }
-        }
     }
 
     private var categorias: some View {

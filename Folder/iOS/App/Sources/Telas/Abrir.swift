@@ -24,8 +24,13 @@ final class Abridor: ObservableObject {
         var fracao: Double?
     }
 
-    /// O aviso "Baixando…" por cima da tela, com Cancelar.
-    @Published private(set) var preparo: Preparo?
+    /// O aviso "Baixando…" por cima da tela, com Cancelar. Mora à parte, como
+    /// o progresso das operações: muda a cada megabyte, e só o aviso precisa
+    /// saber.
+    private(set) var preparo: Preparo? {
+        get { PainelDePreparo.shared.preparo }
+        set { if PainelDePreparo.shared.preparo != newValue { PainelDePreparo.shared.preparo = newValue } }
+    }
     @Published var erro: String?
 
     private var tarefa: Task<Void, Never>?
@@ -280,4 +285,11 @@ final class Avisos: ObservableObject {
             if !Task.isCancelled { self.texto = nil }
         }
     }
+}
+
+@MainActor
+final class PainelDePreparo: ObservableObject {
+    static let shared = PainelDePreparo()
+    @Published var preparo: Abridor.Preparo?
+    private init() {}
 }
