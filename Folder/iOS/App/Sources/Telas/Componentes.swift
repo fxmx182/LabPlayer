@@ -121,6 +121,20 @@ struct Trilha: View {
             }
             .onAppear { leitor.scrollTo(cadeia.count - 1, anchor: .trailing) }
             .onChange(of: loc) { _, _ in leitor.scrollTo(cadeia.count - 1, anchor: .trailing) }
+            .padding(.bottom, 4)
+            // A trilha fica presa no topo e a lista rola por baixo dela: sem
+            // fundo, os nomes dos arquivos apareciam através dos botões. O
+            // mesmo vidro fosco da barra de navegação ao rolar, com o fio de
+            // baixo marcando onde a lista começa.
+            .background {
+                ZStack {
+                    Rectangle().fill(.ultraThinMaterial)
+                    Lx.fundo.opacity(0.55)
+                }
+                .environment(\.colorScheme, .dark)
+                .ignoresSafeArea(edges: [.horizontal, .top])
+            }
+            .overlay(alignment: .bottom) { Rectangle().fill(Lx.vidroBorda).frame(height: 0.5) }
         }
     }
 
