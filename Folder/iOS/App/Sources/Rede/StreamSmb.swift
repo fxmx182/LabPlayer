@@ -109,7 +109,7 @@ final class StreamSmb: NSObject, AVAssetResourceLoaderDelegate {
         if let abertura { return try await abertura.value }
         let l = loc
         let t = Task<Serial, Error> {
-            guard let leitor = try await SmbFs.abrirLeitura(l) as? SmbLeitor else { throw ErroDeArquivo.naoAchado }
+            let leitor = try await SmbFs.abrirLeitura(l)
             return Serial(leitor)
         }
         abertura = t

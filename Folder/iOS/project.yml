@@ -18,9 +18,15 @@ packages:
   # O mesmo cliente SMB do Player: Swift puro, MIT, sem nada nativo. Ler e
   # gravar por posição (`FileReader.read(offset:length:)` e `Session.write`)
   # é o que deixa copiar com progresso e cancelar no meio.
+  #
+  # Revisão fixa do main, e não a 0.3.1: a versão publicada trava em arquivo
+  # grande (recebia com minimumIncompleteLength 0), embaralha o buffer quando
+  # o servidor responde STATUS_PENDING (HD acordando) e pode retomar a mesma
+  # continuação duas vezes. Visto ao copiar um MP3 de 518 MB: parou em 489 MB
+  # sem erro, ou caiu no meio. As correções estão no main, ainda sem tag.
   SMBClient:
     url: https://github.com/kishikawakatsumi/SMBClient
-    from: "0.3.1"
+    revision: 66eafaa6d17e034e8036dee4b3ebc1b52cb53919
 
 settings:
   base:

@@ -66,7 +66,7 @@ actor GeradorDeMiniaturas {
     }
 
     nonisolated private static func doServidor(_ e: FileEntry, lado: CGFloat) async -> UIImage? {
-        guard let leitor = try? await SmbFs.abrirLeitura(e.loc) else { return nil }
+        guard let leitor = try? await SmbFs.abrirLeitura(e.loc, dedicada: false) else { return nil }
         var dados = Data()
         while !Task.isCancelled {
             guard let d = try? await leitor.ler(1 << 20), !d.isEmpty else { break }

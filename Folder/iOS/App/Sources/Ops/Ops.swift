@@ -108,6 +108,18 @@ final class Ops: ObservableObject {
             for e in itens { total += try await Arquivos.tamanhoTotal(e, contagem: &cont) }
             op.estado?.total = total
 
+            // A cópia corre fora da principal; a tela só espia o contador.
+            let prog = Progresso()
+            let espelho = Task { @MainActor [weak op] in
+                while !Task.isCancelled {
+                    let (feitos, atual) = prog.ler()
+                    op?.estado?.feitos = feitos
+                    if !atual.isEmpty { op?.estado?.atual = atual }
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                }
+            }
+            defer { espelho.cancel() }
+
             for (i, e) in itens.enumerated() {
                 try Task.checkCancellation()
                 op.estado?.itensFeitos = i
@@ -116,25 +128,26 @@ final class Ops: ObservableObject {
                 let existentes = Set(try await Arquivos.listar(destino).map { $0.nome.lowercased() })
                 let alvo = destino.filho(Self.nomeLivre(e.nome, isDir: e.isDir, existentes))
                 if mover, await Arquivos.moverRapido(e.loc, alvo) {
-                    op.estado?.feitos += e.isDir ? 0 : e.tamanho
+                    prog.somar(e.isDir ? 0 : e.tamanho)
                     continue
                 }
-                try await op.copiar(e, para: alvo)
+                try await Self.copiar(e, para: alvo, prog)
                 if mover { try await Arquivos.apagar(e) }
             }
+            espelho.cancel()
             op.estado?.itensFeitos = itens.count
             op.estado?.feitos = total
         }
     }
 
-    private func copiar(_ e: FileEntry, para alvo: Loc) async throws {
+    nonisolated private static func copiar(_ e: FileEntry, para alvo: Loc, _ prog: Progresso) async throws {
         try Task.checkCancellation()
-        estado?.atual = e.nome
+        prog.mudar(e.nome)
         if e.isDir {
             guard let pai = alvo.pai else { return }
             _ = try await Arquivos.criarPasta(pai, alvo.nome)
             for filho in try await Arquivos.listar(e.loc) {
-                try await copiar(filho, para: alvo.filho(filho.nome))
+                try await copiar(filho, para: alvo.filho(filho.nome), prog)
             }
             return
         }
@@ -147,23 +160,20 @@ final class Ops: ObservableObject {
             throw error
         }
         do {
-            var ultimo = Date()
-            var acumulado: Int64 = 0
+            var copiados: Int64 = 0
             while true {
                 try Task.checkCancellation()
                 let d = try await leitor.ler(1 << 20)
                 if d.isEmpty { break }
                 try await gravador.gravar(d)
-                acumulado += Int64(d.count)
-                // Uma atualização de tela por décimo de segundo basta; uma por
-                // megabyte afogaria a principal numa cópia rápida.
-                if Date().timeIntervalSince(ultimo) > 0.1 {
-                    estado?.feitos += acumulado
-                    acumulado = 0
-                    ultimo = Date()
-                }
+                copiados += Int64(d.count)
+                prog.somar(Int64(d.count))
             }
-            estado?.feitos += acumulado
+            // Um arquivo que "acabou" antes do tamanho que o servidor
+            // informou ficou cortado: melhor falhar do que entregar metade.
+            if case .smb = e.loc, copiados < e.tamanho {
+                throw SmbErro.caiu
+            }
             try await gravador.concluir()
             await leitor.fechar()
         } catch {
@@ -185,4 +195,14 @@ final class Ops: ObservableObject {
         while existentes.contains("\(base) (\(i))\(ext)".lowercased()) { i += 1 }
         return "\(base) (\(i))\(ext)"
     }
+}
+
+/// O contador da cópia, escrito pela tarefa que copia e lido pela tela.
+final class Progresso: @unchecked Sendable {
+    private let trava = NSLock()
+    private var feitos: Int64 = 0
+    private var atual = ""
+    func somar(_ n: Int64) { trava.lock(); feitos += n; trava.unlock() }
+    func mudar(_ nome: String) { trava.lock(); atual = nome; trava.unlock() }
+    func ler() -> (Int64, String) { trava.lock(); defer { trava.unlock() }; return (feitos, atual) }
 }
