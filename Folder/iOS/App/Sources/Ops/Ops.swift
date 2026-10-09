@@ -66,6 +66,9 @@ final class Ops: ObservableObject {
                 self.estado?.erro = error.localizedDescription
             }
             self.tarefa = nil
+            // O índice das categorias primeiro: as telas recarregam quando a
+            // versão muda, e não podem pegar o índice de antes da operação.
+            await Indice.shared.invalidar()
             self.versao += 1
             self.encerrarSegundoPlano()
         }

@@ -133,7 +133,13 @@ final class Lugares: ObservableObject {
     func resolverTodos() {
         var fora: Set<String> = []
         for (i, l) in autorizados.enumerated() {
-            guard Raizes.url(l.id) == nil else { continue }
+            // Pendrive tirado e posto de novo volta montado noutro caminho: a
+            // URL antiga não existe mais, e o bookmark acha a nova.
+            if let atual = Raizes.url(l.id) {
+                if FileManager.default.fileExists(atPath: atual.path) { continue }
+                atual.stopAccessingSecurityScopedResource()
+                Raizes.definir(l.id, nil)
+            }
             guard let b = l.bookmark else { fora.insert(l.id); continue }
             var velho = false
             guard let url = try? URL(resolvingBookmarkData: b, options: [], relativeTo: nil, bookmarkDataIsStale: &velho),

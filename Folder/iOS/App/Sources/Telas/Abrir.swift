@@ -51,7 +51,12 @@ final class Abridor: ObservableObject {
                 case .local:
                     // As fotos e vídeos ao lado viram páginas no visualizador:
                     // desliza-se de um para o outro, como na galeria.
-                    let visiveis = irmaos.filter { !$0.isDir && !$0.naNuvem && $0.loc != e.loc }
+                    // Só entre fotos e vídeos: um PDF ou um zip no meio da
+                    // galeria seria uma página estranha no deslizar.
+                    let midia: Set<Tipo> = [.imagem, .video]
+                    let visiveis = midia.contains(Mime.tipo(e))
+                        ? irmaos.filter { !$0.isDir && !$0.naNuvem && $0.loc != e.loc && midia.contains(Mime.tipo($0)) }
+                        : []
                     let todos = ([e] + visiveis).sorted { a, b in
                         let ia = irmaos.firstIndex(of: a) ?? 0, ib = irmaos.firstIndex(of: b) ?? 0
                         return ia < ib
