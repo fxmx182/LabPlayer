@@ -283,7 +283,7 @@ struct Inicio: View {
                     nav.abrir(.pasta(.smb(servidor: s.id, share: "", caminho: "")))
                 }
             }
-            let salvos = Set(servidores.lista.map(\.host))
+            let salvos = Set(servidores.lista.map { Descobertas.semInterface($0.host) })
             ForEach(descobertas.achados.filter { !salvos.contains($0.host) }) { a in
                 LinhaDeCartao(simbolo: "desktopcomputer", titulo: a.nome,
                               sub: a.nome != a.host ? String(localized: "\(a.host) · encontrado na rede") : String(localized: "Encontrado na rede"),

@@ -55,16 +55,47 @@ final class Descobertas: ObservableObject {
         }
     }
 
-    private func adicionar(_ novo: Achado) {
-        if let i = achados.firstIndex(where: { $0.host == novo.host }) {
+    private func adicionar(_ chegou: Achado) {
+        var novo = chegou
+        novo.host = Self.semInterface(novo.host)
+        var lista = achados
+        if let i = lista.firstIndex(where: { $0.host == novo.host }) {
             // O nome é melhor que o IP puro.
-            if achados[i].nome == achados[i].host && novo.nome != novo.host { achados[i] = novo }
-            return
+            if lista[i].nome == lista[i].host && novo.nome != novo.host { lista[i].nome = novo.nome }
+        } else {
+            lista.append(novo)
         }
-        // A mesma máquina vista pelos dois caminhos (Bonjour e varredura).
-        if novo.nome != novo.host, achados.contains(where: { $0.nome.caseInsensitiveCompare(novo.nome) == .orderedSame }) { return }
-        achados.append(novo)
-        achados.sort { $0.nome.localizedStandardCompare($1.nome) == .orderedAscending }
+        // A mesma máquina vista pelos dois caminhos (Bonjour e varredura) pode
+        // chegar com endereços escritos diferente, e o nome só aparece depois
+        // (a consulta NetBIOS vem depois do IP). Então, a cada chegada, um por
+        // nome — e fica o de IP puro, que é o que conecta.
+        var vistos: [String: Int] = [:]
+        var limpa: [Achado] = []
+        for a in lista {
+            guard a.nome != a.host else { limpa.append(a); continue }
+            let k = a.nome.lowercased()
+            if let j = vistos[k] {
+                if !Self.ehIPv4(limpa[j].host) && Self.ehIPv4(a.host) { limpa[j] = a }
+            } else {
+                vistos[k] = limpa.count
+                limpa.append(a)
+            }
+        }
+        limpa.sort { $0.nome.localizedStandardCompare($1.nome) == .orderedAscending }
+        if limpa != achados { achados = limpa }
+    }
+
+    /// "192.168.50.113%en0" → "192.168.50.113". O Bonjour devolve o endereço
+    /// com a interface de rede grudada; para o SMB e para comparar com os
+    /// servidores salvos, é o mesmo IP.
+    nonisolated static func semInterface(_ host: String) -> String {
+        guard let i = host.firstIndex(of: "%") else { return host }
+        return String(host[..<i])
+    }
+
+    nonisolated private static func ehIPv4(_ h: String) -> Bool {
+        let p = h.split(separator: ".")
+        return p.count == 4 && p.allSatisfy { UInt8($0) != nil }
     }
 
     // MARK: - Bonjour
@@ -102,7 +133,7 @@ final class Descobertas: ObservableObject {
                 switch estado {
                 case .ready:
                     if case .hostPort(let h, _)? = c.currentPath?.remoteEndpoint, case .ipv4(let a) = h {
-                        fim("\(a)")
+                        fim(semInterface("\(a)"))
                     } else { fim(nil) }
                 case .failed, .cancelled: fim(nil)
                 default: break

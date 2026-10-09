@@ -45,13 +45,13 @@ struct TelaDeRede: View {
                 }
                 TituloDeSecao(texto: "Encontrados nesta rede")
                 Cartao {
-                    let salvos = Set(servidores.lista.map(\.host))
+                    let salvos = Set(servidores.lista.map { Descobertas.semInterface($0.host) })
                     ForEach(descobertas.achados) { a in
                         let ja = salvos.contains(a.host)
                         LinhaDeCartao(simbolo: "desktopcomputer", titulo: a.nome,
                                       sub: (a.nome != a.host ? a.host : "SMB") + (ja ? String(localized: " · já salvo") : ""),
                                       cor: ja ? Lx.ouro : Lx.verde) {
-                            if let s = servidores.lista.first(where: { $0.host == a.host }) {
+                            if let s = servidores.lista.first(where: { Descobertas.semInterface($0.host) == a.host }) {
                                 nav.abrir(.pasta(.smb(servidor: s.id, share: "", caminho: "")))
                             } else {
                                 rascunho = RascunhoDeServidor(nome: a.nome, host: a.host)
