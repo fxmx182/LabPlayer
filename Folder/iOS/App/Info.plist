@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Inglês é a língua de quem não tem a sua entre as do app; português e
+	     espanhol vêm das pastas .lproj. Os textos do código seguem em
+	     português — são a chave de busca nas tabelas. -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>pt</string>
+		<string>es</string>
+	</array>
+	<key>CFBundleDisplayName</key>
+	<string>LibertyX Folder</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<!-- Carimbado pelo CI com o commit de origem e mostrado em Configurações:
+	     sem isso não dá para distinguir um app que não mudou de um .ipa antigo
+	     instalado por engano (lição paga no Player). -->
+	<key>FolderBuild</key>
+	<string>local</string>
+
+	<!-- A pasta do app aparece no Arquivos ("No iPhone › LibertyX Folder") e
+	     os arquivos abertos a partir de outros lugares são lidos no lugar,
+	     sem cópia. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!-- A letra do app, a mesma do Android, em cinco pesos (licença OFL). -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>manrope_regular.ttf</string>
+		<string>manrope_medium.ttf</string>
+		<string>manrope_semibold.ttf</string>
+		<string>manrope_bold.ttf</string>
+		<string>manrope_extrabold.ttf</string>
+	</array>
+
+	<!-- SMB: o iOS pede permissão de rede local para varrer a sub-rede e
+	     conectar aos servidores, e o Bonjour só procura o que está listado. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>O LibertyX Folder usa a rede local para encontrar os computadores e servidores SMB e abrir os arquivos deles.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_smb._tcp</string>
+	</array>
+
+	<!-- Só para "Salvar na galeria"; o app não lê as suas fotos. Importar da
+	     galeria usa o seletor do sistema, que dispensa permissão. -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Para salvar fotos e vídeos na sua galeria.</string>
+
+	<!-- Servidor caseiro em HTTP puro não entra aqui (SMB não é HTTP), mas a
+	     regra fica igual à do Player para nada de rede local ser recusado. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+
+	<!-- Faz o LibertyX Folder aparecer em "Abrir com"/"Compartilhar" para
+	     qualquer arquivo: o que chega vai para a pasta Recebidos. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Arquivo</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.item</string>
+				<string>public.data</string>
+				<string>public.content</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Dict vazio = tela de lançamento padrão. Sem esta chave o iOS roda o
+	     app em caixa reduzida, sem ocupar a tela toda. -->
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<!-- Escuro sempre, como no Android: ouro sobre fundo claro vira mostarda. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
+</dict>
+</plist>

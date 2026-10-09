@@ -1,0 +1,148 @@
+name: Build IPA (LibertyX Folder)
+
+# O LibertyX Folder do iPhone (Folder/iOS). O mesmo caminho do Player: sem
+# macOS em casa, quem compila é este runner, o .ipa sai sem assinatura de
+# verdade (só ad-hoc) e o Sideloadly/AltStore reassina no aparelho com o Apple
+# ID. Só acorda quando o Folder do iPhone muda.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Folder/iOS/**"
+      - ".github/workflows/folder-ios.yml"
+  pull_request:
+    paths:
+      - "Folder/iOS/**"
+  workflow_dispatch:
+
+concurrency:
+  group: folder-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compilar e empacotar
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: write   # para publicar o release "folder-latest"
+    defaults:
+      run:
+        working-directory: Folder/iOS
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mostrar Xcode em uso
+        run: xcodebuild -version
+
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+
+      # O commit aparece em Configurações › Sobre: sem isso não dá para
+      # distinguir "a mudança não funcionou" de "instalei o .ipa antigo".
+      - name: Carimbar o build com o commit
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :FolderBuild ${GITHUB_SHA:0:7}" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :FolderBuild" App/Info.plist
+
+      - name: Gerar projeto
+        run: xcodegen generate
+
+      - name: Compilar (sem assinar)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project LibertyXFolder.xcodeproj \
+            -scheme LibertyXFolder \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee build.log
+
+      # Ad-hoc DEPOIS do xcodebuild, não durante (armadilha paga no Player):
+      # sem assinatura nenhuma o binário sai sem LC_CODE_SIGNATURE, o
+      # Sideloadly não consegue inserir a estrutura, e o iOS recusa com
+      # "spawn failed, error=85" — o ícone abre e fecha na hora.
+      - name: Assinar ad-hoc
+        run: |
+          APP="build/Build/Products/Release-iphoneos/LibertyXFolder.app"
+          for fw in "$APP"/Frameworks/*.framework "$APP"/Frameworks/*.dylib; do
+            [ -e "$fw" ] || continue
+            codesign --force --sign - --timestamp=none "$fw"
+          done
+          codesign --force --sign - --timestamp=none "$APP"
+
+      - name: Conferir a assinatura
+        run: |
+          APP="build/Build/Products/Release-iphoneos/LibertyXFolder.app"
+          codesign -dvvv "$APP" 2>&1 | sed 's/^/  /'
+          otool -l "$APP/LibertyXFolder" | grep -q LC_CODE_SIGNATURE || {
+            echo "::error title=Sem LC_CODE_SIGNATURE::o app não vai abrir no aparelho — pisca e fecha"
+            exit 1
+          }
+          echo "LC_CODE_SIGNATURE presente"
+
+      # O log do job só é baixável com admin no repositório; as anotações de
+      # um repositório público, qualquer um lê. Os erros do compilador viram
+      # anotação para dar para diagnosticar a falha de fora, sem token.
+      - name: Republicar erros do compilador como anotação
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          log = pathlib.Path("build.log")
+          if not log.exists():
+              print("::error title=Sem log::build.log não foi gerado")
+              raise SystemExit(0)
+          text = log.read_text(errors="replace")
+          seen, errors = set(), []
+          for line in text.splitlines():
+              if re.search(r"(error:|fatal error:|\*\* BUILD FAILED)", line):
+                  line = line.strip()
+                  if line not in seen:
+                      seen.add(line)
+                      errors.append(line)
+          if not errors:
+              errors = ["Nenhuma linha 'error:' encontrada. Fim do log:", "\n".join(text.splitlines()[-40:])]
+          body = "\n".join(errors)[:6000]
+          enc = body.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Erros de compilação ({len(errors)})::{enc}")
+          PY
+
+      - name: Empacotar .ipa
+        run: |
+          APP="build/Build/Products/Release-iphoneos/LibertyXFolder.app"
+          test -d "$APP" || { echo "::error::App não encontrado em $APP"; exit 1; }
+          mkdir -p payload/Payload
+          cp -R "$APP" payload/Payload/
+          (cd payload && zip -qry ../LibertyXFolder.ipa Payload)
+          ls -lh LibertyXFolder.ipa
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: LibertyXFolder-ipa
+          path: Folder/iOS/LibertyXFolder.ipa
+          retention-days: 30
+          if-no-files-found: error
+
+      # Asset de release baixa com um curl seco, sem login — direto do
+      # servidor de casa para o Sideloadly.
+      - name: Publicar release "folder-latest"
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete folder-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create folder-latest LibertyXFolder.ipa \
+            --title "LibertyX Folder (iPhone) — build mais recente" \
+            --notes "Compilado de ${GITHUB_SHA:0:7}. Assinado ad-hoc; o Sideloadly/AltStore reassina no aparelho.
+
+          \`\`\`
+          curl -L -o LibertyXFolder.ipa https://github.com/${GITHUB_REPOSITORY}/releases/download/folder-latest/LibertyXFolder.ipa
+          \`\`\`" \
+            --prerelease
