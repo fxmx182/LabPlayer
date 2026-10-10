@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/LibertyX.Partition.Core/LibertyX.Partition.Core.csproj" /></ItemGroup>
+</Project>

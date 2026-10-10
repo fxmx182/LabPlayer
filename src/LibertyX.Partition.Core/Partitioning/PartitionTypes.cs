@@ -1,0 +1,110 @@
+namespace LibertyX.Partition.Core.Partitioning;
+
+public static class PartitionTypes
+{
+    public static readonly Guid Esp = new("C12A7328-F81F-11D2-BA4B-00A0C93EC93B");
+    public static readonly Guid Msr = new("E3C9E316-0B5C-4DB8-817D-F92DF00215AE");
+    public static readonly Guid BasicData = new("EBD0A0A2-B9E5-4433-87C0-68B6B72699C7");
+    public static readonly Guid WinRecovery = new("DE94BBA4-06D1-4D40-A16A-BFD50179D6AC");
+    public static readonly Guid LdmMetadata = new("5808C8AA-7E8F-42E0-85D2-E1E90434CFB3");
+    public static readonly Guid LdmData = new("AF9B60A0-1431-4F62-BC68-3311714A69AD");
+    public static readonly Guid StorageSpaces = new("E75CAF8F-F680-4CEE-AFA3-B001E56EFC2D");
+    public static readonly Guid LinuxFs = new("0FC63DAF-8483-4772-8E79-3D69D8477DE4");
+    public static readonly Guid LinuxSwap = new("0657FD6D-A4AB-43C4-84E5-0933C84B4F4F");
+    public static readonly Guid LinuxLvm = new("E6D6D379-F507-44C2-A23C-238F2A3DF928");
+    public static readonly Guid LinuxRaid = new("A19D880F-05FC-4D3B-A006-743F0F84911E");
+    public static readonly Guid BiosBoot = new("21686148-6449-6E6F-744E-656564454649");
+    public static readonly Guid AppleHfs = new("48465300-0000-11AA-AA11-00306543ECAC");
+    public static readonly Guid AppleApfs = new("7C3457EF-0000-11AA-AA11-00306543ECAC");
+
+    /// <summary>Atributo GPT "requerido pela plataforma" + "sem letra" — o que o Windows põe na partição de recuperação.</summary>
+    public const ulong RecoveryAttributes = 0x8000000000000001UL;
+
+    public static string GptName(Guid g)
+    {
+        if (g == Esp) return "Sistema EFI";
+        if (g == Msr) return "Reservada da Microsoft";
+        if (g == BasicData) return "Dados básicos";
+        if (g == WinRecovery) return "Recuperação do Windows";
+        if (g == LdmMetadata) return "Metadados LDM (disco dinâmico)";
+        if (g == LdmData) return "Dados LDM (disco dinâmico)";
+        if (g == StorageSpaces) return "Espaços de Armazenamento";
+        if (g == LinuxFs) return "Linux";
+        if (g == LinuxSwap) return "Linux swap";
+        if (g == LinuxLvm) return "Linux LVM";
+        if (g == LinuxRaid) return "Linux RAID";
+        if (g == BiosBoot) return "BIOS boot";
+        if (g == AppleHfs) return "Apple HFS+";
+        if (g == AppleApfs) return "Apple APFS";
+        return "Tipo " + g.ToString().ToUpperInvariant();
+    }
+
+    public static string MbrName(byte t) => t switch
+    {
+        0x00 => "Vazia",
+        0x01 => "FAT12",
+        0x04 or 0x06 or 0x0E => "FAT16",
+        0x05 or 0x0F or 0x85 => "Estendida",
+        0x07 => "NTFS / exFAT",
+        0x0B or 0x0C => "FAT32",
+        0x11 or 0x14 or 0x16 or 0x1B or 0x1C or 0x1E => "Oculta (FAT)",
+        0x17 => "Oculta (NTFS)",
+        0x27 => "Recuperação do Windows",
+        0x42 => "Disco dinâmico",
+        0x82 => "Linux swap",
+        0x83 => "Linux",
+        0x8E => "Linux LVM",
+        0xA5 => "FreeBSD",
+        0xAF => "Apple HFS+",
+        0xEE => "GPT protetora",
+        0xEF => "Sistema EFI",
+        0xFD => "Linux RAID",
+        _ => $"Tipo 0x{t:X2}",
+    };
+
+    public static bool IsExtended(byte t) => t is 0x05 or 0x0F or 0x85;
+
+    /// <summary>Conversão MBR → GPT. MSR não existe em MBR, então o caminho de volta não a traz.</summary>
+    public static (Guid type, ulong attrs) MbrToGpt(byte t) => t switch
+    {
+        0xEF => (Esp, 0),
+        0x27 => (WinRecovery, RecoveryAttributes),
+        0x82 => (LinuxSwap, 0),
+        0x83 => (LinuxFs, 0),
+        0x8E => (LinuxLvm, 0),
+        0xFD => (LinuxRaid, 0),
+        0xAF => (AppleHfs, 0),
+        _ => (BasicData, 0),
+    };
+
+    /// <summary>Conversão GPT → MBR; <paramref name="fs"/> decide o byte certo para dados básicos.</summary>
+    public static byte? GptToMbr(Guid g, FileSystems.FsKind fs)
+    {
+        if (g == Msr) return null; // descartada
+        if (g == Esp) return 0xEF;
+        if (g == WinRecovery) return 0x27;
+        if (g == LinuxSwap) return 0x82;
+        if (g == LinuxFs) return 0x83;
+        if (g == LinuxLvm) return 0x8E;
+        if (g == LinuxRaid) return 0xFD;
+        if (g == AppleHfs) return 0xAF;
+        return fs switch
+        {
+            FileSystems.FsKind.Fat12 => 0x01,
+            FileSystems.FsKind.Fat16 => 0x0E,
+            FileSystems.FsKind.Fat32 => 0x0C,
+            FileSystems.FsKind.Ext => 0x83,
+            _ => 0x07,
+        };
+    }
+
+    /// <summary>Tipos conhecidos para o seletor "Alterar ID de tipo".</summary>
+    public static readonly (Guid id, string name)[] CommonGpt =
+    [
+        (BasicData, GptName(BasicData)), (Esp, GptName(Esp)), (Msr, GptName(Msr)), (WinRecovery, GptName(WinRecovery)),
+        (LinuxFs, GptName(LinuxFs)), (LinuxSwap, GptName(LinuxSwap)), (LinuxLvm, GptName(LinuxLvm)),
+        (BiosBoot, GptName(BiosBoot)), (AppleHfs, GptName(AppleHfs)), (AppleApfs, GptName(AppleApfs)),
+    ];
+
+    public static readonly byte[] CommonMbr = [0x07, 0x0C, 0x0B, 0x0E, 0x06, 0x01, 0x27, 0xEF, 0x17, 0x1C, 0x83, 0x82, 0x8E, 0xFD, 0xAF];
+}
