@@ -1,0 +1,152 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LibertyX.Partition.ViewModels"
+             xmlns:c="using:LibertyX.Partition.Controls"
+             x:Class="LibertyX.Partition.Views.DisksPageView"
+             x:DataType="vm:DisksPageViewModel">
+  <Grid ColumnDefinitions="*,24,348">
+    <DockPanel>
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,4,0,18">
+        <StackPanel>
+          <TextBlock Classes="h1" Text="Discos e partições" />
+          <TextBlock Classes="muted" Text="{Binding Summary}" Margin="0,2,0,0" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).OpenImageCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource IcDisc}" Classes="small" /><TextBlock Text="Abrir imagem de disco" /></StackPanel>
+          </Button>
+          <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).RefreshCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource IcRefresh}" Classes="small" /><TextBlock Text="Atualizar" /></StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+        <ItemsControl ItemsSource="{Binding Disks}">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="14" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DiskVM">
+              <Border Classes="card" Classes.selected="{Binding IsSelected}" Padding="18,16">
+                <StackPanel Spacing="14">
+                  <Button Classes="ghost" Padding="0" Command="{Binding SelectCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <Border Width="46" Height="46" CornerRadius="14" Background="#1AFBC501" BorderBrush="#33FBC501" BorderThickness="1">
+                        <PathIcon Data="{Binding Icon}" Width="24" Height="24" Foreground="{StaticResource Ouro}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                          <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="ExtraBold" Foreground="{StaticResource Texto}" />
+                          <TextBlock Text="{Binding Model}" FontSize="14" FontWeight="Medium" Foreground="{StaticResource Apagado}" VerticalAlignment="Bottom" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Info}" FontSize="12.5" Foreground="{StaticResource Tenue}" Margin="0,2,0,0" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Border Classes="chip gold" IsVisible="{Binding IsSystem}"><TextBlock Text="Windows" /></Border>
+                        <Border Classes="chip" IsVisible="{Binding IsImage}"><TextBlock Text="Imagem · leitura" /></Border>
+                        <Border Classes="chip" IsVisible="{Binding HasTemp}"><TextBlock Text="{Binding TempText}" /></Border>
+                        <Border Classes="chip green" IsVisible="{Binding HealthGood}"><TextBlock Text="Saudável" /></Border>
+                        <Border Classes="chip orange" IsVisible="{Binding HealthCaution}"><TextBlock Text="Atenção" /></Border>
+                        <Border Classes="chip red" IsVisible="{Binding HealthBad}"><TextBlock Text="Crítico" /></Border>
+                      </StackPanel>
+                    </Grid>
+                  </Button>
+
+                  <Border Classes="notice danger" IsVisible="{Binding HasError}">
+                    <TextBlock Text="{Binding Error}" TextWrapping="Wrap" FontSize="12.5" />
+                  </Border>
+
+                  <c:PartitionRibbon Items="{Binding Partitions}" />
+
+                  <StackPanel Spacing="2">
+                    <Grid ColumnDefinitions="2.1*,0.95*,0.95*,0.95*,0.9*,2.2*,1.4*" Margin="12,0,12,4">
+                      <TextBlock Classes="section" Text="PARTIÇÃO" />
+                      <TextBlock Grid.Column="1" Classes="section" Text="TAMANHO" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="2" Classes="section" Text="USADO" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="3" Classes="section" Text="LIVRE" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="4" Classes="section" Text="FS" Margin="18,0,0,0" />
+                      <TextBlock Grid.Column="5" Classes="section" Text="TIPO" />
+                      <TextBlock Grid.Column="6" Classes="section" Text="STATUS" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Partitions}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PartitionVM">
+                          <Button Classes="action" Classes.sel="{Binding IsSelected}" Command="{Binding SelectCommand}" HorizontalContentAlignment="Stretch" Padding="12,8">
+                            <Grid ColumnDefinitions="2.1*,0.95*,0.95*,0.95*,0.9*,2.2*,1.4*">
+                              <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Border Width="10" Height="10" CornerRadius="5" Background="{Binding ColorBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Name}" FontWeight="Bold" MinWidth="34" />
+                                <TextBlock Text="{Binding LabelText}" Foreground="{StaticResource Apagado}" TextTrimming="CharacterEllipsis" />
+                              </StackPanel>
+                              <TextBlock Grid.Column="1" Text="{Binding SizeText}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="2" Text="{Binding UsedText}" HorizontalAlignment="Right" Foreground="{StaticResource Apagado}" />
+                              <TextBlock Grid.Column="3" Text="{Binding FreeText}" HorizontalAlignment="Right" Foreground="{StaticResource Apagado}" />
+                              <TextBlock Grid.Column="4" Text="{Binding FsText}" Margin="18,0,0,0" />
+                              <TextBlock Grid.Column="5" Text="{Binding TypeText}" Foreground="{StaticResource Apagado}" TextTrimming="CharacterEllipsis" Margin="0,0,10,0" />
+                              <TextBlock Grid.Column="6" Text="{Binding StatusText}" Foreground="{StaticResource Apagado}" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </DockPanel>
+
+    <!-- inspetor: o que está selecionado e o que dá para fazer -->
+    <Border Grid.Column="2" Classes="glass" Padding="0" IsVisible="{Binding HasSelection}">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20,22,20,20" Spacing="16">
+          <Grid ColumnDefinitions="Auto,*">
+            <Panel Width="84" Height="84">
+              <c:UsageRing Value="{Binding InspectorUsage}" Color="{Binding InspectorColor}" Thickness="9" />
+              <TextBlock Text="{Binding InspectorUsageText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="ExtraBold" FontSize="16" />
+            </Panel>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="{Binding InspectorTitle}" Classes="h2" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding InspectorSubtitle}" Classes="muted" TextWrapping="Wrap" Margin="0,3,0,0" />
+            </StackPanel>
+          </Grid>
+          <Border Classes="notice warn" IsVisible="{Binding InspectorWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding InspectorWarning}" TextWrapping="Wrap" FontSize="12.5" />
+          </Border>
+          <ItemsControl ItemsSource="{Binding Details}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:InfoRow">
+                <Grid ColumnDefinitions="118,*" Margin="0,3">
+                  <TextBlock Text="{Binding Key}" FontSize="12" Foreground="{StaticResource Tenue}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12.5" TextWrapping="Wrap" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <ItemsControl ItemsSource="{Binding Actions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ActionGroup">
+                <StackPanel Margin="0,4,0,8">
+                  <TextBlock Classes="section" Text="{Binding Title}" Margin="10,0,0,4" />
+                  <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ActionItem">
+                        <Button Classes="action" Classes.dangerous="{Binding Dangerous}" Command="{Binding Command}" ToolTip.Tip="{Binding Tip}" ToolTip.ShowOnDisabled="True">
+                          <StackPanel Orientation="Horizontal" Spacing="11">
+                            <PathIcon Data="{Binding Icon}" Width="17" Height="17" />
+                            <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                          </StackPanel>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

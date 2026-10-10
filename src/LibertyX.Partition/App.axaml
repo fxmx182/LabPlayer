@@ -1,0 +1,31 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:LibertyX.Partition"
+             x:Class="LibertyX.Partition.App"
+             RequestedThemeVariant="Dark">
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Assets/Icons.axaml" />
+        <ResourceInclude Source="/Assets/Logo.axaml" />
+        <ResourceInclude Source="/Styles/Palette.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#FBC501" RegionColor="#0C0B0A" AltHigh="#0C0B0A"
+                               ChromeMediumLow="#16151A" ChromeLow="#1E1D22" ChromeMedium="#26252B" ChromeAltLow="#EBEBF5"
+                               BaseHigh="#F0F0F2" BaseMediumHigh="#CFCFD6" BaseMedium="#9C9CA6" BaseMediumLow="#5A5963" BaseLow="#2E2D33"
+                               ListLow="#14FFFFFF" ListMedium="#24FFFFFF" ErrorText="#FF5A5A" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="/Styles/Theme.axaml" />
+  </Application.Styles>
+</Application>

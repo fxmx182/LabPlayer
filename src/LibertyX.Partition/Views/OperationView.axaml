@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LibertyX.Partition.ViewModels"
+             xmlns:c="using:LibertyX.Partition.Controls"
+             x:Class="LibertyX.Partition.Views.OperationView"
+             x:DataType="vm:OperationViewModel">
+  <Border Width="640" Background="#F2141318" BorderBrush="#2AFFFFFF" BorderThickness="1" CornerRadius="26" Padding="30,28" BoxShadow="0 24 60 0 #A0000000">
+    <StackPanel Spacing="20">
+      <TextBlock Text="{Binding Title}" Classes="h2" HorizontalAlignment="Center" />
+      <Panel Width="176" Height="176" HorizontalAlignment="Center">
+        <c:UsageRing Value="{Binding Fraction}" Indeterminate="{Binding Indeterminate}" Thickness="12" />
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+          <TextBlock Text="{Binding PercentText}" Classes="big" HorizontalAlignment="Center" />
+          <PathIcon Data="{StaticResource IcCheck}" Width="46" Height="46" Foreground="{StaticResource Verde}" IsVisible="{Binding Succeeded}" />
+        </StackPanel>
+      </Panel>
+      <StackPanel Spacing="4" HorizontalAlignment="Center">
+        <TextBlock Text="{Binding Status}" Classes="h3" HorizontalAlignment="Center" Classes.failed="{Binding Failed}" />
+        <TextBlock Text="{Binding Detail}" Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+        <TextBlock Text="{Binding Elapsed}" Classes="faint" HorizontalAlignment="Center" />
+      </StackPanel>
+      <Border Classes="notice danger" IsVisible="{Binding Failed}">
+        <SelectableTextBlock Text="{Binding ResultText}" TextWrapping="Wrap" />
+      </Border>
+      <Border Classes="inset" Height="150" Padding="12,10">
+        <ScrollViewer x:Name="LogScroll" VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding Log}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <SelectableTextBlock Text="{Binding}" Classes="mono" TextWrapping="Wrap" Margin="0,1" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Border>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+        <Button IsVisible="{Binding CanPause}" Command="{Binding TogglePauseCommand}" IsEnabled="{Binding Running}">
+          <Panel>
+            <TextBlock Text="Pausar" IsVisible="{Binding !Paused}" />
+            <TextBlock Text="Continuar" IsVisible="{Binding Paused}" />
+          </Panel>
+        </Button>
+        <Button Classes="danger" Content="Cancelar" Command="{Binding CancelCommand}" IsVisible="{Binding Running}" />
+        <Button Classes="primary" Content="Fechar" Command="{Binding CloseCommand}" IsVisible="{Binding Done}" MinWidth="110" HorizontalContentAlignment="Center" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

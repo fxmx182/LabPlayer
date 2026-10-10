@@ -1,0 +1,118 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LibertyX.Partition.ViewModels"
+        xmlns:c="using:LibertyX.Partition.Controls"
+        x:Class="LibertyX.Partition.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="LibertyX Partition"
+        Width="1440" Height="900" MinWidth="1140" MinHeight="720"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/app.ico"
+        Background="#0C0B0A"
+        Foreground="{StaticResource Texto}"
+        FontFamily="{StaticResource Manrope}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="40">
+  <Panel>
+    <!-- a luz de cima: ouro fraco no alto à esquerda, violeta frio no rodapé -->
+    <Border IsHitTestVisible="False">
+      <Border.Background>
+        <RadialGradientBrush Center="10%,-6%" GradientOrigin="10%,-6%" Radius="0.95">
+          <GradientStop Offset="0" Color="#26FBC501" />
+          <GradientStop Offset="1" Color="#00FBC501" />
+        </RadialGradientBrush>
+      </Border.Background>
+    </Border>
+    <Border IsHitTestVisible="False">
+      <Border.Background>
+        <RadialGradientBrush Center="100%,105%" GradientOrigin="100%,105%" Radius="0.8">
+          <GradientStop Offset="0" Color="#283A2E6E" />
+          <GradientStop Offset="1" Color="#003A2E6E" />
+        </RadialGradientBrush>
+      </Border.Background>
+    </Border>
+
+    <Grid ColumnDefinitions="256,*">
+      <!-- barra lateral -->
+      <Border Background="#59000000" BorderBrush="#10FFFFFF" BorderThickness="0,0,1,0">
+        <DockPanel Margin="14,18,14,14">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="8,10,0,22">
+            <Path Data="{StaticResource LogoMark}" Fill="{StaticResource OuroGradiente}" Width="40" Height="40" Stretch="Uniform" />
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="LIBERTYX" FontSize="10.5" FontWeight="Bold" LetterSpacing="2.6" Foreground="{StaticResource Ouro}" />
+              <TextBlock Text="Partition" FontSize="21" FontWeight="ExtraBold" LetterSpacing="-0.6" Margin="0,-4,0,0" />
+            </StackPanel>
+          </StackPanel>
+
+          <Border DockPanel.Dock="Bottom" Classes="inset" Padding="12,10" Margin="0,10,0,0">
+            <StackPanel Spacing="3">
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <PathIcon Data="{StaticResource IcShield}" Classes="small" Foreground="{StaticResource Verde}" IsVisible="{Binding IsAdmin}" />
+                <PathIcon Data="{StaticResource IcAlert}" Classes="small" Foreground="{StaticResource Laranja}" IsVisible="{Binding !IsAdmin}" />
+                <TextBlock Text="{Binding AdminText}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Apagado}" />
+              </StackPanel>
+              <TextBlock FontSize="11" Foreground="{StaticResource Tenue}">
+                <Run Text="LibertyX Partition" /><Run Text=" · " /><Run Text="{Binding Version}" />
+              </TextBlock>
+            </StackPanel>
+          </Border>
+
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Nav}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:NavGroup">
+                  <StackPanel Margin="0,0,0,16">
+                    <TextBlock Classes="section" Text="{Binding Title}" Margin="12,0,0,6" />
+                    <ItemsControl ItemsSource="{Binding Items}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:NavItem">
+                          <Button Classes="nav" Classes.active="{Binding IsActive}" Command="{Binding Go}">
+                            <StackPanel Orientation="Horizontal" Spacing="11">
+                              <PathIcon Data="{Binding Icon}" Width="17" Height="17" />
+                              <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+
+      <!-- conteúdo -->
+      <Grid Grid.Column="1" RowDefinitions="40,*">
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="30,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" IsVisible="{Binding Loading}">
+          <c:UsageRing Width="14" Height="14" Thickness="2.5" Indeterminate="True" />
+          <TextBlock Text="{Binding LoadingText}" FontSize="12" Foreground="{StaticResource Apagado}" />
+        </StackPanel>
+        <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" Margin="30,0,30,26" />
+      </Grid>
+    </Grid>
+
+    <!-- diálogo -->
+    <Panel IsVisible="{Binding Dialog, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Border Background="#C4050403" />
+      <ContentControl Content="{Binding Dialog}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40" />
+    </Panel>
+
+    <!-- operação em andamento -->
+    <Panel IsVisible="{Binding Operation, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Border Background="#D2050403" />
+      <ContentControl Content="{Binding Operation}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40" />
+    </Panel>
+
+    <!-- aviso rápido -->
+    <Border IsVisible="{Binding Toast, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+            HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,28"
+            Background="#F21E1D22" BorderBrush="#55FBC501" BorderThickness="1" CornerRadius="14" Padding="18,11">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <PathIcon Data="{StaticResource IcInfo}" Classes="small gold" />
+        <TextBlock Text="{Binding Toast}" FontWeight="SemiBold" FontSize="13" />
+      </StackPanel>
+    </Border>
+  </Panel>
+</Window>

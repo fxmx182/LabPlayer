@@ -16,6 +16,11 @@ public sealed class CopyOptions
     public long TargetOffset { get; set; }
     /// <summary>Copiando para trás (destino depois da origem e sobrepostos): de trás para frente.</summary>
     public bool Backwards { get; set; }
+    /// <summary>Hash compartilhado entre várias chamadas (imagem montada por regiões).</summary>
+    public IncrementalHash? HashSink { get; set; }
+    /// <summary>Somado ao progresso reportado (várias regiões numa operação só).</summary>
+    public long ProgressBase { get; set; }
+    public long? ProgressTotal { get; set; }
 }
 
 public sealed class CopyResult
@@ -82,6 +87,7 @@ public static class SectorCopier
                     }
                 }
                 sha?.AppendData(span);
+                opt.HashSink?.AppendData(span);
                 dst.Write(opt.TargetOffset + p, span);
                 done += n;
                 var now = sw.Elapsed;
@@ -90,16 +96,16 @@ public static class SectorCopier
                     double inst = (done - lastBytes) / (now - lastTick).TotalSeconds;
                     speed = speed == 0 ? inst : speed * 0.7 + inst * 0.3;
                     lastBytes = done; lastTick = now;
-                    progress?.Report(new(done, total, speed, res.BadSectors.Count, p, "Copiando"));
+                    progress?.Report(new(opt.ProgressBase + done, opt.ProgressTotal ?? total, speed, res.BadSectors.Count, p, "Copiando"));
                 }
             }
         }
-        progress?.Report(new(done, total, speed, res.BadSectors.Count, src.Length, "Gravando cache"));
+        progress?.Report(new(opt.ProgressBase + done, opt.ProgressTotal ?? total, speed, res.BadSectors.Count, src.Length, "Gravando cache"));
         dst.Flush();
         res.BytesCopied = done;
         res.Elapsed = sw.Elapsed;
         if (sha != null) res.Sha256 = Convert.ToHexString(sha.GetHashAndReset());
-        progress?.Report(new(done, total, speed, res.BadSectors.Count, src.Length, "Concluído"));
+        progress?.Report(new(opt.ProgressBase + done, opt.ProgressTotal ?? total, speed, res.BadSectors.Count, src.Length, "Concluído"));
         return res;
     }
 

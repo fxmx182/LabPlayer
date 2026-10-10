@@ -15,7 +15,8 @@ public static class DiskSystem
     public static List<DiskInfo> Enumerate()
     {
         var list = new List<DiskInfo>();
-        try { list.AddRange(Native.Enumerate()); } catch { }
+        if (Environment.GetEnvironmentVariable("LIBERTYX_ONLY_IMAGES") != "1")
+            try { list.AddRange(Native.Enumerate()); } catch { }
         int n = 100;
         foreach (var path in AttachedImages.ToList())
         {

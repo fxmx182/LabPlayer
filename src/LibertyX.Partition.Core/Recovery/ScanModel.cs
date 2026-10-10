@@ -39,6 +39,22 @@ public sealed class AllocationMap(long dataStart, long clusterSize, long cluster
         long end = DataStart + ClusterCount * ClusterSize;
         if (end < volumeLength) yield return (end, volumeLength - end);
     }
+
+    /// <summary>O contrário: o que precisa ser copiado num clone "só espaço usado" — metadados, clusters em uso e a cauda (cópia do boot).</summary>
+    public IEnumerable<(long offset, long length)> UsedRanges(long volumeLength)
+    {
+        if (DataStart > 0) yield return (0, DataStart);
+        long runStart = -1;
+        for (long c = 0; c < ClusterCount; c++)
+        {
+            bool alloc = IsClusterAllocated(c) || (c == 0 && DataStart == 0);
+            if (alloc && runStart < 0) runStart = c;
+            if (!alloc && runStart >= 0) { yield return (DataStart + runStart * ClusterSize, (c - runStart) * ClusterSize); runStart = -1; }
+        }
+        if (runStart >= 0) yield return (DataStart + runStart * ClusterSize, (ClusterCount - runStart) * ClusterSize);
+        long end = DataStart + ClusterCount * ClusterSize;
+        if (end < volumeLength) yield return (end, volumeLength - end);
+    }
 }
 
 public sealed class ScanResult

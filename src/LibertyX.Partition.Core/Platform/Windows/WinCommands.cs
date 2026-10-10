@@ -179,6 +179,12 @@ public static class WinCommands
     public static Task<CommandResult> Robocopy(string from, string to, CancellationToken ct, Action<string> onLine)
         => Cmd($"robocopy \"{from.TrimEnd('\\')}\" \"{to.TrimEnd('\\')}\" /E /COPY:DAT /DCOPY:DAT /XJ /R:1 /W:1 /NP /NFL /NDL /MT:8 /XD \"System Volume Information\" \"$RECYCLE.BIN\"", ct, onLine);
 
+    public static Task<CommandResult> RobocopyExcluding(string from, string to, string excludeFile, CancellationToken ct, Action<string> onLine)
+        => Cmd($"robocopy \"{from.TrimEnd('\\')}\" \"{to.TrimEnd('\\')}\" /E /R:1 /W:1 /NP /NDL /XF \"{excludeFile}\"", ct, onLine);
+
+    public static Task<CommandResult> SplitWim(string wim, string swm, CancellationToken ct, Action<string> onLine)
+        => Cmd($"dism /Split-Image /ImageFile:\"{wim}\" /SWMFile:\"{swm}\" /FileSize:3800", ct, onLine);
+
     public static Task<CommandResult> ExtendFileSystem(char letter, CancellationToken ct)
         => PowerShell($"$p=Get-Partition -DriveLetter {letter}; $m=($p | Get-PartitionSupportedSize).SizeMax; if($m -gt $p.Size){{ $p | Resize-Partition -Size $m }}", ct);
 }
