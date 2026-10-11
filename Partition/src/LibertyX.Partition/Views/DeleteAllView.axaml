@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LibertyX.Partition.ViewModels" xmlns:c="using:LibertyX.Partition.Controls" xmlns:core="using:LibertyX.Partition.Core.Platform" x:Class="LibertyX.Partition.Views.DeleteAllView" x:DataType="vm:DeleteAllViewModel">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Margin="0,4,0,18">
+      <TextBlock Classes="h1" Text="Excluir todas as partições" />
+      <TextBlock Classes="muted" Text="Deixa o disco vazio, pronto para reparticionar. Rápido: só a tabela muda." />
+    </StackPanel>
+    <Grid ColumnDefinitions="*,24,420">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="10"><TextBlock Classes="section" Text="DISCO" /><ContentControl Content="{Binding Picker}" /></StackPanel>
+      </ScrollViewer>
+      <Border Grid.Column="2" Classes="card" VerticalAlignment="Top">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="section" Text="SAEM DA TABELA" />
+          <ItemsControl ItemsSource="{Binding Parts}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:PartitionVM">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4" IsVisible="{Binding !IsUnallocated}">
+                  <Border Width="10" Height="10" CornerRadius="5" Background="{Binding ColorBrush}" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="1" FontWeight="SemiBold"><Run Text="{Binding Title}" /><Run Text="  " /><Run Text="{Binding FsText}" Foreground="{StaticResource Apagado}" /></TextBlock>
+                  <TextBlock Grid.Column="2" Text="{Binding SizeText}" Foreground="{StaticResource Apagado}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Border Classes="notice gold"><TextBlock TextWrapping="Wrap" FontSize="12.5" Text="Os dados não são apagados agora — só ficam sem partição. Até serem sobrescritos, Recuperar partição devolve tudo. Um backup da tabela também é salvo." /></Border>
+          <Button Classes="danger" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="16,12">
+            <StackPanel Orientation="Horizontal" Spacing="9"><PathIcon Data="{StaticResource IcDeleteAll}" /><TextBlock Text="Excluir todas" /></StackPanel>
+          </Button>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </DockPanel>
+</UserControl>

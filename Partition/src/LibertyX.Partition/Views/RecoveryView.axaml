@@ -1,0 +1,220 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LibertyX.Partition.ViewModels"
+             xmlns:c="using:LibertyX.Partition.Controls"
+             x:Class="LibertyX.Partition.Views.RecoveryView"
+             x:DataType="vm:RecoveryViewModel">
+  <Panel>
+    <!-- 1. escolher onde procurar -->
+    <DockPanel IsVisible="{Binding IsChoosing}">
+      <StackPanel DockPanel.Dock="Top" Margin="0,4,0,18">
+        <TextBlock Classes="h1" Text="Recuperar dados" />
+        <TextBlock Classes="muted" Text="Arquivos apagados, Lixeira esvaziada, partição formatada, RAW ou que o Windows pede para formatar." />
+      </StackPanel>
+      <Grid ColumnDefinitions="*,24,370">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="section" Text="ONDE PROCURAR" />
+            <ContentControl Content="{Binding Picker}" />
+          </StackPanel>
+        </ScrollViewer>
+        <Border Grid.Column="2" Classes="card" VerticalAlignment="Top">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="section" Text="COMO PROCURAR" />
+            <Border Classes="option">
+              <StackPanel Spacing="3">
+                <CheckBox IsChecked="True" IsEnabled="False" Content="Varredura rápida" FontWeight="Bold" />
+                <TextBlock Classes="faint" TextWrapping="Wrap" Margin="30,0,0,0" Text="Lê a tabela de arquivos (MFT, FAT, exFAT): volta com nome, pasta e data originais. Leva segundos." />
+              </StackPanel>
+            </Border>
+            <Border Classes="option">
+              <StackPanel Spacing="3">
+                <CheckBox IsChecked="{Binding DeepScan}" Content="Varredura profunda" FontWeight="Bold" />
+                <TextBlock Classes="faint" TextWrapping="Wrap" Margin="30,0,0,0" Text="Lê setor a setor reconhecendo os arquivos pelo conteúdo. Acha o que sobrou de partições formatadas e corrompidas. Leva o tempo de ler o disco." />
+              </StackPanel>
+            </Border>
+            <Border Classes="option">
+              <StackPanel Spacing="3">
+                <CheckBox IsChecked="{Binding IncludeLive}" Content="Incluir arquivos existentes" FontWeight="Bold" />
+                <TextBlock Classes="faint" TextWrapping="Wrap" Margin="30,0,0,0" Text="Para partição RAW ou que não abre: lista tudo, não só os apagados, para copiar para fora." />
+              </StackPanel>
+            </Border>
+            <CheckBox IsChecked="{Binding FreeOnly}" IsEnabled="{Binding DeepScan}" Content="Na profunda, escavar só o espaço livre" Margin="4,0,0,0" />
+            <StackPanel Spacing="6" IsVisible="{Binding DeepScan}">
+              <TextBlock Classes="section" Text="TIPOS NA VARREDURA PROFUNDA" Margin="0,6,0,0" />
+              <ItemsControl ItemsSource="{Binding Types}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:TypeChip">
+                    <ToggleButton Classes="chip" IsChecked="{Binding IsChecked}" Content="{Binding Ext}" ToolTip.Tip="{Binding Desc}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+            <Border Classes="notice gold">
+              <TextBlock TextWrapping="Wrap" FontSize="12.5" LineHeight="18" Text="Pare de usar o disco agora: cada arquivo gravado nele pode cair em cima do que você quer de volta. Salve o que recuperar em OUTRO disco." />
+            </Border>
+            <Button Classes="primary" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="16,13" FontSize="15">
+              <StackPanel Orientation="Horizontal" Spacing="9"><PathIcon Data="{StaticResource IcSearch}" /><TextBlock Text="Procurar arquivos" /></StackPanel>
+            </Button>
+            <Button Classes="ghost" Command="{Binding OpenImageCommand}" HorizontalAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource IcDisc}" Classes="small" /><TextBlock Text="Recuperar de uma imagem de disco (.img)…" /></StackPanel>
+            </Button>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </DockPanel>
+
+    <!-- 2. varrendo -->
+    <Grid IsVisible="{Binding IsScanning}">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20" Width="560">
+        <TextBlock Text="{Binding SourceText}" Classes="muted" HorizontalAlignment="Center" />
+        <Panel Width="250" Height="250" HorizontalAlignment="Center">
+          <c:UsageRing Value="{Binding ScanFraction}" Indeterminate="{Binding ScanIndeterminate}" Thickness="14" />
+          <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="0">
+            <TextBlock Text="{Binding ScanFound, StringFormat='{}{0:N0}'}" Classes="big" HorizontalAlignment="Center" Foreground="{StaticResource Ouro}" />
+            <TextBlock Text="arquivos encontrados" Classes="muted" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Panel>
+        <StackPanel Spacing="4">
+          <TextBlock Text="{Binding ScanPhase}" Classes="h3" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ScanFraction, StringFormat='{}{0:P0}'}" Classes="muted" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ScanElapsed}" Classes="faint" HorizontalAlignment="Center" />
+        </StackPanel>
+        <Button HorizontalAlignment="Center" Command="{Binding StopCommand}" Padding="18,11">
+          <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource IcStop}" Classes="small" /><TextBlock Text="Parar e ver o que já achou" /></StackPanel>
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <!-- 3. resultados -->
+    <DockPanel IsVisible="{Binding IsResults}">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,4,0,14">
+        <StackPanel>
+          <TextBlock Classes="h1" Text="{Binding ResultTitle}" />
+          <TextBlock Classes="muted" Text="{Binding ResultSubtitle}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <Button Grid.Column="1" Command="{Binding NewScanCommand}" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource IcSearch}" Classes="small" /><TextBlock Text="Nova busca" /></StackPanel>
+        </Button>
+      </Grid>
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="340,*,Auto" Margin="0,0,0,12">
+        <TextBox Text="{Binding Search}" Watermark="Buscar pelo nome em todos os resultados" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+          <ComboBox SelectedIndex="{Binding OriginFilter}" Width="200">
+            <ComboBoxItem>Todos</ComboBoxItem>
+            <ComboBoxItem>Apagados e perdidos</ComboBoxItem>
+            <ComboBoxItem>Existentes</ComboBoxItem>
+            <ComboBoxItem>Achados por assinatura</ComboBoxItem>
+          </ComboBox>
+          <ComboBox SelectedIndex="{Binding SortMode}" Width="170">
+            <ComboBoxItem>Ordem: nome</ComboBoxItem>
+            <ComboBoxItem>Ordem: tamanho</ComboBoxItem>
+            <ComboBoxItem>Ordem: data</ComboBoxItem>
+            <ComboBoxItem>Ordem: estado</ComboBoxItem>
+          </ComboBox>
+          <CheckBox IsChecked="{Binding HideOverwritten}" Content="Ocultar sobrescritos" />
+        </StackPanel>
+      </Grid>
+      <Border DockPanel.Dock="Bottom" Classes="glass" Padding="18,12" Margin="0,12,0,0">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+          <PathIcon Data="{StaticResource IcCheck}" Classes="gold" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0" />
+          <Button Grid.Column="2" Classes="ghost" Content="Marcar / desmarcar os visíveis" Command="{Binding CheckVisibleCommand}" Margin="0,0,10,0" />
+          <Button Grid.Column="3" Classes="primary" Command="{Binding RecoverCommand}" IsEnabled="{Binding HasSelection}" Padding="20,11">
+            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource IcDownload}" /><TextBlock Text="Recuperar" FontSize="14.5" /></StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+      <Grid ColumnDefinitions="290,12,*,12,340">
+        <Border Classes="glass" Padding="8">
+          <TreeView ItemsSource="{Binding Tree}" SelectedItem="{Binding SelectedFolder}">
+            <TreeView.Styles>
+              <Style Selector="TreeViewItem" x:DataType="vm:FolderNode">
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+              </Style>
+            </TreeView.Styles>
+            <TreeView.ItemTemplate>
+              <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FolderNode">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                  <CheckBox IsChecked="{Binding IsChecked}" MinWidth="0" Margin="0,0,4,0" Padding="0" />
+                  <PathIcon Grid.Column="1" Data="{Binding Icon}" Width="15" Height="15" Classes="tree" Classes.del="{Binding Deleted}" />
+                  <TextBlock Grid.Column="2" Text="{Binding Name}" Margin="8,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="13" />
+                  <TextBlock Grid.Column="3" Text="{Binding CountText}" Classes="faint" VerticalAlignment="Center" FontSize="11" />
+                </Grid>
+              </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+          </TreeView>
+        </Border>
+
+        <Border Grid.Column="2" Classes="glass" Padding="8,10,8,8">
+          <DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="34,*,96,130,104" Margin="10,0,14,6">
+              <TextBlock Grid.Column="1" Classes="section" Text="NOME" />
+              <TextBlock Grid.Column="2" Classes="section" Text="TAMANHO" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Classes="section" Text="MODIFICADO" Margin="16,0,0,0" />
+              <TextBlock Grid.Column="4" Classes="section" Text="ESTADO" />
+            </Grid>
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding ListCaption}" Classes="faint" Margin="10,6,0,0" />
+            <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:FileRow">
+                  <Grid ColumnDefinitions="34,*,96,130,104">
+                    <CheckBox IsChecked="{Binding IsChecked}" MinWidth="0" Padding="0" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="9">
+                      <PathIcon Data="{Binding Icon}" Width="16" Height="16" Foreground="{StaticResource Apagado}" />
+                      <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="13" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding SizeText}" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12.5" />
+                    <TextBlock Grid.Column="3" Text="{Binding DateText}" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="12" Foreground="{StaticResource Apagado}" />
+                    <Panel Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Left">
+                      <Border Classes="chip green" IsVisible="{Binding CondGood}"><TextBlock Text="{Binding ConditionText}" /></Border>
+                      <Border Classes="chip orange" IsVisible="{Binding CondPartial}"><TextBlock Text="{Binding ConditionText}" /></Border>
+                      <Border Classes="chip red" IsVisible="{Binding CondBad}"><TextBlock Text="{Binding ConditionText}" /></Border>
+                      <Border Classes="chip" IsVisible="{Binding CondOther}"><TextBlock Text="{Binding ConditionText}" /></Border>
+                    </Panel>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+
+        <Border Grid.Column="4" Classes="glass" Padding="16">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
+              <TextBlock Classes="section" Text="PRÉVIA" />
+              <Border Classes="inset" MinHeight="180" Padding="8">
+                <Panel>
+                  <Image Source="{Binding PreviewImage}" Stretch="Uniform" MaxHeight="300" />
+                  <SelectableTextBlock Text="{Binding PreviewText}" Classes="mono" TextWrapping="Wrap" MaxHeight="300" />
+                  <SelectableTextBlock Text="{Binding PreviewHex}" Classes="mono" FontSize="10.5" />
+                  <TextBlock Text="Selecione um arquivo para ver aqui antes de recuperar." Classes="faint" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                             IsVisible="{Binding SelectedFile, Converter={x:Static ObjectConverters.IsNull}}" />
+                </Panel>
+              </Border>
+              <ItemsControl ItemsSource="{Binding FileDetails}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:InfoRow">
+                    <Grid ColumnDefinitions="92,*" Margin="0,3">
+                      <TextBlock Text="{Binding Key}" FontSize="12" Foreground="{StaticResource Tenue}" />
+                      <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12.5" TextWrapping="Wrap" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <StackPanel Spacing="4" IsVisible="{Binding ScanLog.Count}">
+                <TextBlock Classes="section" Text="DIÁRIO DA VARREDURA" Margin="0,8,0,0" />
+                <ItemsControl ItemsSource="{Binding ScanLog}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String"><TextBlock Text="{Binding}" Classes="faint" TextWrapping="Wrap" Margin="0,1" /></DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Border>
+      </Grid>
+    </DockPanel>
+  </Panel>
+</UserControl>

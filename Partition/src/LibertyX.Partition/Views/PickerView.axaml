@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LibertyX.Partition.ViewModels"
+             x:Class="LibertyX.Partition.Views.PickerView"
+             x:DataType="vm:PickerViewModel">
+  <ItemsControl ItemsSource="{Binding Groups}">
+    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="16" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate>
+      <DataTemplate x:DataType="vm:PickGroup">
+        <StackPanel Spacing="8">
+          <Button Classes="tile" Classes.selected="{Binding Header.IsSelected}" Command="{Binding Header.Pick}" Padding="14,11"
+                  ToolTip.Tip="{Binding Header.Reason}" ToolTip.ShowOnDisabled="True" IsEnabled="{Binding Header.Enabled}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Border Width="38" Height="38" CornerRadius="12" Background="#1AFBC501">
+                <PathIcon Data="{Binding Header.Icon}" Width="20" Height="20" Foreground="{StaticResource Ouro}" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Header.Title}" FontWeight="ExtraBold" FontSize="14.5" />
+                <TextBlock Text="{Binding Header.Subtitle}" FontSize="12" Foreground="{StaticResource Tenue}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <Border Grid.Column="2" Classes="chip gold" IsVisible="{Binding Header.Badge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding Header.Badge}" />
+              </Border>
+            </Grid>
+          </Button>
+          <ItemsControl ItemsSource="{Binding Items}" Margin="18,0,0,0">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:PickItem">
+                <Button Classes="tile" Classes.selected="{Binding IsSelected}" Command="{Binding Pick}" Width="214" Height="86" Margin="0,0,10,10" Padding="13,11"
+                        ToolTip.Tip="{Binding Reason}" ToolTip.ShowOnDisabled="True" IsEnabled="{Binding Enabled}">
+                  <Grid RowDefinitions="Auto,*,Auto">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <Border Width="9" Height="9" CornerRadius="5" Background="{Binding Accent}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="Bold" FontSize="13.5" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                    <TextBlock Grid.Row="1" Text="{Binding Subtitle}" FontSize="11.5" Foreground="{StaticResource Tenue}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    <ProgressBar Grid.Row="2" Value="{Binding Usage}" Maximum="1" MinHeight="4" Height="4" Foreground="{Binding Accent}" />
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>

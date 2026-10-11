@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LibertyX.Partition.ViewModels" xmlns:c="using:LibertyX.Partition.Controls" xmlns:core="using:LibertyX.Partition.Core.Platform" xmlns:p="using:LibertyX.Partition.Core.Platform" x:Class="LibertyX.Partition.Views.HealthView" x:DataType="vm:HealthViewModel">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Margin="0,4,0,18">
+      <TextBlock Classes="h1" Text="Saúde e propriedades" />
+      <TextBlock Classes="muted" Text="O que o próprio disco relata sobre si: S.M.A.R.T. (SATA) ou o log de saúde (NVMe)." />
+    </StackPanel>
+    <Grid ColumnDefinitions="330,24,*">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="section" Text="DISCO" />
+          <ContentControl Content="{Binding Picker}" />
+        </StackPanel>
+      </ScrollViewer>
+      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" IsVisible="{Binding Loaded}">
+        <StackPanel Spacing="16">
+          <Border Classes="card">
+            <Grid ColumnDefinitions="Auto,*">
+              <Panel Width="130" Height="130">
+                <c:UsageRing Value="{Binding HealthValue}" Color="{Binding HealthColor}" Thickness="12" Indeterminate="{Binding Busy}" />
+                <TextBlock Text="{Binding HealthText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="ExtraBold" FontSize="17" />
+              </Panel>
+              <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center" Spacing="6">
+                <TextBlock Text="{Binding Summary}" Classes="h3" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Source}" Classes="faint" />
+              </StackPanel>
+            </Grid>
+          </Border>
+          <UniformGrid Columns="3">
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="TEMPERATURA" /><TextBlock Text="{Binding Temp}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="LIGADO" /><TextBlock Text="{Binding Hours}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="CICLOS" /><TextBlock Text="{Binding Cycles}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="VIDA ÚTIL" /><TextBlock Text="{Binding Life}" Classes="h2" Foreground="{StaticResource Ouro}" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="ESCRITO" /><TextBlock Text="{Binding Written}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="LIDO" /><TextBlock Text="{Binding Read}" Classes="h2" /></StackPanel></Border>
+          </UniformGrid>
+          <Border Classes="card">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="section" Text="ATRIBUTOS" />
+              <Grid ColumnDefinitions="50,*,80,80,80,140,90" Margin="0,4,0,4">
+                <TextBlock Classes="faint" Text="ID" /><TextBlock Grid.Column="1" Classes="faint" Text="Atributo" />
+                <TextBlock Grid.Column="2" Classes="faint" Text="Atual" HorizontalAlignment="Right" /><TextBlock Grid.Column="3" Classes="faint" Text="Pior" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="4" Classes="faint" Text="Limite" HorizontalAlignment="Right" /><TextBlock Grid.Column="5" Classes="faint" Text="Valor bruto" HorizontalAlignment="Right" />
+              </Grid>
+              <ItemsControl ItemsSource="{Binding Attributes}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="p:SmartAttribute">
+                    <Grid ColumnDefinitions="50,*,80,80,80,140,90" Margin="0,3">
+                      <TextBlock Text="{Binding Id}" Foreground="{StaticResource Tenue}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Column="2" Text="{Binding Current}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="3" Text="{Binding Worst}" HorizontalAlignment="Right" Foreground="{StaticResource Apagado}" />
+                      <TextBlock Grid.Column="4" Text="{Binding Threshold}" HorizontalAlignment="Right" Foreground="{StaticResource Apagado}" />
+                      <TextBlock Grid.Column="5" Text="{Binding Raw, StringFormat='{}{0:N0}'}" HorizontalAlignment="Right" />
+                      <Panel Grid.Column="6" HorizontalAlignment="Right">
+                        <Border Classes="chip green" IsVisible="{Binding Level, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static p:HealthLevel.Good}}"><TextBlock Text="OK" /></Border>
+                        <Border Classes="chip orange" IsVisible="{Binding Level, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static p:HealthLevel.Caution}}"><TextBlock Text="Atenção" /></Border>
+                        <Border Classes="chip red" IsVisible="{Binding Level, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static p:HealthLevel.Bad}}"><TextBlock Text="Falha" /></Border>
+                      </Panel>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section" Text="PROPRIEDADES DO DISCO" Margin="0,0,0,6" />
+              <ItemsControl ItemsSource="{Binding Properties}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:InfoRow">
+                    <Grid ColumnDefinitions="150,*" Margin="0,3">
+                      <TextBlock Text="{Binding Key}" Foreground="{StaticResource Tenue}" FontSize="12.5" />
+                      <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" FontSize="13" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>

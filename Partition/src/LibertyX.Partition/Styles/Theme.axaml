@@ -1,0 +1,374 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ───────── tipografia ───────── -->
+  <Style Selector="TextBlock.h1">
+    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="ExtraBold" />
+    <Setter Property="LetterSpacing" Value="-0.7" />
+  </Style>
+  <Style Selector="TextBlock.h2">
+    <Setter Property="FontSize" Value="19" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="-0.3" />
+  </Style>
+  <Style Selector="TextBlock.h3">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.big">
+    <Setter Property="FontSize" Value="40" />
+    <Setter Property="FontWeight" Value="ExtraBold" />
+    <Setter Property="LetterSpacing" Value="-1.2" />
+  </Style>
+  <Style Selector="TextBlock.section">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="1.6" />
+    <Setter Property="Foreground" Value="{StaticResource Tenue}" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{StaticResource Apagado}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="TextBlock.faint">
+    <Setter Property="Foreground" Value="{StaticResource Tenue}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="TextBlock.gold">
+    <Setter Property="Foreground" Value="{StaticResource Ouro}" />
+  </Style>
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="{StaticResource Mono}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="SelectableTextBlock.mono">
+    <Setter Property="FontFamily" Value="{StaticResource Mono}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{StaticResource Apagado}" />
+  </Style>
+
+  <!-- ───────── superfícies ───────── -->
+  <Style Selector="Border.glass">
+    <Setter Property="Background" Value="{StaticResource Vidro}" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RaioCartao}" />
+  </Style>
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{StaticResource Vidro}" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RaioCartao}" />
+    <Setter Property="Padding" Value="20" />
+  </Style>
+  <Style Selector="Border.card.selected">
+    <Setter Property="BorderBrush" Value="{StaticResource OuroBorda}" />
+    <Setter Property="Background" Value="#12FBC501" />
+  </Style>
+  <Style Selector="Border.inset">
+    <Setter Property="Background" Value="#33000000" />
+    <Setter Property="BorderBrush" Value="#12FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+  <Style Selector="Border.chip">
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="9,3" />
+    <Setter Property="Background" Value="{StaticResource VidroForte}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.chip > TextBlock">
+    <Setter Property="FontSize" Value="11.5" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{StaticResource Apagado}" />
+  </Style>
+  <Style Selector="Border.chip.gold"><Setter Property="Background" Value="{StaticResource OuroSuave}" /></Style>
+  <Style Selector="Border.chip.gold > TextBlock"><Setter Property="Foreground" Value="{StaticResource Ouro}" /></Style>
+  <Style Selector="Border.chip.green"><Setter Property="Background" Value="{StaticResource VerdeSuave}" /></Style>
+  <Style Selector="Border.chip.green > TextBlock"><Setter Property="Foreground" Value="{StaticResource Verde}" /></Style>
+  <Style Selector="Border.chip.red"><Setter Property="Background" Value="{StaticResource VermelhoSuave}" /></Style>
+  <Style Selector="Border.chip.red > TextBlock"><Setter Property="Foreground" Value="{StaticResource Vermelho}" /></Style>
+  <Style Selector="Border.chip.orange"><Setter Property="Background" Value="{StaticResource LaranjaSuave}" /></Style>
+  <Style Selector="Border.chip.orange > TextBlock"><Setter Property="Foreground" Value="{StaticResource Laranja}" /></Style>
+
+  <Style Selector="Border.notice">
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="14,11" />
+    <Setter Property="Background" Value="{StaticResource VidroForte}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+  </Style>
+  <Style Selector="Border.notice.warn">
+    <Setter Property="Background" Value="{StaticResource LaranjaSuave}" />
+    <Setter Property="BorderBrush" Value="#55FFA24D" />
+  </Style>
+  <Style Selector="Border.notice.danger">
+    <Setter Property="Background" Value="{StaticResource VermelhoSuave}" />
+    <Setter Property="BorderBrush" Value="#55FF5A5A" />
+  </Style>
+  <Style Selector="Border.notice.good">
+    <Setter Property="Background" Value="{StaticResource VerdeSuave}" />
+    <Setter Property="BorderBrush" Value="#5535D0BE" />
+  </Style>
+  <Style Selector="Border.notice.gold">
+    <Setter Property="Background" Value="#14FBC501" />
+    <Setter Property="BorderBrush" Value="#44FBC501" />
+  </Style>
+
+  <Style Selector="PathIcon">
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+  </Style>
+  <Style Selector="PathIcon.small"><Setter Property="Width" Value="14" /><Setter Property="Height" Value="14" /></Style>
+  <Style Selector="PathIcon.large"><Setter Property="Width" Value="26" /><Setter Property="Height" Value="26" /></Style>
+  <Style Selector="PathIcon.gold"><Setter Property="Foreground" Value="{StaticResource Ouro}" /></Style>
+  <Style Selector="PathIcon.muted"><Setter Property="Foreground" Value="{StaticResource Apagado}" /></Style>
+
+  <!-- ───────── botões ───────── -->
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="15,9" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13.5" />
+    <Setter Property="Background" Value="{StaticResource VidroForte}" />
+    <Setter Property="Foreground" Value="{StaticResource Texto}" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#26FFFFFF" />
+    <Setter Property="BorderBrush" Value="#38FFFFFF" />
+    <Setter Property="Foreground" Value="{StaticResource Texto}" />
+  </Style>
+  <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#10FFFFFF" />
+  </Style>
+  <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#08FFFFFF" />
+    <Setter Property="BorderBrush" Value="#10FFFFFF" />
+    <Setter Property="Foreground" Value="{StaticResource Tenue}" />
+  </Style>
+
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{StaticResource OuroBotao}" />
+    <Setter Property="Foreground" Value="{StaticResource SobreOuro}" />
+    <Setter Property="BorderBrush" Value="#FFE27A" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource OuroClaro}" />
+    <Setter Property="BorderBrush" Value="#FFF0B0" />
+    <Setter Property="Foreground" Value="{StaticResource SobreOuro}" />
+  </Style>
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#E0A800" />
+  </Style>
+  <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#33FBC501" />
+    <Setter Property="BorderBrush" Value="#22FBC501" />
+    <Setter Property="Foreground" Value="#66FBC501" />
+  </Style>
+
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="{StaticResource VermelhoSuave}" />
+    <Setter Property="Foreground" Value="{StaticResource Vermelho}" />
+    <Setter Property="BorderBrush" Value="#55FF5A5A" />
+  </Style>
+  <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#40FF5A5A" />
+    <Setter Property="BorderBrush" Value="#88FF5A5A" />
+    <Setter Property="Foreground" Value="#FF8A8A" />
+  </Style>
+
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{StaticResource Apagado}" />
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource VidroForte}" />
+    <Setter Property="Foreground" Value="{StaticResource Texto}" />
+  </Style>
+
+  <Style Selector="Button.nav">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Foreground" Value="{StaticResource Apagado}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13.5" />
+  </Style>
+  <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#12FFFFFF" />
+    <Setter Property="Foreground" Value="{StaticResource Texto}" />
+  </Style>
+  <Style Selector="Button.nav.active /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource OuroSuave}" />
+    <Setter Property="Foreground" Value="{StaticResource Ouro}" />
+  </Style>
+
+  <Style Selector="Button.action">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{StaticResource Texto}" />
+  </Style>
+  <Style Selector="Button.action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource VidroForte}" />
+    <Setter Property="Foreground" Value="{StaticResource OuroClaro}" />
+  </Style>
+  <Style Selector="Button.action.dangerous:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{StaticResource Vermelho}" />
+    <Setter Property="Background" Value="{StaticResource VermelhoSuave}" />
+  </Style>
+
+  <Style Selector="Button.action:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#4DEBEBF5" />
+  </Style>
+  <Style Selector="Button.action.sel /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#1AFBC501" />
+  </Style>
+
+  <Style Selector="Button.tile">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="16" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Background" Value="{StaticResource Vidro}" />
+  </Style>
+  <Style Selector="Button.tile:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#16FFFFFF" />
+    <Setter Property="BorderBrush" Value="#55FBC501" />
+  </Style>
+  <Style Selector="Button.tile.selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#1AFBC501" />
+    <Setter Property="BorderBrush" Value="{StaticResource Ouro}" />
+  </Style>
+
+  <!-- ───────── entradas ───────── -->
+  <Style Selector="TextBox">
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="12,9" />
+    <Setter Property="FontSize" Value="13.5" />
+  </Style>
+  <Style Selector="TextBox /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{StaticResource Vidro}" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+  </Style>
+  <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#14FFFFFF" />
+    <Setter Property="BorderBrush" Value="#33FFFFFF" />
+  </Style>
+  <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#14FFFFFF" />
+    <Setter Property="BorderBrush" Value="{StaticResource Ouro}" />
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Background" Value="{StaticResource Vidro}" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+    <Setter Property="MinHeight" Value="38" />
+  </Style>
+  <Style Selector="ComboBoxItem">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Margin" Value="4,1" />
+  </Style>
+  <Style Selector="NumericUpDown">
+    <Setter Property="CornerRadius" Value="12" />
+  </Style>
+  <Style Selector="ProgressBar">
+    <Setter Property="Foreground" Value="{StaticResource OuroBotao}" />
+    <Setter Property="Background" Value="{StaticResource VidroForte}" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="MinHeight" Value="8" />
+  </Style>
+  <Style Selector="ToolTip">
+    <Setter Property="Background" Value="{StaticResource Superficie2}" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Foreground" Value="{StaticResource Texto}" />
+    <Setter Property="MaxWidth" Value="360" />
+  </Style>
+  <Style Selector="CheckBox">
+    <Setter Property="FontSize" Value="13.5" />
+  </Style>
+
+  <!-- ───────── listas ───────── -->
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="ListBoxItem">
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Margin" Value="0,1" />
+  </Style>
+  <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#10FFFFFF" />
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#1FFBC501" />
+  </Style>
+  <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#2AFBC501" />
+  </Style>
+  <Style Selector="TreeViewItem">
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="MinHeight" Value="30" />
+  </Style>
+  <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="#1FFBC501" />
+  </Style>
+  <Style Selector="TabItem">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="MinHeight" Value="38" />
+    <Setter Property="Padding" Value="14,0" />
+  </Style>
+  <Style Selector="ToggleButton.chip">
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="{StaticResource Vidro}" />
+    <Setter Property="BorderBrush" Value="{StaticResource VidroBorda}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{StaticResource Apagado}" />
+  </Style>
+  <Style Selector="ToggleButton.chip:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#22FBC501" />
+    <Setter Property="BorderBrush" Value="#77FBC501" />
+    <Setter Property="Foreground" Value="{StaticResource Ouro}" />
+  </Style>
+  <Style Selector="ToggleButton.chip:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="#55FFFFFF" />
+  </Style>
+  <Style Selector="Border.option">
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="14,12" />
+    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="BorderBrush" Value="#14FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="PathIcon.tree"><Setter Property="Foreground" Value="{StaticResource Ouro}" /></Style>
+  <Style Selector="PathIcon.del"><Setter Property="Foreground" Value="{StaticResource Laranja}" /></Style>
+  <Style Selector=":is(Control).hidden"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector="TextBlock.failed"><Setter Property="Foreground" Value="{StaticResource Vermelho}" /></Style>
+  <Style Selector="Border.dangerbox">
+    <Setter Property="Background" Value="{StaticResource VermelhoSuave}" />
+    <Setter Property="BorderBrush" Value="#55FF5A5A" />
+  </Style>
+  <Style Selector="Border.dangerbox > PathIcon"><Setter Property="Foreground" Value="{StaticResource Vermelho}" /></Style>
+</Styles>

@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LibertyX.Partition.ViewModels" xmlns:c="using:LibertyX.Partition.Controls" xmlns:t="using:LibertyX.Partition.Core.Tools" x:Class="LibertyX.Partition.Views.BitLockerView" x:DataType="vm:BitLockerViewModel">
+  <DockPanel>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,4,0,18">
+      <StackPanel>
+        <TextBlock Classes="h1" Text="BitLocker" />
+        <TextBlock Classes="muted" Text="Desbloquear, bloquear, ativar, desativar e guardar a chave de recuperação de cada volume." />
+      </StackPanel>
+      <Button Grid.Column="1" Command="{Binding LoadCommand}" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource IcRefresh}" Classes="small" /><TextBlock Text="Atualizar" /></StackPanel>
+      </Button>
+    </Grid>
+    <Border DockPanel.Dock="Top" Classes="notice warn" Margin="0,0,0,14" IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+    </Border>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding Volumes}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:BitLockerRow">
+            <Border Classes="card" Width="380" Margin="0,0,14,14">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Border Width="46" Height="46" CornerRadius="14" Background="#1AFBC501">
+                    <Panel>
+                      <PathIcon Data="{StaticResource IcLock}" Width="22" Height="22" Foreground="{StaticResource Ouro}" IsVisible="{Binding Locked}" />
+                      <PathIcon Data="{StaticResource IcUnlock}" Width="22" Height="22" Foreground="{StaticResource Ouro}" IsVisible="{Binding Unlocked}" />
+                    </Panel>
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Mount}" Classes="h2" />
+                    <TextBlock Text="{Binding StatusText}" Classes="muted" />
+                  </StackPanel>
+                  <Border Grid.Column="2" Classes="chip" Classes.red="{Binding Locked}" Classes.green="{Binding Unlocked}"><TextBlock Text="{Binding LockText}" /></Border>
+                </Grid>
+                <ProgressBar Value="{Binding Percent}" Maximum="1" IsVisible="{Binding Encrypted}" />
+                <TextBlock Text="{Binding Detail}" Classes="faint" TextWrapping="Wrap" />
+                <WrapPanel>
+                  <Button Content="Desbloquear" Command="{Binding Unlock}" IsVisible="{Binding Locked}" Classes="primary" Margin="0,0,8,8" />
+                  <Button Content="Bloquear" Command="{Binding LockCmd}" IsVisible="{Binding Unlocked}" Margin="0,0,8,8" Classes.hidden="{Binding Decrypted}" />
+                  <Button Content="Chave de recuperação" Command="{Binding Keys}" IsVisible="{Binding Encrypted}" Margin="0,0,8,8" />
+                  <Button Content="Desativar" Command="{Binding Disable}" IsVisible="{Binding Encrypted}" Margin="0,0,8,8" />
+                  <Button Content="Ativar BitLocker" Command="{Binding Enable}" IsVisible="{Binding Decrypted}" Classes="primary" Margin="0,0,8,8" />
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

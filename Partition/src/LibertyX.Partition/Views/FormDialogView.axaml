@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LibertyX.Partition.ViewModels"
+             x:Class="LibertyX.Partition.Views.FormDialogView"
+             x:DataType="vm:FormDialogViewModel">
+  <Border Width="560" Background="#F2141318" BorderBrush="#2AFFFFFF" BorderThickness="1" CornerRadius="24" Padding="28,26" BoxShadow="0 24 60 0 #A0000000">
+    <StackPanel Spacing="18">
+      <Grid ColumnDefinitions="Auto,*">
+        <Border Width="44" Height="44" CornerRadius="14" Background="#1FFBC501" BorderBrush="#40FBC501" BorderThickness="1" Classes.dangerbox="{Binding Danger}">
+          <PathIcon Data="{Binding Icon}" Width="22" Height="22" Foreground="{StaticResource Ouro}" />
+        </Border>
+        <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+          <TextBlock Text="{Binding Title}" Classes="h2" />
+          <TextBlock Text="{Binding Subtitle}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding Subtitle, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Grid>
+
+      <ScrollViewer MaxHeight="520" VerticalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding Fields}">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="14" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.DataTemplates>
+            <DataTemplate DataType="vm:TextField">
+              <StackPanel Spacing="6" IsVisible="{Binding IsVisible}">
+                <TextBlock Text="{Binding Label}" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Apagado}" />
+                <TextBox Text="{Binding Value}" Watermark="{Binding Watermark}" MaxLength="{Binding MaxLength}" PasswordChar="{Binding PasswordChar}" />
+                <TextBlock Text="{Binding Hint}" Classes="faint" TextWrapping="Wrap" IsVisible="{Binding Hint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="vm:PathField">
+              <StackPanel Spacing="6" IsVisible="{Binding IsVisible}">
+                <TextBlock Text="{Binding Label}" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Apagado}" />
+                <Grid ColumnDefinitions="*,8,Auto">
+                  <TextBox Text="{Binding Value}" />
+                  <Button Grid.Column="2" Content="Escolher…" Command="{Binding BrowseCommand}" />
+                </Grid>
+              </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="vm:ChoiceField">
+              <StackPanel Spacing="6" IsVisible="{Binding IsVisible}">
+                <TextBlock Text="{Binding Label}" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Apagado}" />
+                <ComboBox ItemsSource="{Binding Options}" SelectedIndex="{Binding SelectedIndex}" HorizontalAlignment="Stretch" />
+              </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="vm:ToggleField">
+              <StackPanel Spacing="2" IsVisible="{Binding IsVisible}">
+                <CheckBox IsChecked="{Binding Value}" Content="{Binding Label}" />
+                <TextBlock Text="{Binding Hint}" Classes="faint" TextWrapping="Wrap" Margin="30,0,0,0" IsVisible="{Binding Hint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="vm:SizeField">
+              <StackPanel Spacing="4" IsVisible="{Binding IsVisible}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Label}" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Apagado}" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <TextBox Text="{Binding ValueMb}" Width="110" Padding="10,6" HorizontalContentAlignment="Right" />
+                    <TextBlock Text="MB" VerticalAlignment="Center" Foreground="{StaticResource Tenue}" />
+                  </StackPanel>
+                </Grid>
+                <Slider Minimum="{Binding MinMb}" Maximum="{Binding MaxMb}" Value="{Binding ValueMb}" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Caption}" Classes="faint" TextWrapping="Wrap" />
+                  <TextBlock Grid.Column="1" Text="{Binding ValueText}" FontWeight="Bold" Foreground="{StaticResource Ouro}" FontSize="13" />
+                </Grid>
+              </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="vm:InfoField">
+              <Panel IsVisible="{Binding IsVisible}">
+                <Grid ColumnDefinitions="170,*" IsVisible="{Binding HasLabel}">
+                  <TextBlock Text="{Binding Label}" FontSize="12.5" Foreground="{StaticResource Tenue}" />
+                  <SelectableTextBlock Grid.Column="1" Text="{Binding Text}" FontSize="13" TextWrapping="Wrap" />
+                </Grid>
+                <Border Classes="notice" Classes.warn="{Binding IsWarn}" Classes.danger="{Binding IsDanger}" Classes.good="{Binding IsGood}" Classes.gold="{Binding IsGold}" IsVisible="{Binding IsNotice}">
+                  <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" LineHeight="19" />
+                </Border>
+              </Panel>
+            </DataTemplate>
+          </ItemsControl.DataTemplates>
+        </ItemsControl>
+      </ScrollViewer>
+
+      <StackPanel Spacing="6" IsVisible="{Binding PhraseRequired}">
+        <TextBlock FontSize="12.5" Foreground="{StaticResource Apagado}">
+          <Run Text="Para confirmar, digite " /><Run Text="{Binding ConfirmPhrase}" FontWeight="ExtraBold" Foreground="{StaticResource Vermelho}" />
+        </TextBlock>
+        <TextBox Text="{Binding Typed}" />
+      </StackPanel>
+
+      <Border Classes="notice danger" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
+      </Border>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+        <Button Classes="ghost" Content="Cancelar" Command="{Binding CancelCommand}" />
+        <Button Classes.primary="{Binding !Danger}" Classes.danger="{Binding Danger}" Content="{Binding ConfirmText}" Command="{Binding ConfirmCommand}" IsEnabled="{Binding CanConfirm}" MinWidth="120" HorizontalContentAlignment="Center" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LibertyX.Partition.ViewModels" xmlns:c="using:LibertyX.Partition.Controls" xmlns:core="using:LibertyX.Partition.Core.Platform" x:Class="LibertyX.Partition.Views.AlignView" x:DataType="vm:AlignViewModel">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Margin="0,4,0,18">
+      <TextBlock Classes="h1" Text="Alinhar partições" />
+      <TextBlock Classes="muted" Text="Partições criadas por Windows XP, clonagens antigas ou alguns programas começam fora do limite de 1 MB." />
+    </StackPanel>
+    <Grid ColumnDefinitions="340,24,*">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="10"><TextBlock Classes="section" Text="DISCO" /><ContentControl Content="{Binding Picker}" /></StackPanel>
+      </ScrollViewer>
+      <Border Grid.Column="2" Classes="card" VerticalAlignment="Top">
+        <StackPanel Spacing="14">
+          <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Classes="h3" />
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AlignRow">
+                <Border Classes="option" Margin="0,0,0,8">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <CheckBox IsChecked="{Binding IsChecked}" IsEnabled="{Binding CanCheck}" />
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Text="{Binding Title}" FontWeight="Bold" />
+                      <TextBlock Text="{Binding Start}" Classes="faint" />
+                    </StackPanel>
+                    <Panel Grid.Column="2" VerticalAlignment="Center">
+                      <Border Classes="chip green" IsVisible="{Binding Aligned}"><TextBlock Text="{Binding Plan}" /></Border>
+                      <Border Classes="chip orange" IsVisible="{Binding Misaligned}"><TextBlock Text="{Binding Plan}" /></Border>
+                    </Panel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Classes="primary" Content="Alinhar selecionadas" Command="{Binding AlignCommand}" IsEnabled="{Binding CanAlign}" HorizontalAlignment="Right" Padding="18,11" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </DockPanel>
+</UserControl>

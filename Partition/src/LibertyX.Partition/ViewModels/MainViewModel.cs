@@ -1,0 +1,278 @@
+using System.Collections.ObjectModel;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LibertyX.Partition.Core.Operations;
+using LibertyX.Partition.Core.Platform;
+
+namespace LibertyX.Partition.ViewModels;
+
+public sealed partial class NavItem(string key, string title, string icon) : ObservableObject
+{
+    public string Key { get; } = key;
+    public string Title { get; } = title;
+    public Avalonia.Media.Geometry? Icon { get; } = Ui.Icon(icon);
+    [ObservableProperty] private bool _isActive;
+    public IRelayCommand Go => new RelayCommand(() => MainViewModel.Instance.Navigate(Key));
+}
+
+public sealed class NavGroup(string title, params NavItem[] items)
+{
+    public string Title { get; } = title.ToUpperInvariant();
+    public List<NavItem> Items { get; } = [.. items];
+}
+
+public sealed partial class MainViewModel : ViewModelBase
+{
+    public static MainViewModel Instance { get; private set; } = null!;
+
+    public List<NavGroup> Nav { get; }
+    private readonly Dictionary<string, Func<PageViewModel>> _factories;
+    private readonly Dictionary<string, PageViewModel> _pages = [];
+
+    [ObservableProperty] private PageViewModel? _currentPage;
+    [ObservableProperty] private DialogViewModel? _dialog;
+    [ObservableProperty] private OperationViewModel? _operation;
+    [ObservableProperty] private string? _toast;
+    [ObservableProperty] private bool _loading;
+    [ObservableProperty] private string _loadingText = "Lendo discos…";
+
+    public List<DiskInfo> Disks { get; private set; } = [];
+    public bool IsAdmin { get; } = DiskSystem.Native.IsElevated;
+    public bool IsWindows { get; } = OperatingSystem.IsWindows();
+    /// <summary>Versão + commit do build (o CI carimba): sem isso não dá para saber se o .exe aberto é o novo.</summary>
+    public string Version
+    {
+        get
+        {
+            var info = typeof(MainViewModel).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "1.0.0";
+            var parts = info.Split('+');
+            return "v" + parts[0] + (parts.Length > 1 && parts[1].Length >= 7 ? " · " + parts[1][..7] : "");
+        }
+    }
+    public string AdminText => IsAdmin ? "Administrador" : "Sem privilégio de administrador";
+
+    public MainViewModel()
+    {
+        Instance = this;
+        Nav =
+        [
+            new("Painel", new NavItem("discos", "Discos e partições", "Dashboard")),
+            new("Resgate",
+                new NavItem("recuperar", "Recuperar dados", "RecoverFiles"),
+                new NavItem("particoes", "Recuperar partição", "RecoverPartition"),
+                new NavItem("imagem", "Backup e imagem", "Backup"),
+                new NavItem("superficie", "Teste de superfície", "Surface"),
+                new NavItem("saude", "Saúde e propriedades", "Health")),
+            new("Disco",
+                new NavItem("migrar", "Migrar sistema para SSD", "Migrate"),
+                new NavItem("copiar-disco", "Copiar disco", "CopyDisk"),
+                new NavItem("copiar-particao", "Copiar partição", "CopyPartition"),
+                new NavItem("converter", "Converter GPT ⇄ MBR", "Convert"),
+                new NavItem("alinhar", "Alinhar partições", "Align"),
+                new NavItem("limpar", "Limpar disco", "Wipe"),
+                new NavItem("excluir-todas", "Excluir todas as partições", "DeleteAll")),
+            new("Utilidades",
+                new NavItem("bitlocker", "BitLocker", "BitLocker"),
+                new NavItem("benchmark", "Benchmark de disco", "Benchmark"),
+                new NavItem("espaco", "Analisador de espaço", "Space"),
+                new NavItem("duplicados", "Limpador de duplicados", "Duplicates"),
+                new NavItem("boot", "Mídia inicializável", "Boot")),
+        ];
+        _factories = new()
+        {
+            ["discos"] = () => new DisksPageViewModel(),
+            ["recuperar"] = () => new RecoveryViewModel(),
+            ["particoes"] = () => new PartitionRecoveryViewModel(),
+            ["imagem"] = () => new BackupViewModel(),
+            ["superficie"] = () => new SurfaceViewModel(),
+            ["saude"] = () => new HealthViewModel(),
+            ["migrar"] = () => new CloneViewModel(migrate: true),
+            ["copiar-disco"] = () => new CloneViewModel(migrate: false),
+            ["copiar-particao"] = () => new CopyPartitionViewModel(),
+            ["converter"] = () => new ConvertViewModel(),
+            ["alinhar"] = () => new AlignViewModel(),
+            ["limpar"] = () => new WipeViewModel(),
+            ["excluir-todas"] = () => new DeleteAllViewModel(),
+            ["bitlocker"] = () => new BitLockerViewModel(),
+            ["benchmark"] = () => new BenchmarkViewModel(),
+            ["espaco"] = () => new SpaceViewModel(),
+            ["duplicados"] = () => new DuplicatesViewModel(),
+            ["boot"] = () => new BootMediaViewModel(),
+        };
+    }
+
+    public void Start(string[] args)
+    {
+        foreach (var a in args.Where(File.Exists)) DiskSystem.AttachedImages.Add(Path.GetFullPath(a));
+        Navigate("discos");
+        _ = Refresh();
+    }
+
+    public void Navigate(string key, object? arg = null)
+    {
+        if (!_pages.TryGetValue(key, out var page))
+        {
+            page = _factories[key]();
+            _pages[key] = page;
+        }
+        foreach (var g in Nav) foreach (var i in g.Items) i.IsActive = i.Key == key;
+        CurrentPage = page;
+        page.OnShown(arg);
+    }
+
+    public T Page<T>(string key) where T : PageViewModel
+    {
+        if (!_pages.TryGetValue(key, out var p)) { p = _factories[key](); _pages[key] = p; }
+        return (T)p;
+    }
+
+    [RelayCommand]
+    public async Task Refresh()
+    {
+        Loading = true;
+        LoadingText = "Lendo discos…";
+        try
+        {
+            Disks = await Task.Run(DiskSystem.Enumerate);
+            foreach (var p in _pages.Values) p.OnDisksChanged();
+            // partes lentas depois: S.M.A.R.T. e uso de partições sem letra
+            _ = Task.Run(() =>
+            {
+                foreach (var d in Disks.ToList())
+                {
+                    try { if (!d.IsImage) d.Smart = DiskSystem.Native.ReadSmart(d); } catch { }
+                    foreach (var p in d.Partitions.Where(p => p.Used == null && !p.IsUnallocated && Core.FileSystems.FsDetect.CanRead(p.FileSystem) && !p.Disk.IsImage))
+                    {
+                        try
+                        {
+                            using var v = DiskSystem.OpenPartition(p);
+                            var u = UsageCalculator.Compute(v, p.FileSystem);
+                            if (u != null) { p.Used = u.Value.used; p.Free = u.Value.free; p.Label ??= u.Value.label; }
+                        }
+                        catch { }
+                    }
+                }
+                Ui.Post(() => { foreach (var p in _pages.Values) p.OnDisksChanged(); });
+            });
+        }
+        catch (Exception ex) { ShowToast("Erro ao ler discos: " + ex.Message); }
+        finally { Loading = false; }
+    }
+
+    // ───────── diálogos ─────────
+
+    public async Task<bool> ShowDialog(DialogViewModel d)
+    {
+        Dialog = d;
+        try { return await d.Result; }
+        finally { if (Dialog == d) Dialog = null; }
+    }
+
+    public Task<bool> Confirm(string title, string text, string confirm = "Continuar", bool danger = false, string? phrase = null, string icon = "Alert")
+    {
+        var f = new FormDialogViewModel { Title = title, ConfirmText = confirm, Danger = danger, ConfirmPhrase = phrase, IconKey = icon };
+        f.Note(text, danger ? "danger" : "");
+        return ShowDialog(f);
+    }
+
+    public Task Alert(string title, string text, string kind = "") 
+    {
+        var f = new FormDialogViewModel { Title = title, ConfirmText = "Entendi", IconKey = kind == "danger" ? "Alert" : "Info" };
+        f.Note(text, kind);
+        return ShowDialog(f);
+    }
+
+    // ───────── operações ─────────
+
+    /// <summary>Roda uma operação longa com a janela de progresso. Relê os discos no fim se pedido.</summary>
+    public async Task<bool> Run(string title, Func<OpSink, Task> work, bool refresh = true, bool canPause = false, string? success = null)
+    {
+        var op = new OperationViewModel { Title = title, CanPause = canPause };
+        Operation = op;
+        bool ok;
+        try
+        {
+            await Task.Run(() => work(op.Sink));
+            op.Finish(true, success);
+            ok = true;
+        }
+        catch (OperationCanceledException) { op.Finish(false, "Cancelado pelo usuário."); ok = false; }
+        catch (Exception ex)
+        {
+            CrashLog.Write(ex);
+            op.Finish(false, ex.Message);
+            ok = false;
+        }
+        if (refresh) await Refresh();
+        return ok;
+    }
+
+    public Task<bool> Run(string title, Action<OpSink> work, bool refresh = true, bool canPause = false, string? success = null)
+        => Run(title, s => { work(s); return Task.CompletedTask; }, refresh, canPause, success);
+
+    public void ShowToast(string text)
+    {
+        Toast = text;
+        var mine = text;
+        _ = Task.Delay(4500).ContinueWith(_ => Ui.Post(() => { if (Toast == mine) Toast = null; }));
+    }
+
+    // ───────── arquivos ─────────
+
+    public static TopLevel? Top => (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+
+    public static async Task<string?> PickFolder(string title)
+    {
+        if (Top == null) return null;
+        var r = await Top.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = title, AllowMultiple = false });
+        return r.FirstOrDefault()?.TryGetLocalPath();
+    }
+
+    public static async Task<string?> PickFile(string title, params (string name, string[] patterns)[] types)
+    {
+        if (Top == null) return null;
+        var r = await Top.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title, AllowMultiple = false,
+            FileTypeFilter = types.Select(t => new FilePickerFileType(t.name) { Patterns = t.patterns }).Append(FilePickerFileTypes.All).ToList(),
+        });
+        return r.FirstOrDefault()?.TryGetLocalPath();
+    }
+
+    public static async Task<string?> SaveFile(string title, string suggested, string ext, string typeName)
+    {
+        if (Top == null) return null;
+        var r = await Top.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title, SuggestedFileName = suggested, DefaultExtension = ext,
+            FileTypeChoices = [new FilePickerFileType(typeName) { Patterns = [$"*.{ext}"] }],
+        });
+        return r?.TryGetLocalPath();
+    }
+
+    [RelayCommand]
+    public async Task OpenImage()
+    {
+        var f = await PickFile("Abrir imagem de disco", ("Imagens de disco", ["*.img", "*.dd", "*.raw", "*.bin", "*.iso", "*.001"]));
+        if (f == null) return;
+        if (!DiskSystem.AttachedImages.Contains(f)) DiskSystem.AttachedImages.Add(f);
+        await Refresh();
+        ShowToast("Imagem anexada como disco (somente leitura).");
+    }
+
+    public static void OpenInExplorer(string path)
+    {
+        try
+        {
+            if (OperatingSystem.IsWindows())
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", File.Exists(path) ? $"/select,\"{path}\"" : $"\"{path}\"") { UseShellExecute = true });
+            else
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("xdg-open", Directory.Exists(path) ? path : Path.GetDirectoryName(path)!) { UseShellExecute = true });
+        }
+        catch { }
+    }
+}
