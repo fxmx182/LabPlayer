@@ -9,6 +9,13 @@ internal static class Program
     {
         AppDomain.CurrentDomain.UnhandledException += (_, e) => CrashLog.Write(e.ExceptionObject as Exception);
         TaskScheduler.UnobservedTaskException += (_, e) => { CrashLog.Write(e.Exception); e.SetObserved(); };
+        int st = Array.IndexOf(args, "--selftest");
+        if (st >= 0)
+        {
+            string outPath = st + 1 < args.Length ? args[st + 1] : "autoteste.txt";
+            Environment.Exit(SelfTest.Run(outPath, args.Contains("--vhd")));
+            return;
+        }
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

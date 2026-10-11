@@ -25,13 +25,13 @@
               </StackPanel>
             </Grid>
           </Border>
-          <UniformGrid Columns="6">
-            <Border Classes="card" Margin="0,0,10,0" Padding="14"><StackPanel><TextBlock Classes="section" Text="TEMPERATURA" /><TextBlock Text="{Binding Temp}" Classes="h2" /></StackPanel></Border>
-            <Border Classes="card" Margin="0,0,10,0" Padding="14"><StackPanel><TextBlock Classes="section" Text="LIGADO" /><TextBlock Text="{Binding Hours}" Classes="h2" /></StackPanel></Border>
-            <Border Classes="card" Margin="0,0,10,0" Padding="14"><StackPanel><TextBlock Classes="section" Text="CICLOS" /><TextBlock Text="{Binding Cycles}" Classes="h2" /></StackPanel></Border>
-            <Border Classes="card" Margin="0,0,10,0" Padding="14"><StackPanel><TextBlock Classes="section" Text="VIDA ÚTIL" /><TextBlock Text="{Binding Life}" Classes="h2" Foreground="{StaticResource Ouro}" /></StackPanel></Border>
-            <Border Classes="card" Margin="0,0,10,0" Padding="14"><StackPanel><TextBlock Classes="section" Text="ESCRITO" /><TextBlock Text="{Binding Written}" Classes="h2" /></StackPanel></Border>
-            <Border Classes="card" Padding="14"><StackPanel><TextBlock Classes="section" Text="LIDO" /><TextBlock Text="{Binding Read}" Classes="h2" /></StackPanel></Border>
+          <UniformGrid Columns="3">
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="TEMPERATURA" /><TextBlock Text="{Binding Temp}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="LIGADO" /><TextBlock Text="{Binding Hours}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="CICLOS" /><TextBlock Text="{Binding Cycles}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="VIDA ÚTIL" /><TextBlock Text="{Binding Life}" Classes="h2" Foreground="{StaticResource Ouro}" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="ESCRITO" /><TextBlock Text="{Binding Written}" Classes="h2" /></StackPanel></Border>
+            <Border Classes="card" Margin="0,0,10,10" Padding="14"><StackPanel><TextBlock Classes="section" Text="LIDO" /><TextBlock Text="{Binding Read}" Classes="h2" /></StackPanel></Border>
           </UniformGrid>
           <Border Classes="card">
             <StackPanel Spacing="6">

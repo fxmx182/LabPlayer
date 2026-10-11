@@ -172,6 +172,7 @@ public sealed partial class BenchmarkViewModel : PageViewModel
         Drives.Clear();
         foreach (var d in DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType is DriveType.Fixed or DriveType.Removable))
             Drives.Add(OperatingSystem.IsWindows() ? $"{d.Name.TrimEnd('\\')} {d.VolumeLabel} · {Fmt.Size(d.AvailableFreeSpace)} livres" : d.Name);
+        DriveIndex = Drives.Count > 0 ? 0 : -1;
     }
 
     [RelayCommand]

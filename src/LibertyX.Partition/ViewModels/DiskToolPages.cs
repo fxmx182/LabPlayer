@@ -253,7 +253,7 @@ public sealed partial class AlignViewModel : PageViewModel
     public override string IconKey => "Align";
     public PickerViewModel Picker { get; } = new() { ShowPartitions = false };
     public ObservableCollection<AlignRow> Rows { get; } = [];
-    [ObservableProperty] private string _summary = "";
+    [ObservableProperty] private string _summary = "Escolha um disco à esquerda.";
     [ObservableProperty] private bool _canAlign;
     private DiskInfo? _d;
     public AlignViewModel() { Picker.Changed += it => Load(it?.Disk); }

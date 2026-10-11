@@ -42,7 +42,17 @@ public sealed partial class MainViewModel : ViewModelBase
     public List<DiskInfo> Disks { get; private set; } = [];
     public bool IsAdmin { get; } = DiskSystem.Native.IsElevated;
     public bool IsWindows { get; } = OperatingSystem.IsWindows();
-    public string Version => "v" + (typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.0");
+    /// <summary>Versão + commit do build (o CI carimba): sem isso não dá para saber se o .exe aberto é o novo.</summary>
+    public string Version
+    {
+        get
+        {
+            var info = typeof(MainViewModel).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "1.0.0";
+            var parts = info.Split('+');
+            return "v" + parts[0] + (parts.Length > 1 && parts[1].Length >= 7 ? " · " + parts[1][..7] : "");
+        }
+    }
     public string AdminText => IsAdmin ? "Administrador" : "Sem privilégio de administrador";
 
     public MainViewModel()

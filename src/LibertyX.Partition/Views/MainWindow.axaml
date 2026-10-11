@@ -17,7 +17,7 @@
     <!-- a luz de cima: ouro fraco no alto à esquerda, violeta frio no rodapé -->
     <Border IsHitTestVisible="False">
       <Border.Background>
-        <RadialGradientBrush Center="10%,-6%" GradientOrigin="10%,-6%" Radius="0.95">
+        <RadialGradientBrush Center="10%,-6%" GradientOrigin="10%,-6%" RadiusX="95%" RadiusY="95%">
           <GradientStop Offset="0" Color="#26FBC501" />
           <GradientStop Offset="1" Color="#00FBC501" />
         </RadialGradientBrush>
@@ -25,7 +25,7 @@
     </Border>
     <Border IsHitTestVisible="False">
       <Border.Background>
-        <RadialGradientBrush Center="100%,105%" GradientOrigin="100%,105%" Radius="0.8">
+        <RadialGradientBrush Center="100%,105%" GradientOrigin="100%,105%" RadiusX="80%" RadiusY="80%">
           <GradientStop Offset="0" Color="#283A2E6E" />
           <GradientStop Offset="1" Color="#003A2E6E" />
         </RadialGradientBrush>
